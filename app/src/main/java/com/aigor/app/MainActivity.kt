@@ -43,6 +43,12 @@ import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = newBase.getSharedPreferences("aigor_prefs", android.content.Context.MODE_PRIVATE)
+        val code = prefs.getString("ui_locale", "auto")
+        super.attachBaseContext(LocaleManager.apply(newBase, code))
+    }
+
     data class AttachmentData(
         val name: String,
         val mime: String,
@@ -694,7 +700,6 @@ class MainActivity : AppCompatActivity() {
         thread {
             try {
                 val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-                val preferredLang = prefs.getString("preferred_lang", "auto") ?: "auto"
                 val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
 
                 val urls = extractUrls(message)
@@ -703,7 +708,6 @@ class MainActivity : AppCompatActivity() {
                     put("message", payloadText)
                     put("sessionId", "aigor-app-chat")
                     put("prefs", JSONObject().apply {
-                        put("language", preferredLang)
                         put("showTranscription", showTranscriptions)
                     })
                     attachment?.let {

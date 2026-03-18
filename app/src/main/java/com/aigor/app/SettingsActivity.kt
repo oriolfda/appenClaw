@@ -11,6 +11,12 @@ import androidx.appcompat.app.AppCompatActivity
 
 class SettingsActivity : AppCompatActivity() {
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val prefs = newBase.getSharedPreferences("aigor_prefs", android.content.Context.MODE_PRIVATE)
+        val code = prefs.getString("ui_locale", "auto")
+        super.attachBaseContext(LocaleManager.apply(newBase, code))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -37,18 +43,21 @@ class SettingsActivity : AppCompatActivity() {
         val selectedIndex = themes.indexOfFirst { it.id == currentThemeId }.coerceAtLeast(0)
         themeSpinner.setSelection(selectedIndex)
 
-        // Language selector is intentionally data-driven to make adding new languages easy.
+        // UI language selector (app interface only), easy to extend later.
         val languageOptions = listOf(
-            "auto" to "Automàtic (segons entrada)",
-            "ca" to "Català",
-            "en" to "English",
-            "es" to "Castellano",
+            "auto" to getString(R.string.lang_auto),
+            "en-GB" to "English (UK)",
+            "en-US" to "English (US)",
+            "ca-ES" to "Català",
+            "es-ES" to "Español",
+            "gl-ES" to "Galego",
+            "eu-ES" to "Euskara",
         )
         val langAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, languageOptions.map { it.second })
         langAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         languageSpinner.adapter = langAdapter
 
-        val currentLang = prefs.getString("preferred_lang", "auto") ?: "auto"
+        val currentLang = prefs.getString("ui_locale", "auto") ?: "auto"
         val langIndex = languageOptions.indexOfFirst { it.first == currentLang }.coerceAtLeast(0)
         languageSpinner.setSelection(langIndex)
 
@@ -70,12 +79,13 @@ class SettingsActivity : AppCompatActivity() {
                 .putString("openclaw_endpoint", endpoint)
                 .putString("openclaw_hook_token", token)
                 .putString(ThemeManager.PREF_KEY, themeId)
-                .putString("preferred_lang", selectedLang)
+                .putString("ui_locale", selectedLang)
                 .putBoolean("show_transcriptions", showTranscriptions)
                 .apply()
 
-            statusText.text = "Configuració guardada ✅"
+            statusText.text = getString(R.string.saved_ok)
             setResult(RESULT_OK)
+            recreate()
         }
     }
 }
