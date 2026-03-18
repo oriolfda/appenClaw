@@ -68,7 +68,7 @@ object ThemeManager {
         UiTheme(
             id = "deep_dark",
             label = "Fosc blau",
-            screenBg = 0xFF0A0F1C.toInt(),
+            screenBg = 0xFF0B1018.toInt(),
             titleColor = 0xFFF3F4F6.toInt(),
             statusColor = 0xFF94A3B8.toInt(),
             messageTextColor = 0xFFF8FAFC.toInt(),
@@ -119,8 +119,8 @@ object ThemeManager {
             botText = 0xFFF9FAFB.toInt(),
             typingDots = 0xFFD1D5DB.toInt(),
             userBubble = R.drawable.bg_chat_user_ember,
-            botBubble = R.drawable.bg_chat_bot_ember,
-            inputBg = R.drawable.bg_input_chat,
+            botBubble = R.drawable.bg_chat_bot_green,
+            inputBg = R.drawable.bg_input_chat_green,
         ),
         UiTheme(
             id = "dark_all_blue",
@@ -137,9 +137,9 @@ object ThemeManager {
             userText = 0xFFF9FAFB.toInt(),
             botText = 0xFFF9FAFB.toInt(),
             typingDots = 0xFFD1D5DB.toInt(),
-            userBubble = R.drawable.bg_chat_user_ember,
-            botBubble = R.drawable.bg_chat_bot_ember,
-            inputBg = R.drawable.bg_input_chat,
+            userBubble = R.drawable.bg_chat_user_dark,
+            botBubble = R.drawable.bg_chat_bot_blue,
+            inputBg = R.drawable.bg_input_chat_blue,
         ),
         UiTheme(
             id = "dark_all_red",
@@ -157,7 +157,7 @@ object ThemeManager {
             botText = 0xFFF9FAFB.toInt(),
             typingDots = 0xFFD1D5DB.toInt(),
             userBubble = R.drawable.bg_chat_user_ember,
-            botBubble = R.drawable.bg_chat_bot_ember,
+            botBubble = R.drawable.bg_chat_bot_red,
             inputBg = R.drawable.bg_input_chat,
         )
     )
