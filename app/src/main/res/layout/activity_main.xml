@@ -54,40 +54,75 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="bottom"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="8dp">
 
-        <Button
-            android:id="@+id/attachButton"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_marginEnd="6dp"
-            android:backgroundTint="#1F2937"
-            android:text="+"
-            android:textColor="#E5E7EB"
-            android:textSize="20sp" />
-
-        <EditText
-            android:id="@+id/messageEdit"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:id="@+id/pendingAttachmentRow"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_input_chat"
-            android:hint="Escriu un missatge..."
-            android:inputType="textMultiLine|textCapSentences"
-            android:maxLines="4"
-            android:textColor="#F9FAFB"
-            android:textColorHint="#7C879A" />
+            android:layout_marginBottom="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
 
-        <Button
-            android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/pendingAttachmentText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="#1F2937"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="8dp"
+                android:text="📎 fitxer"
+                android:textColor="#E5E7EB"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/cancelAttachmentButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Treure" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="#FF5C5C"
-            android:text="Send"
-            android:textColor="#FFFFFF" />
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/attachButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="6dp"
+                android:backgroundTint="#1F2937"
+                android:text="+"
+                android:textColor="#E5E7EB"
+                android:textSize="20sp" />
+
+            <EditText
+                android:id="@+id/messageEdit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_input_chat"
+                android:hint="Escriu un missatge..."
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="4"
+                android:textColor="#F9FAFB"
+                android:textColorHint="#7C879A" />
+
+            <Button
+                android:id="@+id/sendButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#FF5C5C"
+                android:text="Send"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

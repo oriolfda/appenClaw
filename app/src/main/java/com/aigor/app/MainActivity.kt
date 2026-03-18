@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var chatRecycler: RecyclerView
     private lateinit var sendButton: Button
+    private lateinit var pendingAttachmentRow: LinearLayout
+    private lateinit var pendingAttachmentText: TextView
+    private lateinit var cancelAttachmentButton: Button
     private lateinit var adapter: ChatAdapter
     private val messages = mutableListOf<ChatMessage>()
     private var pendingAttachment: AttachmentData? = null
@@ -55,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         if (bitmap != null) {
             val b64 = bitmapToBase64(bitmap)
             pendingAttachment = AttachmentData(name = "camera-photo.jpg", mime = "image/jpeg", base64 = b64)
-            attachButton.text = "📎"
+            updatePendingAttachmentUi()
             statusText.text = "Foto preparada"
         }
     }
@@ -82,6 +86,9 @@ class MainActivity : AppCompatActivity() {
         statusText = findViewById(R.id.statusText)
         chatRecycler = findViewById(R.id.chatRecycler)
         sendButton = findViewById(R.id.sendButton)
+        pendingAttachmentRow = findViewById(R.id.pendingAttachmentRow)
+        pendingAttachmentText = findViewById(R.id.pendingAttachmentText)
+        cancelAttachmentButton = findViewById(R.id.cancelAttachmentButton)
 
         val theme = currentTheme()
         adapter = ChatAdapter(messages, theme)
@@ -91,6 +98,7 @@ class MainActivity : AppCompatActivity() {
 
         loadHistory()
         consumeSharedText(intent)
+        updatePendingAttachmentUi()
 
         overflowMenuButton.setOnClickListener { anchor ->
             val popup = PopupMenu(this, anchor)
@@ -150,6 +158,12 @@ class MainActivity : AppCompatActivity() {
             popup.show()
         }
 
+        cancelAttachmentButton.setOnClickListener {
+            pendingAttachment = null
+            updatePendingAttachmentUi()
+            statusText.text = "Adjunt eliminat"
+        }
+
         sendButton.setOnClickListener {
             val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
             val endpoint = prefs.getString("openclaw_endpoint", "").orEmpty().trim()
@@ -181,7 +195,7 @@ class MainActivity : AppCompatActivity() {
             addMessage(ChatMessage("typing", ""))
             sendToOpenClaw(endpoint, token, message, pendingAttachment)
             pendingAttachment = null
-            attachButton.text = "+"
+            updatePendingAttachmentUi()
         }
     }
 
@@ -229,7 +243,7 @@ class MainActivity : AppCompatActivity() {
 
             val b64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
             pendingAttachment = AttachmentData(name = name, mime = mime, base64 = b64)
-            attachButton.text = "📎"
+            updatePendingAttachmentUi()
             statusText.text = "Adjunt preparat: $name"
         } catch (e: Exception) {
             statusText.text = "Error adjunt: ${e.message}"
@@ -247,6 +261,18 @@ class MainActivity : AppCompatActivity() {
         val out = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
         return Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP)
+    }
+
+    private fun updatePendingAttachmentUi() {
+        val att = pendingAttachment
+        if (att == null) {
+            pendingAttachmentRow.visibility = View.GONE
+            attachButton.text = "+"
+        } else {
+            pendingAttachmentRow.visibility = View.VISIBLE
+            pendingAttachmentText.text = "📎 ${att.name}"
+            attachButton.text = "📎"
+        }
     }
 
     private fun currentTheme(): ThemeManager.UiTheme {
@@ -397,7 +423,7 @@ class MainActivity : AppCompatActivity() {
         if (body.isBlank()) return if (code in 200..299) "Missatge enviat ✅" else "Error HTTP $code"
         return try {
             val obj = JSONObject(body)
-            when {
+            val core = when {
                 obj.has("reply") -> obj.optString("reply")
                 obj.has("response") -> obj.optString("response")
                 obj.has("message") -> obj.optString("message")
@@ -410,6 +436,8 @@ class MainActivity : AppCompatActivity() {
                 obj.has("ok") -> "Missatge enviat ✅"
                 else -> body
             }
+            val mediaUrl = obj.optString("mediaUrl", "")
+            if (mediaUrl.isNotBlank()) "$core\n\n🔗 Media: $mediaUrl" else core
         } catch (_: Exception) {
             body
         }
