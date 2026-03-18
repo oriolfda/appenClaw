@@ -14,7 +14,6 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
-import android.speech.tts.TextToSpeech
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Base64
@@ -39,11 +38,10 @@ import java.io.File
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
-class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class MainActivity : AppCompatActivity() {
 
     data class AttachmentData(
         val name: String,
@@ -80,8 +78,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private val sentAudioFiles = mutableListOf<File>()
     private var lastSentAudioFile: File? = null
     private var mediaPlayer: MediaPlayer? = null
-    private var tts: TextToSpeech? = null
-    private var ttsReady = false
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentRecordingFile: File? = null
@@ -159,10 +155,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     if (f.exists()) playLocalAudio(f) else statusText.text = "Àudio local no trobat"
                 }
                 !msg.audioUrl.isNullOrBlank() -> tryPlayRemoteAudio(msg.audioUrl)
-                !msg.ttsText.isNullOrBlank() -> speakTts(msg.ttsText)
             }
         }
-        tts = TextToSpeech(this, this)
         chatRecycler.layoutManager = LinearLayoutManager(this)
         chatRecycler.adapter = adapter
         applyTheme(theme)
@@ -352,9 +346,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         try { mediaPlayer?.release() } catch (_: Exception) {}
         mediaPlayer = null
-        try { tts?.stop(); tts?.shutdown() } catch (_: Exception) {}
-        tts = null
-        ttsReady = false
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -708,9 +699,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         addMessage(ChatMessage("assistant", "Àudio de resposta", audioUrl = mediaUrl))
                         tryPlayRemoteAudio(mediaUrl)
                     } else if (!ttsText.isNullOrBlank()) {
-                        // Fallback: TTS block received as text markup -> expose as playable message.
-                        addMessage(ChatMessage("assistant", "Àudio de resposta (TTS)", ttsText = ttsText))
-                        speakTts(ttsText)
+                        addMessage(ChatMessage("assistant", "[TTS pendent de veu servidor]"))
                     }
 
                     statusText.text = if (code in 200..299) "Estat: enviat OK ($code)" else "Estat: error HTTP $code"
@@ -831,24 +820,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return text to null
     }
 
-    override fun onInit(status: Int) {
-        ttsReady = status == TextToSpeech.SUCCESS
-        if (ttsReady) {
-            tts?.language = Locale("ca", "ES")
-        }
-    }
-
-    private fun speakTts(text: String?) {
-        if (text.isNullOrBlank()) return
-        if (!ttsReady) {
-            statusText.text = "TTS no disponible al dispositiu"
-            return
-        }
-        try {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "aigor-tts")
-        } catch (_: Exception) {
-        }
-    }
 
     private fun showAboutDialog() {
         val pkg = packageManager.getPackageInfo(packageName, 0)
