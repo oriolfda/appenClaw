@@ -689,10 +689,16 @@ class MainActivity : AppCompatActivity() {
                     val mediaUrl = try {
                         JSONObject(body).optString("mediaUrl", "")
                     } catch (_: Exception) { "" }
-                    adapter.replaceLast(ChatMessage("assistant", assistantText, audioUrl = mediaUrl.ifBlank { null }))
+
+                    // Replace typing bubble with textual assistant response.
+                    adapter.replaceLast(ChatMessage("assistant", assistantText))
+
+                    // If response includes audio, append it as its own playable chat message.
                     if (mediaUrl.isNotBlank()) {
+                        addMessage(ChatMessage("assistant", "Àudio de resposta", audioUrl = mediaUrl))
                         tryPlayRemoteAudio(mediaUrl)
                     }
+
                     statusText.text = if (code in 200..299) "Estat: enviat OK ($code)" else "Estat: error HTTP $code"
                     saveHistory()
                     scrollBottom()
@@ -787,8 +793,7 @@ class MainActivity : AppCompatActivity() {
                 obj.has("ok") -> "Missatge enviat ✅"
                 else -> body
             }
-            val mediaUrl = obj.optString("mediaUrl", "")
-            if (mediaUrl.isNotBlank()) "$core\n\n🔗 Media: $mediaUrl" else core
+            core
         } catch (_: Exception) {
             body
         }
