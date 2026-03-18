@@ -6,6 +6,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.OutputStreamWriter
@@ -18,7 +21,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
-    private lateinit var responseText: TextView
+    private lateinit var chatRecycler: RecyclerView
+    private lateinit var adapter: ChatAdapter
+    private val messages = mutableListOf<ChatMessage>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,12 +31,17 @@ class MainActivity : AppCompatActivity() {
 
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
-        responseText = findViewById(R.id.responseText)
+        chatRecycler = findViewById(R.id.chatRecycler)
+
+        adapter = ChatAdapter(messages)
+        chatRecycler.layoutManager = LinearLayoutManager(this)
+        chatRecycler.adapter = adapter
+
+        loadHistory()
+        consumeSharedText(intent)
 
         val sendButton: Button = findViewById(R.id.sendButton)
         val openSettingsButton: Button = findViewById(R.id.openSettingsButton)
-
-        consumeSharedText(intent)
 
         openSettingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -52,10 +62,12 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             if (message.isBlank()) {
-                statusText.text = "Estat: escriu algun missatge"
                 return@setOnClickListener
             }
 
+            addMessage(ChatMessage("user", message))
+            messageEdit.setText("")
+            addMessage(ChatMessage("assistant", "AIGOR està pensant..."))
             sendToOpenClaw(endpoint, token, message)
         }
     }
@@ -81,24 +93,17 @@ class MainActivity : AppCompatActivity() {
         val pattern = Pattern.compile("(https?://[^\\s]+)")
         val matcher = pattern.matcher(text)
         val urls = mutableListOf<String>()
-        while (matcher.find()) {
-            matcher.group(1)?.let { urls.add(it) }
-        }
+        while (matcher.find()) matcher.group(1)?.let { urls.add(it) }
         return urls.distinct()
     }
 
     private fun sendToOpenClaw(endpoint: String, token: String, message: String) {
         statusText.text = "Estat: enviant..."
-        responseText.text = "(esperant resposta...)"
 
         thread {
             try {
                 val urls = extractUrls(message)
-                val payloadText = if (urls.isEmpty()) {
-                    message
-                } else {
-                    "$message\n\nURLs detectades: ${urls.joinToString(", ")}" 
-                }
+                val payloadText = if (urls.isEmpty()) message else "$message\n\nURLs detectades: ${urls.joinToString(", ")}" 
                 val payload = JSONObject().apply {
                     put("text", payloadText)
                     put("mode", "now")
@@ -117,31 +122,83 @@ class MainActivity : AppCompatActivity() {
 
                 val code = conn.responseCode
                 val body = try {
-                    if (code in 200..299) {
-                        conn.inputStream.bufferedReader().use(BufferedReader::readText)
-                    } else {
-                        conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
-                    }
-                } catch (_: Exception) {
-                    ""
-                }
+                    if (code in 200..299) conn.inputStream.bufferedReader().use(BufferedReader::readText)
+                    else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
+                } catch (_: Exception) { "" }
 
                 runOnUiThread {
-                    if (code in 200..299) {
-                        statusText.text = "Estat: enviat OK ($code)"
-                    } else {
-                        statusText.text = "Estat: error HTTP $code"
-                    }
-                    responseText.text = if (body.isBlank()) "(resposta buida)" else body
+                    val assistantText = parseAssistantText(body, code)
+                    adapter.replaceLast(ChatMessage("assistant", assistantText))
+                    statusText.text = if (code in 200..299) "Estat: enviat OK ($code)" else "Estat: error HTTP $code"
+                    saveHistory()
+                    scrollBottom()
                 }
-
                 conn.disconnect()
             } catch (e: Exception) {
                 runOnUiThread {
+                    adapter.replaceLast(ChatMessage("assistant", "Error de connexió: ${e.message}"))
                     statusText.text = "Estat: error ${e.message}"
-                    responseText.text = "(sense resposta per error de connexió)"
+                    saveHistory()
+                    scrollBottom()
                 }
             }
         }
+    }
+
+    private fun parseAssistantText(body: String, code: Int): String {
+        if (body.isBlank()) return if (code in 200..299) "Missatge enviat ✅" else "Error HTTP $code"
+        return try {
+            val obj = JSONObject(body)
+            when {
+                obj.has("response") -> obj.optString("response")
+                obj.has("message") -> obj.optString("message")
+                obj.has("text") -> obj.optString("text")
+                obj.has("ok") -> "Enviat OK. (ACK tècnic: ${obj.optBoolean("ok")})"
+                else -> body
+            }
+        } catch (_: Exception) {
+            body
+        }
+    }
+
+    private fun addMessage(msg: ChatMessage) {
+        adapter.add(msg)
+        saveHistory()
+        scrollBottom()
+    }
+
+    private fun scrollBottom() {
+        if (messages.isNotEmpty()) chatRecycler.scrollToPosition(messages.lastIndex)
+    }
+
+    private fun loadHistory() {
+        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val raw = prefs.getString("chat_history", "[]").orEmpty()
+        messages.clear()
+        try {
+            val arr = JSONArray(raw)
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                messages.add(ChatMessage(o.optString("role", "assistant"), o.optString("text", ""), o.optLong("ts", 0L)))
+            }
+        } catch (_: Exception) {
+        }
+        adapter.notifyDataSetChanged()
+        scrollBottom()
+    }
+
+    private fun saveHistory() {
+        val arr = JSONArray()
+        messages.takeLast(200).forEach {
+            arr.put(JSONObject().apply {
+                put("role", it.role)
+                put("text", it.text)
+                put("ts", it.ts)
+            })
+        }
+        getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("chat_history", arr.toString())
+            .apply()
     }
 }

@@ -1,76 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="horizontal"
+        android:padding="12dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="AIGOR app en marxa 🚀"
-            android:textSize="24sp"
+            android:layout_weight="1"
+            android:text="AIGOR Chat"
+            android:textSize="22sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/openSettingsButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
             android:text="Settings" />
+    </LinearLayout>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Missatge (text + URLs)"
-            android:textStyle="bold" />
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/chatRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="12dp"
+        android:paddingBottom="6dp"
+        android:text="Estat: llest"
+        android:textColor="#6B7280" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp">
 
         <EditText
             android:id="@+id/messageEdit"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:gravity="top|start"
-            android:hint="Escriu text o enganxa URLs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Escriu un missatge..."
             android:inputType="textMultiLine|textCapSentences"
-            android:minLines="6" />
+            android:maxLines="4" />
 
         <Button
             android:id="@+id/sendButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Enviar a OpenClaw" />
-
-        <TextView
-            android:id="@+id/statusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Estat: llest"
-            android:textColor="#333333" />
-
-        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Resposta OpenClaw"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/responseText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="#EEF2FF"
-            android:padding="12dp"
-            android:text="(Encara no hi ha resposta)"
-            android:textColor="#111827" />
-
+            android:layout_marginStart="8dp"
+            android:text="Enviar" />
     </LinearLayout>
-</ScrollView>
+
+</LinearLayout>
