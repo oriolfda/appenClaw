@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import json
 import os
-import shlex
 import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -52,6 +51,13 @@ def extract_json_block(text: str):
         return None
 
 
+def run_openclaw_json(cmd, timeout=180):
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    out = (proc.stdout or "") + (proc.stderr or "")
+    parsed = extract_json_block(out)
+    return proc.returncode, parsed, out
+
+
 class Handler(BaseHTTPRequestHandler):
     def _send(self, code: int, payload: dict):
         body = json.dumps(payload).encode("utf-8")
@@ -61,16 +67,88 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _auth_ok(self):
+        if not TOKEN:
+            return True
+        auth = self.headers.get("Authorization", "")
+        return auth == f"Bearer {TOKEN}"
+
+    def do_GET(self):
+        if self.path != "/status":
+            self._send(404, {"ok": False, "error": "Not found"})
+            return
+
+        if not self._auth_ok():
+            self._send(401, {"ok": False, "error": "Unauthorized"})
+            return
+
+        try:
+            session_id = DEFAULT_SESSION
+            code, parsed, raw = run_openclaw_json(["openclaw", "sessions", "--json"], timeout=60)
+            if code != 0 or not parsed:
+                self._send(500, {"ok": False, "error": "sessions_failed", "details": raw[-500:]})
+                return
+
+            sessions = parsed.get("sessions") or []
+            target = None
+            for s in sessions:
+                if (s.get("sessionId") or "") == session_id:
+                    target = s
+                    break
+
+            # fallback: pick main if target session not listed
+            if not target:
+                for s in sessions:
+                    if (s.get("key") or "") == "agent:main:main":
+                        target = s
+                        break
+
+            if not target:
+                self._send(200, {
+                    "ok": True,
+                    "context": {
+                        "sessionId": session_id,
+                        "usedTokens": None,
+                        "maxTokens": None,
+                        "usedPercent": None,
+                        "freeTokens": None,
+                        "freePercent": None,
+                    },
+                    "note": "No session metrics found yet"
+                })
+                return
+
+            used = int(target.get("totalTokens") or 0)
+            max_tokens = int(target.get("contextTokens") or 0)
+            used_pct = round((used / max_tokens) * 100, 1) if max_tokens > 0 else None
+            free = (max_tokens - used) if max_tokens > 0 else None
+            free_pct = round((free / max_tokens) * 100, 1) if (max_tokens > 0 and free is not None) else None
+
+            self._send(200, {
+                "ok": True,
+                "context": {
+                    "sessionId": target.get("sessionId") or session_id,
+                    "usedTokens": used,
+                    "maxTokens": max_tokens,
+                    "usedPercent": used_pct,
+                    "freeTokens": free,
+                    "freePercent": free_pct,
+                    "model": target.get("model"),
+                }
+            })
+        except subprocess.TimeoutExpired:
+            self._send(504, {"ok": False, "error": "timeout"})
+        except Exception as e:
+            self._send(500, {"ok": False, "error": str(e)})
+
     def do_POST(self):
         if self.path != "/chat":
             self._send(404, {"ok": False, "error": "Not found"})
             return
 
-        if TOKEN:
-            auth = self.headers.get("Authorization", "")
-            if auth != f"Bearer {TOKEN}":
-                self._send(401, {"ok": False, "error": "Unauthorized"})
-                return
+        if not self._auth_ok():
+            self._send(401, {"ok": False, "error": "Unauthorized"})
+            return
 
         try:
             length = int(self.headers.get("Content-Length", "0"))
@@ -94,10 +172,8 @@ class Handler(BaseHTTPRequestHandler):
         ]
 
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-            out = (proc.stdout or "") + (proc.stderr or "")
-            parsed = extract_json_block(out)
-            if proc.returncode != 0 or not parsed:
+            rc, parsed, out = run_openclaw_json(cmd, timeout=180)
+            if rc != 0 or not parsed:
                 self._send(500, {"ok": False, "error": "agent_failed", "details": out[-600:]})
                 return
 
@@ -118,7 +194,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     srv = HTTPServer((HOST, PORT), Handler)
-    print(f"AIGOR bridge listening on http://{HOST}:{PORT}/chat")
+    print(f"AIGOR bridge listening on http://{HOST}:{PORT} (/chat, /status)")
     srv.serve_forever()
 
 

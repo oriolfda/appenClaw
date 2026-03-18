@@ -49,6 +49,10 @@ class MainActivity : AppCompatActivity() {
             popup.menuInflater.inflate(R.menu.main_overflow_menu, popup.menu)
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
+                    R.id.menu_status -> {
+                        fetchContextStatus()
+                        true
+                    }
                     R.id.menu_settings -> {
                         startActivity(Intent(this, SettingsActivity::class.java))
                         true
@@ -161,6 +165,67 @@ class MainActivity : AppCompatActivity() {
                     scrollBottom()
                 }
             }
+        }
+    }
+
+    private fun fetchContextStatus() {
+        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val endpoint = prefs.getString("openclaw_endpoint", "").orEmpty().trim()
+        val token = prefs.getString("openclaw_hook_token", "").orEmpty().trim()
+        if (endpoint.isBlank() || token.isBlank()) {
+            statusText.text = "Estat: configura endpoint/token a Settings"
+            return
+        }
+
+        val statusUrl = endpoint.replace("/chat", "/status")
+        addMessage(ChatMessage("assistant", "Consultant estat de context..."))
+
+        thread {
+            try {
+                val conn = (URL(statusUrl).openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    setRequestProperty("Authorization", "Bearer $token")
+                    connectTimeout = 12000
+                    readTimeout = 15000
+                }
+                val code = conn.responseCode
+                val body = try {
+                    if (code in 200..299) conn.inputStream.bufferedReader().use(BufferedReader::readText)
+                    else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
+                } catch (_: Exception) { "" }
+
+                runOnUiThread {
+                    val msg = parseStatusText(body, code)
+                    addMessage(ChatMessage("assistant", msg))
+                    statusText.text = if (code in 200..299) "Estat: context rebut" else "Estat: error context ($code)"
+                }
+                conn.disconnect()
+            } catch (e: Exception) {
+                runOnUiThread {
+                    addMessage(ChatMessage("assistant", "Error consultant context: ${e.message}"))
+                }
+            }
+        }
+    }
+
+    private fun parseStatusText(body: String, code: Int): String {
+        if (body.isBlank()) return "No hi ha dades de context (HTTP $code)"
+        return try {
+            val obj = JSONObject(body)
+            if (!obj.optBoolean("ok", false)) {
+                return "No s'ha pogut llegir el context: ${obj.optString("error", "error")}" 
+            }
+            val ctx = obj.optJSONObject("context") ?: return "Resposta de context incompleta"
+            val used = ctx.optLong("usedTokens", -1)
+            val max = ctx.optLong("maxTokens", -1)
+            val usedPct = ctx.optDouble("usedPercent", -1.0)
+            val free = ctx.optLong("freeTokens", -1)
+            val freePct = ctx.optDouble("freePercent", -1.0)
+            val model = ctx.optString("model", "?")
+
+            "Context actual:\n• Model: $model\n• Ocupat: $used / $max tokens (${if (usedPct >= 0) usedPct else "?"}%)\n• Lliure: $free tokens (${if (freePct >= 0) freePct else "?"}%)"
+        } catch (_: Exception) {
+            "No s'ha pogut parsejar l'estat de context"
         }
     }
 
