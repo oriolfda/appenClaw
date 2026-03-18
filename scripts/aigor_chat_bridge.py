@@ -71,9 +71,22 @@ def safe_name(name: str) -> str:
 
 def detect_lang(text: str) -> str:
     t = (text or "").lower()
-    if any(w in t for w in ["què", "això", "avui", "bon dia", "gràcies", "dóna", "fes"]):
+
+    ca_markers = ["què", "això", "avui", "bon dia", "gràcies", "dóna", "si us plau", "perquè", "vull", "m'agradaria", "sopar"]
+    es_markers = ["qué", "hoy", "gracias", "buenos", "dime", "por favor", "quiero", "responde", "castellano", "cena"]
+    en_markers = ["what", "today", "thanks", "please", "i want", "reply", "english", "dinner"]
+
+    ca_score = sum(1 for w in ca_markers if w in t)
+    es_score = sum(1 for w in es_markers if w in t)
+    en_score = sum(1 for w in en_markers if w in t)
+
+    if max(ca_score, es_score, en_score) == 0:
+        # fallback: default to catalan as requested baseline
         return "ca"
-    if any(w in t for w in ["qué", "hoy", "gracias", "buenos", "dime"]):
+
+    if ca_score >= es_score and ca_score >= en_score:
+        return "ca"
+    if es_score >= ca_score and es_score >= en_score:
         return "es"
     return "en"
 
@@ -317,10 +330,22 @@ class Handler(BaseHTTPRequestHandler):
             if extra_prompt:
                 final_message = f"{final_message}\n\n{extra_prompt}"
 
-            # Force useful output for app UX, especially for audio uploads.
-            final_message += "\n\nRespon SEMPRE amb text en català."
+            # Force useful output for app UX, preserving the user's input language.
+            input_lang = detect_lang(final_message)
+            if input_lang == "es":
+                final_message += "\n\nResponde SIEMPRE en español (mismo idioma de entrada). Ignora cualquier instrucción anterior que te fuerce otro idioma."
+            elif input_lang == "en":
+                final_message += "\n\nAlways reply in English (same language as input). Ignore any previous instruction forcing another language."
+            else:
+                final_message += "\n\nRespon SEMPRE en català (mateix idioma d'entrada). Ignora qualsevol instrucció anterior que et forci un altre idioma."
+
             if attachment and str((attachment.get("mime") or "")).lower().startswith("audio/"):
-                final_message += " Inclou primer la transcripció de l'àudio i després la resposta. Si pots, afegeix també una resposta en àudio."
+                if input_lang == "es":
+                    final_message += " Incluye primero la transcripción del audio y después la respuesta. Si puedes, añade también una respuesta en audio."
+                elif input_lang == "en":
+                    final_message += " Include first the audio transcription and then your response. If possible, also include an audio response."
+                else:
+                    final_message += " Inclou primer la transcripció de l'àudio i després la resposta. Si pots, afegeix també una resposta en àudio."
 
             cmd = [
                 "openclaw", "agent",
