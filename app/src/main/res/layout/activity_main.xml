@@ -2,22 +2,29 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0A0F1C"
+    android:background="#0B1018"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="end"
-        android:paddingHorizontal="8dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="4dp">
+        android:layout_height="56dp"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="14dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="AIGOR"
+            android:textColor="#F3F4F6"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/overflowMenuButton"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:backgroundTint="#111827"
+            android:backgroundTint="#121926"
             android:text="⋮"
             android:textColor="#E5E7EB"
             android:textSize="18sp" />
@@ -39,12 +46,13 @@
         android:paddingHorizontal="12dp"
         android:paddingBottom="6dp"
         android:text="Estat: llest"
-        android:textColor="#9CA3AF"
+        android:textColor="#7C879A"
         android:textSize="12sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="bottom"
         android:orientation="horizontal"
         android:padding="8dp">
 
@@ -53,20 +61,19 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="#111827"
+            android:background="@drawable/bg_input_chat"
             android:hint="Escriu un missatge..."
-            android:textColorHint="#6B7280"
             android:inputType="textMultiLine|textCapSentences"
             android:maxLines="4"
-            android:padding="12dp"
-            android:textColor="#F9FAFB" />
+            android:textColor="#F9FAFB"
+            android:textColorHint="#7C879A" />
 
         <Button
             android:id="@+id/sendButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:backgroundTint="#EF4444"
+            android:backgroundTint="#FF5C5C"
             android:text="Send"
             android:textColor="#FFFFFF" />
     </LinearLayout>
