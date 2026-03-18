@@ -6,7 +6,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.OutputStreamWriter
@@ -18,6 +17,7 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
 
     private lateinit var endpointEdit: EditText
+    private lateinit var tokenEdit: EditText
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
 
@@ -26,22 +26,30 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         endpointEdit = findViewById(R.id.endpointEdit)
+        tokenEdit = findViewById(R.id.tokenEdit)
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
         val sendButton: Button = findViewById(R.id.sendButton)
 
         val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-        val savedEndpoint = prefs.getString("openclaw_endpoint", "http://192.168.0.210:8080/openclaw/input")
+        val savedEndpoint = prefs.getString("openclaw_endpoint", "http://192.168.0.210:18789/hooks/wake")
+        val savedToken = prefs.getString("openclaw_hook_token", "")
         endpointEdit.setText(savedEndpoint)
+        tokenEdit.setText(savedToken)
 
         consumeSharedText(intent)
 
         sendButton.setOnClickListener {
             val endpoint = endpointEdit.text.toString().trim()
+            val token = tokenEdit.text.toString().trim()
             val message = messageEdit.text.toString().trim()
 
             if (endpoint.isBlank()) {
                 statusText.text = "Estat: falta endpoint"
+                return@setOnClickListener
+            }
+            if (token.isBlank()) {
+                statusText.text = "Estat: falta token"
                 return@setOnClickListener
             }
             if (message.isBlank()) {
@@ -49,8 +57,11 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            prefs.edit().putString("openclaw_endpoint", endpoint).apply()
-            sendToOpenClaw(endpoint, message)
+            prefs.edit()
+                .putString("openclaw_endpoint", endpoint)
+                .putString("openclaw_hook_token", token)
+                .apply()
+            sendToOpenClaw(endpoint, token, message)
         }
     }
 
@@ -81,22 +92,26 @@ class MainActivity : AppCompatActivity() {
         return urls.distinct()
     }
 
-    private fun sendToOpenClaw(endpoint: String, message: String) {
+    private fun sendToOpenClaw(endpoint: String, token: String, message: String) {
         statusText.text = "Estat: enviant..."
 
         thread {
             try {
                 val urls = extractUrls(message)
+                val payloadText = if (urls.isEmpty()) {
+                    message
+                } else {
+                    "$message\n\nURLs detectades: ${urls.joinToString(", ")}" 
+                }
                 val payload = JSONObject().apply {
-                    put("source", "aigor-app-android")
-                    put("text", message)
-                    put("urls", JSONArray(urls))
-                    put("timestamp", System.currentTimeMillis())
+                    put("text", payloadText)
+                    put("mode", "now")
                 }
 
                 val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
                     requestMethod = "POST"
                     setRequestProperty("Content-Type", "application/json")
+                    setRequestProperty("Authorization", "Bearer $token")
                     connectTimeout = 15000
                     readTimeout = 20000
                     doOutput = true
