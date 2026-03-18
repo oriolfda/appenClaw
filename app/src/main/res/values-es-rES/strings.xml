@@ -21,7 +21,6 @@
     <string name="recording_discarded">Grabación descartada</string>
     <string name="status_chat_cleared">Estado: chat limpiado</string>
     <string name="fill_endpoint_token">Completa endpoint y token</string>
-
     <string name="title_app">AIGOR</string>
     <string name="cd_menu">Menú</string>
     <string name="status_ready">Estado: listo</string>
@@ -34,7 +33,6 @@
     <string name="cd_delete_recording">Borrar grabación</string>
     <string name="cd_pause_recording">Pausar grabación</string>
     <string name="cd_send_recording">Enviar grabación</string>
-
     <string name="photo_ready">Foto preparada</string>
     <string name="mic_permission_required">Se requiere permiso de micrófono</string>
     <string name="attachment_removed">Adjunto eliminado</string>
@@ -87,4 +85,5 @@
     <string name="about_bridge">Bridge: OpenClaw /chat + /status</string>
     <string name="about_features">Funciones: chat, contexto, adjuntos (imagen/vídeo/audio)</string>
     <string name="about_repo">Repo: aigor-app</string>
+    <string name="html_preview_title">Vista previa HTML</string>
 </resources>

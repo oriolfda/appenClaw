@@ -8,7 +8,10 @@ import androidx.core.text.HtmlCompat
 
 object RichTextRenderer {
 
-    private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\n([\\s\\S]*?)```")
+    // Supports both:
+    // ```python\n...\n```
+    // ```python ... ```
+    private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\s*([\\s\\S]*?)```")
 
     fun bind(textView: TextView, raw: String) {
         val html = toSafeHtml(raw)
@@ -32,6 +35,7 @@ object RichTextRenderer {
             .replace(Regex("on[a-zA-Z]+\\s*=\\s*\"[^\"]*\"", RegexOption.IGNORE_CASE), "")
             .replace(Regex("on[a-zA-Z]+\\s*=\\s*'[^']*'", RegexOption.IGNORE_CASE), "")
             .replace(Regex("javascript:", RegexOption.IGNORE_CASE), "")
+            .trim()
 
         // Preserve fenced code blocks as <pre><code>.
         val blocks = mutableListOf<String>()

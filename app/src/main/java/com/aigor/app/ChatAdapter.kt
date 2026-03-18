@@ -64,13 +64,16 @@ class ChatAdapter(
                     holder.text.setBackgroundResource(theme.botBubble)
                     holder.text.setTextColor(theme.botText)
                 }
-                if (!item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()) {
+                val hasAudio = !item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()
+                val hasHtml = Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(item.text)
+
+                if (hasAudio) {
                     val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
                     RichTextRenderer.bind(holder.text, "$icon ${item.text}")
                     holder.text.setOnClickListener { onMessageClick?.invoke(item) }
                 } else {
                     RichTextRenderer.bind(holder.text, item.text)
-                    holder.text.setOnClickListener(null)
+                    holder.text.setOnClickListener(if (hasHtml) View.OnClickListener { onMessageClick?.invoke(item) } else null)
                 }
 
                 holder.text.setOnLongClickListener {

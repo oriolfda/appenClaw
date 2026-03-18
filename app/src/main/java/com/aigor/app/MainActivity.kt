@@ -19,6 +19,8 @@ import android.text.TextWatcher
 import android.util.Base64
 import android.view.MotionEvent
 import android.view.View
+import android.webkit.WebSettings
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -159,8 +161,13 @@ class MainActivity : AppCompatActivity() {
 
         val theme = currentTheme()
         adapter = ChatAdapter(messages, theme) { msg ->
-            if (!msg.audioPath.isNullOrBlank() || !msg.audioUrl.isNullOrBlank() || !msg.ttsText.isNullOrBlank()) {
-                toggleAudioPlayback(msg)
+            when {
+                !msg.audioPath.isNullOrBlank() || !msg.audioUrl.isNullOrBlank() || !msg.ttsText.isNullOrBlank() -> {
+                    toggleAudioPlayback(msg)
+                }
+                Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(msg.text) -> {
+                    showHtmlPreview(msg.text)
+                }
             }
         }
         chatRecycler.layoutManager = LinearLayoutManager(this)
@@ -892,13 +899,36 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun showHtmlPreview(html: String) {
+        val webView = WebView(this)
+        val ws: WebSettings = webView.settings
+        ws.javaScriptEnabled = false
+        ws.domStorageEnabled = false
+        ws.allowFileAccess = false
+        ws.allowContentAccess = false
+
+        webView.loadDataWithBaseURL(
+            null,
+            "<html><body style='background:#111827;color:#e5e7eb;font-family:Inter,Arial,sans-serif;'>$html</body></html>",
+            "text/html",
+            "utf-8",
+            null
+        )
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.html_preview_title))
+            .setView(webView)
+            .setPositiveButton(getString(R.string.close), null)
+            .show()
+    }
+
     private fun showAboutDialog() {
         val pkg = packageManager.getPackageInfo(packageName, 0)
         val versionName = pkg.versionName ?: "?"
         val versionCode = pkg.longVersionCode
 
         val info = buildString {
-            appendLine("AIGOR App")
+            appendLine(getString(R.string.app_name))
             appendLine(getString(R.string.about_version, versionName, versionCode))
             appendLine(getString(R.string.about_bridge))
             appendLine(getString(R.string.about_features))
