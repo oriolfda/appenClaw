@@ -85,5 +85,6 @@
     <string name="about_bridge">Bridge: OpenClaw /chat + /status</string>
     <string name="about_features">Funciones: chat, contexto, adjuntos (imagen/vídeo/audio)</string>
     <string name="about_repo">Repo: aigor-app</string>
-    <string name="html_preview_title">Previsualització HTML</string>
+    <string name="html_preview_title">Vista previa HTML</string>
+    <string name="html_preview_tap">Contido HTML — toca para abrir a vista previa</string>
 </resources>

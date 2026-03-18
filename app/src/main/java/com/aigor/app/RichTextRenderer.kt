@@ -22,9 +22,13 @@ object RichTextRenderer {
         if (looksLikeCode(raw)) {
             textView.typeface = Typeface.MONOSPACE
             textView.textSize = 14f
+            textView.setTextIsSelectable(true)
+            textView.setHorizontallyScrolling(true)
         } else {
             textView.typeface = Typeface.DEFAULT
             textView.textSize = 16f
+            textView.setTextIsSelectable(true)
+            textView.setHorizontallyScrolling(false)
         }
     }
 

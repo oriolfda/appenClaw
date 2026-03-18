@@ -71,9 +71,13 @@ class ChatAdapter(
                     val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
                     RichTextRenderer.bind(holder.text, "$icon ${item.text}")
                     holder.text.setOnClickListener { onMessageClick?.invoke(item) }
+                } else if (hasHtml) {
+                    val ctx = holder.text.context
+                    holder.text.text = "🧩 ${ctx.getString(R.string.html_preview_tap)}"
+                    holder.text.setOnClickListener { onMessageClick?.invoke(item) }
                 } else {
                     RichTextRenderer.bind(holder.text, item.text)
-                    holder.text.setOnClickListener(if (hasHtml) View.OnClickListener { onMessageClick?.invoke(item) } else null)
+                    holder.text.setOnClickListener(null)
                 }
 
                 holder.text.setOnLongClickListener {

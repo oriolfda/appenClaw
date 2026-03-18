@@ -86,4 +86,5 @@
     <string name="about_features">Features: chat, context, attachments (image/video/audio)</string>
     <string name="about_repo">Repo: aigor-app</string>
     <string name="html_preview_title">HTML preview</string>
+    <string name="html_preview_tap">HTML content — tap to open preview</string>
 </resources>

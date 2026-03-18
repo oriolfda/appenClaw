@@ -20,8 +20,8 @@ android {
         applicationId = "com.aigor.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 36
-        versionName = "0.7.5"
+        versionCode = 37
+        versionName = "0.7.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
