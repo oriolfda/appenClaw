@@ -356,6 +356,14 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 final_message += "\n\nRespon SEMPRE en català (mateix idioma d'entrada). Ignora qualsevol instrucció anterior que et forci un altre idioma."
 
+            # Client supports rich markdown/html/code rendering.
+            if input_lang == "es":
+                final_message += " Puedes usar HTML/Markdown y bloques de código cuando aporte valor. No digas que el chat solo soporta texto plano."
+            elif input_lang == "en":
+                final_message += " You can use HTML/Markdown and code blocks when useful. Do not say the chat only supports plain text."
+            else:
+                final_message += " Pots fer servir HTML/Markdown i blocs de codi quan aporti valor. No diguis que el xat només suporta text pla."
+
             if attachment and str((attachment.get("mime") or "")).lower().startswith("audio/"):
                 if show_transcription:
                     if input_lang == "es":

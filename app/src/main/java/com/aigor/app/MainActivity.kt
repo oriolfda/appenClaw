@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity() {
     private var lastSentAudioFile: File? = null
     private var mediaPlayer: MediaPlayer? = null
     private var currentPlayingTs: Long? = null
+    private var appliedUiLocale: String = "auto"
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentRecordingFile: File? = null
@@ -153,6 +154,8 @@ class MainActivity : AppCompatActivity() {
         recordSendButton = findViewById(R.id.recordSendButton)
         recordTimerText = findViewById(R.id.recordTimerText)
         recordDotsText = findViewById(R.id.recordDotsText)
+
+        appliedUiLocale = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
 
         val theme = currentTheme()
         adapter = ChatAdapter(messages, theme) { msg ->
@@ -335,6 +338,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val currentLocale = prefs.getString("ui_locale", "auto") ?: "auto"
+        if (currentLocale != appliedUiLocale) {
+            appliedUiLocale = currentLocale
+            recreate()
+            return
+        }
+
         val theme = currentTheme()
         applyTheme(theme)
         adapter.setTheme(theme)

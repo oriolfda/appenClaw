@@ -1,11 +1,15 @@
 package com.aigor.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AlphaAnimation
 import android.view.animation.Animation
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
 class ChatAdapter(
@@ -67,6 +71,14 @@ class ChatAdapter(
                 } else {
                     RichTextRenderer.bind(holder.text, item.text)
                     holder.text.setOnClickListener(null)
+                }
+
+                holder.text.setOnLongClickListener {
+                    val ctx = holder.text.context
+                    val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("aigor-message", item.text))
+                    Toast.makeText(ctx, "Copiat", Toast.LENGTH_SHORT).show()
+                    true
                 }
             }
             is TypingVH -> {
