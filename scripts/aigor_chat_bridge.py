@@ -12,6 +12,9 @@ HOST = os.environ.get("AIGOR_BRIDGE_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AIGOR_BRIDGE_PORT", "8091"))
 TOKEN = os.environ.get("AIGOR_BRIDGE_TOKEN", "")
 DEFAULT_SESSION = os.environ.get("AIGOR_BRIDGE_SESSION", "aigor-app-chat")
+PUBLIC_BASE_URL = os.environ.get("AIGOR_BRIDGE_PUBLIC_BASE_URL", f"http://192.168.0.102:{PORT}")
+MEDIA_DIR = os.environ.get("AIGOR_BRIDGE_MEDIA_DIR", "/mnt/apps/aigor/media")
+EDGE_TTS = os.environ.get("AIGOR_BRIDGE_EDGE_TTS", "/home/oriol/.openclaw/venvs/aigor-tts/bin/edge-tts")
 
 
 def extract_json_block(text: str):
@@ -64,6 +67,61 @@ def run_openclaw_json(cmd, timeout=180):
 
 def safe_name(name: str) -> str:
     return "".join(c for c in name if c.isalnum() or c in ("-", "_", "."))[:120] or "attachment"
+
+
+def detect_lang(text: str) -> str:
+    t = (text or "").lower()
+    if any(w in t for w in ["què", "això", "avui", "bon dia", "gràcies", "dóna", "fes"]):
+        return "ca"
+    if any(w in t for w in ["qué", "hoy", "gracias", "buenos", "dime"]):
+        return "es"
+    return "en"
+
+
+def voice_for_lang(lang: str):
+    if lang == "ca":
+        return "ca-ES-EnricNeural", "+20%", "-8Hz"
+    if lang == "es":
+        return "es-ES-AlvaroNeural", "+0%", "+0Hz"
+    return "en-US-AndrewNeural", "+0%", "+0Hz"
+
+
+def parse_tts_from_text(text: str):
+    if not text:
+        return text, None
+    import re
+    m = re.search(r"\[\[tts:(.+?)\]\]", text, flags=re.DOTALL)
+    if m:
+        tts_text = m.group(1).strip()
+        cleaned = text.replace(m.group(0), "").strip()
+        return cleaned, tts_text
+    m2 = re.search(r"\[\[tts:text\]\](.+?)\[\[/tts:text\]\]", text, flags=re.DOTALL)
+    if m2:
+        tts_text = m2.group(1).strip()
+        cleaned = text.replace(m2.group(0), "").strip()
+        return cleaned, tts_text
+    return text, None
+
+
+def synthesize_tts_audio(text: str, lang_hint: str = "ca"):
+    if not text or not os.path.exists(EDGE_TTS):
+        return None
+    os.makedirs(MEDIA_DIR, exist_ok=True)
+    voice, rate, pitch = voice_for_lang(lang_hint)
+    fname = f"tts-{uuid.uuid4().hex}.mp3"
+    out = os.path.join(MEDIA_DIR, fname)
+    try:
+        subprocess.run([
+            EDGE_TTS,
+            "--voice", voice,
+            "--rate", rate,
+            "--pitch", pitch,
+            "--text", text,
+            "--write-media", out,
+        ], capture_output=True, text=True, timeout=90, check=True)
+        return f"{PUBLIC_BASE_URL}/media/{fname}"
+    except Exception:
+        return None
 
 
 def process_attachment(att: dict):
@@ -140,6 +198,24 @@ class Handler(BaseHTTPRequestHandler):
         return auth == f"Bearer {TOKEN}"
 
     def do_GET(self):
+        if self.path.startswith("/media/"):
+            name = safe_name(self.path.split("/media/", 1)[1])
+            path = os.path.join(MEDIA_DIR, name)
+            if not os.path.exists(path):
+                self._send(404, {"ok": False, "error": "media not found"})
+                return
+            try:
+                with open(path, "rb") as f:
+                    body = f.read()
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception:
+                self._send(500, {"ok": False, "error": "media read error"})
+            return
+
         if self.path != "/status":
             self._send(404, {"ok": False, "error": "Not found"})
             return
@@ -274,6 +350,13 @@ class Handler(BaseHTTPRequestHandler):
                 reply = "\n\n".join(text_parts).strip()
             if not reply:
                 reply = "He processat l'entrada, però no he rebut text de resposta."
+
+            # Convert [[tts:...]] style text into real audio URL when media isn't provided.
+            clean_reply, tts_text = parse_tts_from_text(reply)
+            reply = clean_reply or "Resposta d'àudio generada."
+            if not media_url and tts_text:
+                lang = detect_lang(tts_text)
+                media_url = synthesize_tts_audio(tts_text, lang)
 
             payload = {"ok": True, "reply": reply, "sessionId": session_id}
             if media_url:
