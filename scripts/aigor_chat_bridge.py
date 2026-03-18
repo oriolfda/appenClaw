@@ -70,25 +70,39 @@ def safe_name(name: str) -> str:
 
 
 def detect_lang(text: str) -> str:
-    t = (text or "").lower()
+    t = (text or "").lower().strip()
 
-    ca_markers = ["què", "això", "avui", "bon dia", "gràcies", "dóna", "si us plau", "perquè", "vull", "m'agradaria", "sopar"]
-    es_markers = ["qué", "hoy", "gracias", "buenos", "dime", "por favor", "quiero", "responde", "castellano", "cena"]
-    en_markers = ["what", "today", "thanks", "please", "i want", "reply", "english", "dinner"]
+    ca_markers = [
+        "què", "això", "avui", "bon dia", "gràcies", "dóna", "si us plau", "perquè", "vull", "m'agradaria", "sopar",
+        "en quin", "idioma", "parlant", "ara mateix"
+    ]
+    es_markers = [
+        "qué", "hoy", "gracias", "buenos", "dime", "por favor", "quiero", "responde", "castellano", "cena",
+        "en qué", "idioma", "hablando", "ahora"
+    ]
+    en_markers = [
+        "what", "today", "thanks", "please", "i want", "reply", "english", "dinner",
+        "which language", "i'm speaking", "speaking now", "right now", "are you", "can you"
+    ]
 
     ca_score = sum(1 for w in ca_markers if w in t)
     es_score = sum(1 for w in es_markers if w in t)
     en_score = sum(1 for w in en_markers if w in t)
 
+    # Extra heuristic: if text is plain ASCII and has common English words, favor EN.
+    ascii_only = all(ord(ch) < 128 for ch in t)
+    if ascii_only and any(w in t for w in ["the", "and", "you", "your", "which", "language", "speaking", "now"]):
+        en_score += 2
+
     if max(ca_score, es_score, en_score) == 0:
-        # fallback: default to catalan as requested baseline
+        # conservative fallback remains catalan baseline
         return "ca"
 
-    if ca_score >= es_score and ca_score >= en_score:
-        return "ca"
+    if en_score >= ca_score and en_score >= es_score:
+        return "en"
     if es_score >= ca_score and es_score >= en_score:
         return "es"
-    return "en"
+    return "ca"
 
 
 def voice_for_lang(lang: str):
