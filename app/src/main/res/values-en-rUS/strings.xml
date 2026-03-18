@@ -93,5 +93,6 @@
 • Free: %5$s tokens (%6$s%%)</string>
     <string name="copied">Copied</string>
     <string name="image_preview_title">Image preview</string>
+    <string name="html_open_expanded">↗ Open expanded</string>
     <string name="video_preview_title">Video preview</string>
 </resources>

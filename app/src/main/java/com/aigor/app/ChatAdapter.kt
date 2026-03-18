@@ -44,11 +44,14 @@ class ChatAdapter(
     }
 
     class HtmlVH(view: View) : RecyclerView.ViewHolder(view) {
+        val bubble: View = view.findViewById(R.id.htmlBubble)
         val web: WebView = view.findViewById(R.id.htmlWeb)
         val label: TextView = view.findViewById(R.id.htmlLabel)
+        val hint: TextView = view.findViewById(R.id.htmlOpenHint)
     }
 
     class ImageUserVH(view: View) : RecyclerView.ViewHolder(view) {
+        val bubble: View = view.findViewById(R.id.imageBubble)
         val image: ImageView = view.findViewById(R.id.messageImage)
         val caption: TextView = view.findViewById(R.id.messageCaption)
         val videoBadge: TextView = view.findViewById(R.id.videoBadge)
@@ -109,7 +112,9 @@ class ChatAdapter(
             }
             is HtmlVH -> {
                 val item = items[position]
+                holder.bubble.setBackgroundResource(theme.botBubble)
                 holder.label.text = holder.itemView.context.getString(R.string.html_preview_tap)
+                holder.hint.text = holder.itemView.context.getString(R.string.html_open_expanded)
                 val ws: WebSettings = holder.web.settings
                 ws.javaScriptEnabled = false
                 ws.domStorageEnabled = false
@@ -122,11 +127,18 @@ class ChatAdapter(
                     "utf-8",
                     null
                 )
-                holder.web.setOnClickListener { onMessageClick?.invoke(item) }
+                holder.web.setOnTouchListener { _, event ->
+                    if (event.action == android.view.MotionEvent.ACTION_UP) {
+                        onMessageClick?.invoke(item)
+                    }
+                    false
+                }
                 holder.itemView.setOnClickListener { onMessageClick?.invoke(item) }
+                holder.hint.setOnClickListener { onMessageClick?.invoke(item) }
             }
             is ImageUserVH -> {
                 val item = items[position]
+                holder.bubble.setBackgroundResource(theme.userBubble)
                 if (!item.imagePath.isNullOrBlank()) {
                     val bmp = BitmapFactory.decodeFile(item.imagePath)
                     if (bmp != null) holder.image.setImageBitmap(bmp)
