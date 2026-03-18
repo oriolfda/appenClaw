@@ -53,7 +53,6 @@ class ChatAdapter(
         when (holder) {
             is MessageVH -> {
                 val item = items[position]
-                holder.text.text = item.text
                 if (item.role == "user") {
                     holder.text.setBackgroundResource(theme.userBubble)
                     holder.text.setTextColor(theme.userText)
@@ -63,9 +62,10 @@ class ChatAdapter(
                 }
                 if (!item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()) {
                     val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
-                    holder.text.text = "$icon ${item.text}"
+                    RichTextRenderer.bind(holder.text, "$icon ${item.text}")
                     holder.text.setOnClickListener { onMessageClick?.invoke(item) }
                 } else {
+                    RichTextRenderer.bind(holder.text, item.text)
                     holder.text.setOnClickListener(null)
                 }
             }
