@@ -39,9 +39,10 @@ object RichTextRenderer {
 
         // Preserve fenced code blocks as <pre><code>.
         val blocks = mutableListOf<String>()
+        val hadCodeFences = codeFenceRegex.containsMatchIn(noDanger)
         val withPlaceholders = codeFenceRegex.replace(noDanger) { m ->
             val lang = m.groupValues[1].trim()
-            val code = escapeHtml(m.groupValues[2])
+            val code = escapeHtml(m.groupValues[2].trim())
             val block = "<pre><code data-lang=\"$lang\">$code</code></pre>"
             blocks.add(block)
             "@@CODE_BLOCK_${blocks.lastIndex}@@"
@@ -69,8 +70,9 @@ object RichTextRenderer {
             txt = txt.replace("@@CODE_BLOCK_$i@@", block)
         }
 
-        // If text looks like raw code, force <pre><code> to preserve spacing.
-        if (!hasHtmlTags && looksLikeCode(noDanger)) {
+        // If text looks like raw code and there were no explicit fences,
+        // force <pre><code> to preserve spacing.
+        if (!hasHtmlTags && !hadCodeFences && looksLikeCode(noDanger)) {
             return "<pre><code>${escapeHtml(noDanger)}</code></pre>"
         }
 
