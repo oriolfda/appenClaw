@@ -100,30 +100,48 @@
             android:id="@+id/composerRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="bottom"
+            android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/attachButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginEnd="6dp"
-                android:backgroundTint="#1F2937"
-                android:text="+"
-                android:textColor="#E5E7EB"
-                android:textSize="20sp" />
-
-            <EditText
-                android:id="@+id/messageEdit"
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@drawable/bg_input_chat"
-                android:hint="Escriu un missatge..."
-                android:inputType="textMultiLine|textCapSentences"
-                android:maxLines="4"
-                android:textColor="#F9FAFB"
-                android:textColorHint="#7C879A" />
+                android:gravity="center_vertical"
+                android:paddingStart="10dp"
+                android:paddingEnd="6dp">
+
+                <EditText
+                    android:id="@+id/messageEdit"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Escriu un missatge..."
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4"
+                    android:textColor="#F9FAFB"
+                    android:textColorHint="#7C879A" />
+
+                <ImageButton
+                    android:id="@+id/clipButton"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Adjuntar"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_attach_min" />
+
+                <ImageButton
+                    android:id="@+id/cameraButton"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Càmera"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_camera_min" />
+            </LinearLayout>
 
             <ImageButton
                 android:id="@+id/sendButton"

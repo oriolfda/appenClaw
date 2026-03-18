@@ -51,7 +51,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rootLayout: View
     private lateinit var titleText: TextView
     private lateinit var overflowMenuButton: ImageButton
-    private lateinit var attachButton: Button
+    private lateinit var composerRow: LinearLayout
+    private lateinit var clipButton: ImageButton
+    private lateinit var cameraButton: ImageButton
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
     private lateinit var chatRecycler: RecyclerView
@@ -120,7 +122,9 @@ class MainActivity : AppCompatActivity() {
         rootLayout = findViewById(R.id.rootLayout)
         titleText = findViewById(R.id.titleText)
         overflowMenuButton = findViewById(R.id.overflowMenuButton)
-        attachButton = findViewById(R.id.attachButton)
+        composerRow = findViewById(R.id.composerRow)
+        clipButton = findViewById(R.id.clipButton)
+        cameraButton = findViewById(R.id.cameraButton)
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
         chatRecycler = findViewById(R.id.chatRecycler)
@@ -186,36 +190,18 @@ class MainActivity : AppCompatActivity() {
             popup.show()
         }
 
-        attachButton.setOnClickListener { anchor ->
-            val popup = PopupMenu(this, anchor)
-            popup.menu.add(0, 1, 0, "Fer foto")
-            popup.menu.add(0, 2, 1, "Gravar vídeo")
-            popup.menu.add(0, 3, 2, "Gravar àudio")
-            popup.menu.add(0, 4, 3, "Triar fitxer")
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> {
-                        takePicturePreviewLauncher.launch(null)
-                        true
-                    }
-                    2 -> {
-                        val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
-                        captureVideoLauncher.launch(intent)
-                        true
-                    }
-                    3 -> {
-                        val intent = Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION)
-                        recordAudioLauncher.launch(intent)
-                        true
-                    }
-                    4 -> {
-                        pickMediaLauncher.launch("*/*")
-                        true
-                    }
-                    else -> false
-                }
-            }
-            popup.show()
+        clipButton.setOnClickListener {
+            pickMediaLauncher.launch("*/*")
+        }
+
+        cameraButton.setOnClickListener {
+            takePicturePreviewLauncher.launch(null)
+        }
+
+        cameraButton.setOnLongClickListener {
+            val intent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
+            captureVideoLauncher.launch(intent)
+            true
         }
 
         cancelAttachmentButton.setOnClickListener {
@@ -384,12 +370,10 @@ class MainActivity : AppCompatActivity() {
         val att = pendingAttachment
         if (att == null) {
             pendingAttachmentRow.visibility = View.GONE
-            attachButton.text = "+"
             pendingAttachmentPreview.setImageResource(android.R.drawable.ic_menu_gallery)
         } else {
             pendingAttachmentRow.visibility = View.VISIBLE
             pendingAttachmentText.text = "📎 ${att.name}"
-            attachButton.text = "📎"
 
             when {
                 att.mime.startsWith("image/") -> {
@@ -445,6 +429,7 @@ class MainActivity : AppCompatActivity() {
             isRecordingPaused = false
             isRecordingLocked = false
             recordingStartMs = System.currentTimeMillis()
+            composerRow.visibility = View.GONE
             recordingControlsRow.visibility = View.VISIBLE
             statusText.text = "🎙 Gravant... llisca amunt per bloquejar"
             startRecordingTicker()
@@ -536,7 +521,9 @@ class MainActivity : AppCompatActivity() {
         recordPauseButton.setImageResource(R.drawable.ic_pause_min)
         recordTimerText.text = "0:00"
         recordingControlsRow.visibility = View.GONE
+        composerRow.visibility = View.VISIBLE
         recordingHandler.removeCallbacksAndMessages(null)
+        updateComposerActionButton()
     }
 
     private fun currentTheme(): ThemeManager.UiTheme {
@@ -552,9 +539,8 @@ class MainActivity : AppCompatActivity() {
         overflowMenuButton.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         messageEdit.setTextColor(theme.messageTextColor)
         messageEdit.setHintTextColor(theme.messageHintColor)
-        messageEdit.setBackgroundResource(theme.inputBg)
-        attachButton.backgroundTintList = android.content.res.ColorStateList.valueOf(0xFF1F2937.toInt())
-        attachButton.setTextColor(theme.menuDotsColor)
+        clipButton.setColorFilter(theme.statusColor)
+        cameraButton.setColorFilter(theme.statusColor)
         micButton.setColorFilter(0xFF07130B.toInt())
         sendButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
