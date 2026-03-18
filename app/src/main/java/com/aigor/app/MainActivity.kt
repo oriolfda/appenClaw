@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ChatAdapter
     private val messages = mutableListOf<ChatMessage>()
     private var pendingAttachment: AttachmentData? = null
+    private val sentAudioFiles = mutableListOf<File>()
     private var lastSentAudioFile: File? = null
     private var mediaPlayer: MediaPlayer? = null
 
@@ -216,12 +217,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         playLastAudioButton.setOnClickListener {
-            val f = lastSentAudioFile
-            if (f != null && f.exists()) {
-                playLocalAudio(f)
-            } else {
-                statusText.text = "No hi ha àudio recent"
-            }
+            showSentAudiosDialog()
         }
 
         micButton.setOnTouchListener { _, event ->
@@ -306,9 +302,13 @@ class MainActivity : AppCompatActivity() {
             if (attachmentToSend?.mime?.startsWith("audio/") == true) {
                 try {
                     val bytes = Base64.decode(attachmentToSend.base64, Base64.DEFAULT)
-                    val f = File(cacheDir, "last-sent-audio-${System.currentTimeMillis()}.m4a")
+                    val f = File(cacheDir, "sent-audio-${System.currentTimeMillis()}.m4a")
                     f.writeBytes(bytes)
                     lastSentAudioFile = f
+                    sentAudioFiles.add(0, f)
+                    if (sentAudioFiles.size > 50) {
+                        sentAudioFiles.removeLastOrNull()?.delete()
+                    }
                     playLastAudioButton.visibility = View.VISIBLE
                 } catch (_: Exception) {
                 }
@@ -387,6 +387,22 @@ class MainActivity : AppCompatActivity() {
             val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
         }
+    }
+
+    private fun showSentAudiosDialog() {
+        val list = sentAudioFiles.filter { it.exists() }
+        if (list.isEmpty()) {
+            statusText.text = "No hi ha àudios enviats"
+            return
+        }
+        val labels = list.mapIndexed { idx, f -> "${idx + 1}. ${f.name}" }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("Àudios enviats")
+            .setItems(labels) { _, which ->
+                playLocalAudio(list[which])
+            }
+            .setNegativeButton("Tancar", null)
+            .show()
     }
 
     private fun playLocalAudio(file: File) {
@@ -608,7 +624,8 @@ class MainActivity : AppCompatActivity() {
         sendButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
         recordPauseButton.setColorFilter(0xFFFF4D67.toInt())
-        recordSendButton.setColorFilter(0xFF04130A.toInt())
+        recordSendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
+        recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
         recordDotsText.setTextColor(theme.statusColor)
     }

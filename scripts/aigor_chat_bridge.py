@@ -241,6 +241,11 @@ class Handler(BaseHTTPRequestHandler):
             if extra_prompt:
                 final_message = f"{final_message}\n\n{extra_prompt}"
 
+            # Force useful output for app UX, especially for audio uploads.
+            final_message += "\n\nRespon SEMPRE amb text en català."
+            if attachment and str((attachment.get("mime") or "")).lower().startswith("audio/"):
+                final_message += " Inclou primer la transcripció de l'àudio i després la resposta. Si pots, afegeix també una resposta en àudio."
+
             cmd = [
                 "openclaw", "agent",
                 "--session-id", session_id,
@@ -257,11 +262,18 @@ class Handler(BaseHTTPRequestHandler):
             media_url = None
             payloads = (((parsed.get("result") or {}).get("payloads")) or [])
             if payloads and isinstance(payloads, list):
-                first = payloads[0] or {}
-                reply = (first.get("text") or "").strip()
-                media_url = first.get("mediaUrl")
+                text_parts = []
+                for p in payloads:
+                    if not isinstance(p, dict):
+                        continue
+                    t = (p.get("text") or "").strip()
+                    if t:
+                        text_parts.append(t)
+                    if not media_url:
+                        media_url = p.get("mediaUrl")
+                reply = "\n\n".join(text_parts).strip()
             if not reply:
-                reply = "(Sense resposta textual)"
+                reply = "He processat l'entrada, però no he rebut text de resposta."
 
             payload = {"ok": True, "reply": reply, "sessionId": session_id}
             if media_url:
