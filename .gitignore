@@ -13,3 +13,5 @@ local.properties
 *.jks
 *.keystore
 *.pem
+
+app/build/
