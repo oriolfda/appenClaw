@@ -89,4 +89,5 @@
     <string name="html_preview_tap">Contido HTML — toca para abrir a vista previa</string>
     <string name="copied">Copiado</string>
     <string name="image_preview_title">Vista previa imaxe</string>
+    <string name="video_preview_title">Vista previa vídeo</string>
 </resources>

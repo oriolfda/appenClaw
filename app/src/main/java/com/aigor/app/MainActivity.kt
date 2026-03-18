@@ -21,6 +21,8 @@ import android.view.MotionEvent
 import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.MediaController
+import android.widget.VideoView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -165,6 +167,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 !msg.imagePath.isNullOrBlank() -> {
                     showImagePreview(msg.imagePath)
+                }
+                !msg.videoPath.isNullOrBlank() -> {
+                    openVideo(msg.videoPath)
                 }
                 Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(msg.text) -> {
                     showHtmlPreview(msg.text)
@@ -314,6 +319,7 @@ class MainActivity : AppCompatActivity() {
             val attachmentToSend = pendingAttachment
             var sentAudioPath: String? = null
             var sentImagePath: String? = null
+            var sentVideoPath: String? = null
             if (attachmentToSend?.mime?.startsWith("audio/") == true) {
                 try {
                     val bytes = Base64.decode(attachmentToSend.base64, Base64.DEFAULT)
@@ -336,6 +342,14 @@ class MainActivity : AppCompatActivity() {
                     sentImagePath = f.absolutePath
                 } catch (_: Exception) {
                 }
+            } else if (attachmentToSend?.mime?.startsWith("video/") == true) {
+                try {
+                    val bytes = Base64.decode(attachmentToSend.base64, Base64.DEFAULT)
+                    val f = File(cacheDir, "sent-video-${System.currentTimeMillis()}.mp4")
+                    f.writeBytes(bytes)
+                    sentVideoPath = f.absolutePath
+                } catch (_: Exception) {
+                }
             }
 
             addMessage(
@@ -344,6 +358,7 @@ class MainActivity : AppCompatActivity() {
                     previewText.ifBlank { getString(R.string.attachment_placeholder) },
                     audioPath = sentAudioPath,
                     imagePath = sentImagePath,
+                    videoPath = sentVideoPath,
                 )
             )
             messageEdit.setText("")
@@ -937,6 +952,26 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun openVideo(path: String?) {
+        if (path.isNullOrBlank()) return
+        val f = File(path)
+        if (!f.exists()) return
+
+        val vv = VideoView(this)
+        val uri = Uri.fromFile(f)
+        val controller = MediaController(this)
+        controller.setAnchorView(vv)
+        vv.setMediaController(controller)
+        vv.setVideoURI(uri)
+        vv.setOnPreparedListener { it.start() }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.video_preview_title))
+            .setView(vv)
+            .setPositiveButton(getString(R.string.close), null)
+            .show()
+    }
+
     private fun showHtmlPreview(html: String) {
         val webView = WebView(this)
         val ws: WebSettings = webView.settings
@@ -1009,6 +1044,7 @@ class MainActivity : AppCompatActivity() {
                             audioUrl = o.optString("audioUrl", "").ifBlank { null },
                             ttsText = o.optString("ttsText", "").ifBlank { null },
                             imagePath = o.optString("imagePath", "").ifBlank { null },
+                            videoPath = o.optString("videoPath", "").ifBlank { null },
                         )
                     )
                 }
@@ -1030,6 +1066,7 @@ class MainActivity : AppCompatActivity() {
                 put("audioUrl", it.audioUrl ?: "")
                 put("ttsText", it.ttsText ?: "")
                 put("imagePath", it.imagePath ?: "")
+                put("videoPath", it.videoPath ?: "")
             })
         }
         getSharedPreferences("aigor_prefs", MODE_PRIVATE)

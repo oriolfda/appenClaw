@@ -86,4 +86,5 @@
     <string name="about_features">Funcions: xat, context, adjunts (imatge/vídeo/àudio)</string>
     <string name="about_repo">Repo: aigor-app</string>
     <string name="html_preview_title">Previsualització HTML</string>
+    <string name="video_preview_title">Previsualització vídeo</string>
 </resources>

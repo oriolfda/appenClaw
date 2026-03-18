@@ -95,4 +95,5 @@
 • Lliure: %5$s tokens (%6$s%%)</string>
     <string name="copied">Copiat</string>
     <string name="image_preview_title">Previsualització imatge</string>
+    <string name="video_preview_title">Previsualització vídeo</string>
 </resources>

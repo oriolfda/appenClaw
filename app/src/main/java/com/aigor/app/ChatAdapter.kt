@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -50,6 +51,7 @@ class ChatAdapter(
     class ImageUserVH(view: View) : RecyclerView.ViewHolder(view) {
         val image: ImageView = view.findViewById(R.id.messageImage)
         val caption: TextView = view.findViewById(R.id.messageCaption)
+        val videoBadge: TextView = view.findViewById(R.id.videoBadge)
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -57,7 +59,7 @@ class ChatAdapter(
         val hasHtml = Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(item.text)
         return when {
             item.role == "typing" -> VIEW_TYPING
-            item.role == "user" && !item.imagePath.isNullOrBlank() -> VIEW_IMAGE_USER
+            item.role == "user" && (!item.imagePath.isNullOrBlank() || !item.videoPath.isNullOrBlank()) -> VIEW_IMAGE_USER
             item.role == "user" -> VIEW_USER
             hasHtml -> VIEW_HTML
             else -> VIEW_BOT
@@ -125,10 +127,21 @@ class ChatAdapter(
             }
             is ImageUserVH -> {
                 val item = items[position]
-                val path = item.imagePath
-                if (!path.isNullOrBlank()) {
-                    val bmp = BitmapFactory.decodeFile(path)
+                if (!item.imagePath.isNullOrBlank()) {
+                    val bmp = BitmapFactory.decodeFile(item.imagePath)
                     if (bmp != null) holder.image.setImageBitmap(bmp)
+                    holder.videoBadge.visibility = View.GONE
+                } else if (!item.videoPath.isNullOrBlank()) {
+                    try {
+                        val mmr = MediaMetadataRetriever()
+                        mmr.setDataSource(item.videoPath)
+                        val frame = mmr.frameAtTime
+                        if (frame != null) holder.image.setImageBitmap(frame)
+                        mmr.release()
+                    } catch (_: Exception) {
+                        holder.image.setImageResource(android.R.drawable.ic_media_play)
+                    }
+                    holder.videoBadge.visibility = View.VISIBLE
                 }
                 holder.caption.text = item.text
                 holder.itemView.setOnClickListener { onMessageClick?.invoke(item) }
