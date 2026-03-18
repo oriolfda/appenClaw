@@ -1,15 +1,18 @@
 package com.aigor.app
 
-import android.os.Bundle
 import android.content.res.ColorStateList
+import android.graphics.Color
+import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
-import com.google.android.material.button.MaterialButton
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -34,6 +37,8 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
         val uiTheme = ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
+        val isLight = uiTheme.screenBg == 0xFFF8FAFC.toInt()
+
         root.setBackgroundColor(uiTheme.screenBg)
         endpointEdit.setTextColor(uiTheme.messageTextColor)
         endpointEdit.setHintTextColor(uiTheme.messageHintColor)
@@ -42,22 +47,23 @@ class SettingsActivity : AppCompatActivity() {
         tokenEdit.setHintTextColor(uiTheme.messageHintColor)
         tokenEdit.setBackgroundResource(uiTheme.inputBg)
         statusText.setTextColor(uiTheme.statusColor)
+        showTranscriptionsCheck.setTextColor(uiTheme.messageTextColor)
+
         saveButton.backgroundTintList = ColorStateList.valueOf(uiTheme.sendTint)
         saveButton.setTextColor(uiTheme.sendText)
+
         endpointEdit.setText(prefs.getString("openclaw_endpoint", "http://192.168.0.102:8092/chat"))
         tokenEdit.setText(prefs.getString("openclaw_hook_token", ""))
 
         val themes = ThemeManager.themes
-        val labels = themes.map { it.label }
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, labels)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        themeSpinner.adapter = adapter
+        val themeLabels = themes.map { it.label }
+        val themeAdapter = themedAdapter(themeLabels, isLight)
+        themeSpinner.adapter = themeAdapter
 
         val currentThemeId = prefs.getString(ThemeManager.PREF_KEY, "html_match")
         val selectedIndex = themes.indexOfFirst { it.id == currentThemeId }.coerceAtLeast(0)
         themeSpinner.setSelection(selectedIndex)
 
-        // UI language selector (app interface only), easy to extend later.
         val languageOptions = listOf(
             "auto" to getString(R.string.lang_auto),
             "en-GB" to "English (UK)",
@@ -67,8 +73,7 @@ class SettingsActivity : AppCompatActivity() {
             "gl-ES" to "Galego",
             "eu-ES" to "Euskara",
         )
-        val langAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, languageOptions.map { it.second })
-        langAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val langAdapter = themedAdapter(languageOptions.map { it.second }, isLight)
         languageSpinner.adapter = langAdapter
 
         val currentLang = prefs.getString("ui_locale", "auto") ?: "auto"
@@ -101,5 +106,26 @@ class SettingsActivity : AppCompatActivity() {
             setResult(RESULT_OK)
             recreate()
         }
+    }
+
+    private fun themedAdapter(items: List<String>, isLight: Boolean): ArrayAdapter<String> {
+        val textColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F3F4F6")
+        val bgColor = if (isLight) Color.parseColor("#FFFFFF") else Color.parseColor("#111827")
+
+        return object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val v = super.getView(position, convertView, parent)
+                (v as? TextView)?.setTextColor(textColor)
+                v.setBackgroundColor(bgColor)
+                return v
+            }
+
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val v = super.getDropDownView(position, convertView, parent)
+                (v as? TextView)?.setTextColor(textColor)
+                v.setBackgroundColor(bgColor)
+                return v
+            }
+        }.also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
     }
 }
