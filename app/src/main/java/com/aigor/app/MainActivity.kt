@@ -78,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private val sentAudioFiles = mutableListOf<File>()
     private var lastSentAudioFile: File? = null
     private var mediaPlayer: MediaPlayer? = null
+    private var currentPlayingTs: Long? = null
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentRecordingFile: File? = null
@@ -149,12 +150,8 @@ class MainActivity : AppCompatActivity() {
 
         val theme = currentTheme()
         adapter = ChatAdapter(messages, theme) { msg ->
-            when {
-                !msg.audioPath.isNullOrBlank() -> {
-                    val f = File(msg.audioPath)
-                    if (f.exists()) playLocalAudio(f) else statusText.text = "Àudio local no trobat"
-                }
-                !msg.audioUrl.isNullOrBlank() -> tryPlayRemoteAudio(msg.audioUrl)
+            if (!msg.audioPath.isNullOrBlank() || !msg.audioUrl.isNullOrBlank() || !msg.ttsText.isNullOrBlank()) {
+                toggleAudioPlayback(msg)
             }
         }
         chatRecycler.layoutManager = LinearLayoutManager(this)
@@ -415,35 +412,78 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun playLocalAudio(file: File) {
+    private fun toggleAudioPlayback(msg: ChatMessage) {
+        // same bubble clicked: toggle pause/resume
+        if (currentPlayingTs == msg.ts && mediaPlayer != null) {
+            val mp = mediaPlayer!!
+            if (mp.isPlaying) {
+                mp.pause()
+                adapter.setPlayingMessage(null)
+                statusText.text = "Àudio en pausa"
+            } else {
+                mp.start()
+                adapter.setPlayingMessage(msg.ts)
+                statusText.text = "Reproduint àudio..."
+            }
+            return
+        }
+
+        when {
+            !msg.audioPath.isNullOrBlank() -> {
+                val f = File(msg.audioPath)
+                if (f.exists()) playLocalAudio(f, msg.ts) else statusText.text = "Àudio local no trobat"
+            }
+            !msg.audioUrl.isNullOrBlank() -> tryPlayRemoteAudio(msg.audioUrl, msg.ts)
+        }
+    }
+
+    private fun playLocalAudio(file: File, ts: Long? = null) {
         try {
             mediaPlayer?.release()
+            currentPlayingTs = ts
+            adapter.setPlayingMessage(ts)
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(file.absolutePath)
                 setOnPreparedListener { it.start() }
-                setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                setOnCompletionListener { mp ->
+                    mp.release()
+                    mediaPlayer = null
+                    currentPlayingTs = null
+                    adapter.setPlayingMessage(null)
+                }
                 prepareAsync()
             }
             statusText.text = "Reproduint àudio..."
         } catch (e: Exception) {
             statusText.text = "No s'ha pogut reproduir l'àudio: ${e.message}"
+            currentPlayingTs = null
+            adapter.setPlayingMessage(null)
         }
     }
 
-    private fun tryPlayRemoteAudio(url: String) {
+    private fun tryPlayRemoteAudio(url: String, ts: Long? = null) {
         val u = url.lowercase()
-        val looksAudio = u.endsWith(".mp3") || u.endsWith(".m4a") || u.endsWith(".wav") || u.endsWith(".ogg") || u.contains("audio")
+        val looksAudio = u.endsWith(".mp3") || u.endsWith(".m4a") || u.endsWith(".wav") || u.endsWith(".ogg") || u.contains("audio") || u.contains("/media/")
         if (!looksAudio) return
         try {
             mediaPlayer?.release()
+            currentPlayingTs = ts
+            adapter.setPlayingMessage(ts)
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(url)
                 setOnPreparedListener { it.start() }
-                setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                setOnCompletionListener { mp ->
+                    mp.release()
+                    mediaPlayer = null
+                    currentPlayingTs = null
+                    adapter.setPlayingMessage(null)
+                }
                 prepareAsync()
             }
             statusText.text = "Reproduint resposta d'àudio..."
         } catch (_: Exception) {
+            currentPlayingTs = null
+            adapter.setPlayingMessage(null)
         }
     }
 
@@ -653,11 +693,19 @@ class MainActivity : AppCompatActivity() {
 
         thread {
             try {
+                val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+                val preferredLang = prefs.getString("preferred_lang", "auto") ?: "auto"
+                val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
+
                 val urls = extractUrls(message)
                 val payloadText = if (urls.isEmpty()) message else "$message\n\nURLs detectades: ${urls.joinToString(", ")}" 
                 val payload = JSONObject().apply {
                     put("message", payloadText)
                     put("sessionId", "aigor-app-chat")
+                    put("prefs", JSONObject().apply {
+                        put("language", preferredLang)
+                        put("showTranscription", showTranscriptions)
+                    })
                     attachment?.let {
                         put("attachment", JSONObject().apply {
                             put("name", it.name)
@@ -685,21 +733,28 @@ class MainActivity : AppCompatActivity() {
                 } catch (_: Exception) { "" }
 
                 runOnUiThread {
+                    val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+                    val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
+
                     val assistantTextRaw = parseAssistantText(body, code)
                     val mediaUrl = try {
                         JSONObject(body).optString("mediaUrl", "")
                     } catch (_: Exception) { "" }
                     val (assistantText, ttsText) = extractTtsBlock(assistantTextRaw)
 
-                    // Replace typing bubble with textual assistant response.
-                    adapter.replaceLast(ChatMessage("assistant", assistantText, ttsText = ttsText))
-
-                    // If response includes remote audio, append dedicated playable message.
-                    if (mediaUrl.isNotBlank()) {
-                        addMessage(ChatMessage("assistant", "Àudio de resposta", audioUrl = mediaUrl))
-                        tryPlayRemoteAudio(mediaUrl)
-                    } else if (!ttsText.isNullOrBlank()) {
-                        addMessage(ChatMessage("assistant", "[TTS pendent de veu servidor]"))
+                    if (!showTranscriptions && mediaUrl.isNotBlank()) {
+                        val audioMsg = ChatMessage("assistant", "Àudio de resposta", audioUrl = mediaUrl)
+                        adapter.replaceLast(audioMsg)
+                        tryPlayRemoteAudio(mediaUrl, audioMsg.ts)
+                    } else {
+                        adapter.replaceLast(ChatMessage("assistant", assistantText, ttsText = ttsText))
+                        if (mediaUrl.isNotBlank()) {
+                            val audioMsg = ChatMessage("assistant", "Àudio de resposta", audioUrl = mediaUrl)
+                            addMessage(audioMsg)
+                            tryPlayRemoteAudio(mediaUrl, audioMsg.ts)
+                        } else if (!ttsText.isNullOrBlank()) {
+                            addMessage(ChatMessage("assistant", "[TTS pendent de veu servidor]"))
+                        }
                     }
 
                     statusText.text = if (code in 200..299) "Estat: enviat OK ($code)" else "Estat: error HTTP $code"

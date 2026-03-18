@@ -14,6 +14,8 @@ class ChatAdapter(
     private val onMessageClick: ((ChatMessage) -> Unit)? = null,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
+    private var playingMessageTs: Long? = null
+
     companion object {
         private const val VIEW_USER = 1
         private const val VIEW_BOT = 2
@@ -60,7 +62,8 @@ class ChatAdapter(
                     holder.text.setTextColor(theme.botText)
                 }
                 if (!item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()) {
-                    holder.text.text = "▶ ${item.text}"
+                    val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
+                    holder.text.text = "$icon ${item.text}"
                     holder.text.setOnClickListener { onMessageClick?.invoke(item) }
                 } else {
                     holder.text.setOnClickListener(null)
@@ -109,6 +112,11 @@ class ChatAdapter(
 
     fun setTheme(newTheme: ThemeManager.UiTheme) {
         theme = newTheme
+        notifyDataSetChanged()
+    }
+
+    fun setPlayingMessage(ts: Long?) {
+        playingMessageTs = ts
         notifyDataSetChanged()
     }
 }

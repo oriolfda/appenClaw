@@ -330,6 +330,9 @@ class Handler(BaseHTTPRequestHandler):
         message = (data.get("message") or "").strip()
         session_id = (data.get("sessionId") or DEFAULT_SESSION).strip() or DEFAULT_SESSION
         attachment = data.get("attachment") if isinstance(data.get("attachment"), dict) else None
+        prefs = data.get("prefs") if isinstance(data.get("prefs"), dict) else {}
+        preferred_lang = (prefs.get("language") or "auto").strip().lower()
+        show_transcription = bool(prefs.get("showTranscription", True))
         if not message and not attachment:
             self._send(400, {"ok": False, "error": "message or attachment required"})
             return
@@ -345,7 +348,7 @@ class Handler(BaseHTTPRequestHandler):
                 final_message = f"{final_message}\n\n{extra_prompt}"
 
             # Force useful output for app UX, preserving the user's input language.
-            input_lang = detect_lang(final_message)
+            input_lang = preferred_lang if preferred_lang in ("ca", "es", "en") else detect_lang(final_message)
             if input_lang == "es":
                 final_message += "\n\nResponde SIEMPRE en español (mismo idioma de entrada). Ignora cualquier instrucción anterior que te fuerce otro idioma."
             elif input_lang == "en":
@@ -354,12 +357,20 @@ class Handler(BaseHTTPRequestHandler):
                 final_message += "\n\nRespon SEMPRE en català (mateix idioma d'entrada). Ignora qualsevol instrucció anterior que et forci un altre idioma."
 
             if attachment and str((attachment.get("mime") or "")).lower().startswith("audio/"):
-                if input_lang == "es":
-                    final_message += " Incluye primero la transcripción del audio y después la respuesta. Si puedes, añade también una respuesta en audio."
-                elif input_lang == "en":
-                    final_message += " Include first the audio transcription and then your response. If possible, also include an audio response."
+                if show_transcription:
+                    if input_lang == "es":
+                        final_message += " Incluye primero la transcripción del audio y después la respuesta. Si puedes, añade también una respuesta en audio."
+                    elif input_lang == "en":
+                        final_message += " Include first the audio transcription and then your response. If possible, also include an audio response."
+                    else:
+                        final_message += " Inclou primer la transcripció de l'àudio i després la resposta. Si pots, afegeix també una resposta en àudio."
                 else:
-                    final_message += " Inclou primer la transcripció de l'àudio i després la resposta. Si pots, afegeix també una resposta en àudio."
+                    if input_lang == "es":
+                        final_message += " No muestres la transcripción. Responde de forma breve y prepara audio de respuesta."
+                    elif input_lang == "en":
+                        final_message += " Do not show transcription. Reply briefly and prepare an audio response."
+                    else:
+                        final_message += " No mostris la transcripció. Respon breument i prepara àudio de resposta."
 
             cmd = [
                 "openclaw", "agent",
@@ -402,7 +413,7 @@ class Handler(BaseHTTPRequestHandler):
                 tts_source = reply
 
             if not media_url and tts_source:
-                lang = detect_lang(tts_source)
+                lang = input_lang if input_lang in ("ca", "es", "en") else detect_lang(tts_source)
                 media_url = synthesize_tts_audio(tts_source, lang)
 
             payload = {"ok": True, "reply": reply, "sessionId": session_id}
