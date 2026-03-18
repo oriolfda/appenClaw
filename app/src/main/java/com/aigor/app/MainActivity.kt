@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
@@ -62,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pendingAttachmentPreview: ImageView
     private lateinit var pendingAttachmentText: TextView
     private lateinit var cancelAttachmentButton: Button
+    private lateinit var playLastAudioButton: Button
     private lateinit var micButton: ImageButton
     private lateinit var recordingControlsRow: LinearLayout
     private lateinit var recordDeleteButton: ImageButton
@@ -73,6 +75,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ChatAdapter
     private val messages = mutableListOf<ChatMessage>()
     private var pendingAttachment: AttachmentData? = null
+    private var lastSentAudioFile: File? = null
+    private var mediaPlayer: MediaPlayer? = null
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentRecordingFile: File? = null
@@ -133,6 +137,7 @@ class MainActivity : AppCompatActivity() {
         pendingAttachmentPreview = findViewById(R.id.pendingAttachmentPreview)
         pendingAttachmentText = findViewById(R.id.pendingAttachmentText)
         cancelAttachmentButton = findViewById(R.id.cancelAttachmentButton)
+        playLastAudioButton = findViewById(R.id.playLastAudioButton)
         micButton = findViewById(R.id.micButton)
         recordingControlsRow = findViewById(R.id.recordingControlsRow)
         recordDeleteButton = findViewById(R.id.recordDeleteButton)
@@ -208,6 +213,15 @@ class MainActivity : AppCompatActivity() {
             pendingAttachment = null
             updatePendingAttachmentUi()
             statusText.text = "Adjunt eliminat"
+        }
+
+        playLastAudioButton.setOnClickListener {
+            val f = lastSentAudioFile
+            if (f != null && f.exists()) {
+                playLocalAudio(f)
+            } else {
+                statusText.text = "No hi ha àudio recent"
+            }
         }
 
         micButton.setOnTouchListener { _, event ->
@@ -287,7 +301,20 @@ class MainActivity : AppCompatActivity() {
             addMessage(ChatMessage("user", previewText.ifBlank { "(adjunt)" }))
             messageEdit.setText("")
             addMessage(ChatMessage("typing", ""))
-            sendToOpenClaw(endpoint, token, message, pendingAttachment)
+
+            val attachmentToSend = pendingAttachment
+            if (attachmentToSend?.mime?.startsWith("audio/") == true) {
+                try {
+                    val bytes = Base64.decode(attachmentToSend.base64, Base64.DEFAULT)
+                    val f = File(cacheDir, "last-sent-audio-${System.currentTimeMillis()}.m4a")
+                    f.writeBytes(bytes)
+                    lastSentAudioFile = f
+                    playLastAudioButton.visibility = View.VISIBLE
+                } catch (_: Exception) {
+                }
+            }
+
+            sendToOpenClaw(endpoint, token, message, attachmentToSend)
             pendingAttachment = null
             updatePendingAttachmentUi()
         }
@@ -307,6 +334,8 @@ class MainActivity : AppCompatActivity() {
         } else {
             cleanupRecorderState()
         }
+        try { mediaPlayer?.release() } catch (_: Exception) {}
+        mediaPlayer = null
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -357,6 +386,38 @@ class MainActivity : AppCompatActivity() {
         return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
             val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
+        }
+    }
+
+    private fun playLocalAudio(file: File) {
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(file.absolutePath)
+                setOnPreparedListener { it.start() }
+                setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                prepareAsync()
+            }
+            statusText.text = "Reproduint àudio..."
+        } catch (e: Exception) {
+            statusText.text = "No s'ha pogut reproduir l'àudio: ${e.message}"
+        }
+    }
+
+    private fun tryPlayRemoteAudio(url: String) {
+        val u = url.lowercase()
+        val looksAudio = u.endsWith(".mp3") || u.endsWith(".m4a") || u.endsWith(".wav") || u.endsWith(".ogg") || u.contains("audio")
+        if (!looksAudio) return
+        try {
+            mediaPlayer?.release()
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(url)
+                setOnPreparedListener { it.start() }
+                setOnCompletionListener { mp -> mp.release(); mediaPlayer = null }
+                prepareAsync()
+            }
+            statusText.text = "Reproduint resposta d'àudio..."
+        } catch (_: Exception) {
         }
     }
 
@@ -539,9 +600,11 @@ class MainActivity : AppCompatActivity() {
         overflowMenuButton.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         messageEdit.setTextColor(theme.messageTextColor)
         messageEdit.setHintTextColor(theme.messageHintColor)
-        clipButton.setColorFilter(theme.statusColor)
-        cameraButton.setColorFilter(theme.statusColor)
-        micButton.setColorFilter(0xFF07130B.toInt())
+        clipButton.setColorFilter(theme.sendTint)
+        cameraButton.setColorFilter(theme.sendTint)
+        micButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
+        micButton.setColorFilter(theme.sendText)
+        sendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         sendButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
         recordPauseButton.setColorFilter(0xFFFF4D67.toInt())
@@ -597,6 +660,12 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     val assistantText = parseAssistantText(body, code)
                     adapter.replaceLast(ChatMessage("assistant", assistantText))
+                    val mediaUrl = try {
+                        JSONObject(body).optString("mediaUrl", "")
+                    } catch (_: Exception) { "" }
+                    if (mediaUrl.isNotBlank()) {
+                        tryPlayRemoteAudio(mediaUrl)
+                    }
                     statusText.text = if (code in 200..299) "Estat: enviat OK ($code)" else "Estat: error HTTP $code"
                     saveHistory()
                     scrollBottom()
