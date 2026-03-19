@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Theme Designer - AIGOR App</title>
+  <style>
+    :root{
+      --bg:#0f172a;--panel:#111827;--assistant:#1f2937;--user:#2563eb;--text:#e5e7eb;--muted:#9ca3af;--accent:#38bdf8;
+    }
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:var(--text)}
+    .wrap{display:grid;grid-template-columns:1.2fr .8fr;min-height:100vh}
+    .chat{padding:20px;display:flex;flex-direction:column;gap:10px}
+    .phone{max-width:460px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px}
+    .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+    .msg{max-width:82%;padding:10px 12px;border-radius:14px;line-height:1.35}
+    .a{background:var(--assistant)} .u{background:var(--user);margin-left:auto}
+    .input{margin-top:12px;background:var(--panel);padding:10px;border-radius:12px;display:flex;justify-content:space-between;color:var(--muted)}
+    .controls{padding:20px;background:#0b1220;border-left:1px solid rgba(255,255,255,.1)}
+    .card{background:var(--panel);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);margin-bottom:12px}
+    label{display:block;font-size:13px;color:var(--muted);margin:8px 0 4px}
+    input,select,button,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #334155;background:#0b1220;color:var(--text)}
+    button{cursor:pointer;background:var(--accent);color:#00131d;border:none;font-weight:600}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    textarea{height:140px;font-family:ui-monospace,monospace}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="chat">
+    <h2>Preview xat (AIGOR App)</h2>
+    <div class="phone" id="phone">
+      <div class="head"><strong>AIGOR</strong><span class="dot"></span></div>
+      <div class="msg a">Hola Oriol 👋 Aquest és un preview del tema.</div>
+      <div class="msg u">Perfecte, vull ajustar colors.</div>
+      <div class="msg a">Canvia els controls de la dreta i veuràs els canvis al moment.</div>
+      <div class="input"><span>Escriu missatge…</span><span>➤</span></div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="card">
+      <label>Preset tema</label>
+      <select id="preset">
+        <option value="dark">Dark Elegant</option>
+        <option value="oled">OLED</option>
+        <option value="blue">Blue Modern</option>
+        <option value="light">Light Clean</option>
+      </select>
+      <div class="row">
+        <div><label>Fons global</label><input type="color" id="bg" value="#0f172a"></div>
+        <div><label>Panell</label><input type="color" id="panel" value="#111827"></div>
+      </div>
+      <div class="row">
+        <div><label>Bombolla assistent</label><input type="color" id="assistant" value="#1f2937"></div>
+        <div><label>Bombolla usuari</label><input type="color" id="user" value="#2563eb"></div>
+      </div>
+      <div class="row">
+        <div><label>Text</label><input type="color" id="text" value="#e5e7eb"></div>
+        <div><label>Text secundari</label><input type="color" id="muted" value="#9ca3af"></div>
+      </div>
+      <label>Accent (botons, punts, highlights)</label><input type="color" id="accent" value="#38bdf8">
+      <label style="margin-top:10px">JSON tema generat</label>
+      <textarea id="json"></textarea>
+      <button id="approve">✅ Aprovar tema</button>
+    </div>
+  </div>
+</div>
+<script>
+const ids=['bg','panel','assistant','user','text','muted','accent'];
+const presetMap={
+  dark:{bg:'#0f172a',panel:'#111827',assistant:'#1f2937',user:'#2563eb',text:'#e5e7eb',muted:'#9ca3af',accent:'#38bdf8'},
+  oled:{bg:'#000000',panel:'#0b0b0b',assistant:'#171717',user:'#1d4ed8',text:'#f3f4f6',muted:'#a3a3a3',accent:'#22d3ee'},
+  blue:{bg:'#0b1220',panel:'#14213d',assistant:'#1b2a4a',user:'#2563eb',text:'#edf2ff',muted:'#a6b4d0',accent:'#60a5fa'},
+  light:{bg:'#f3f4f6',panel:'#ffffff',assistant:'#e5e7eb',user:'#bfdbfe',text:'#111827',muted:'#4b5563',accent:'#2563eb'}
+};
+function apply(){
+  const o={}; ids.forEach(id=>{o[id]=document.getElementById(id).value;document.documentElement.style.setProperty('--'+id,o[id]);});
+  const out={theme:o,approved:false,updatedAt:new Date().toISOString()};
+  json.value=JSON.stringify(out,null,2);
+}
+ids.forEach(id=>document.getElementById(id).addEventListener('input',apply));
+preset.addEventListener('change',()=>{const p=presetMap[preset.value];ids.forEach(id=>document.getElementById(id).value=p[id]);apply();});
+approve.addEventListener('click',()=>{const data=JSON.parse(json.value);data.approved=true;data.updatedAt=new Date().toISOString();json.value=JSON.stringify(data,null,2);localStorage.setItem('aigor_theme_approved',json.value);alert('Tema aprovat. Envia\'m aquest JSON i l\'aplico a l\'app.');});
+apply();
+</script>
+</body>
+</html>
