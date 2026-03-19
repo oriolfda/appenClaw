@@ -29,13 +29,11 @@
                 android:padding="6dp"
                 android:src="@drawable/ic_play_min" />
 
-            <ImageView
+            <com.aigor.app.AudioWaveProgressView
                 android:id="@+id/audioWaveImage"
                 android:layout_width="170dp"
                 android:layout_height="22dp"
-                android:layout_marginStart="12dp"
-                android:src="@drawable/ic_audio_waveform"
-                android:tint="#9CB9D5" />
+                android:layout_marginStart="12dp" />
 
             <TextView
                 android:id="@+id/audioDurationText"
@@ -53,7 +51,7 @@
                 android:layout_marginStart="8dp"
                 android:background="@android:color/transparent"
                 android:contentDescription="Transcribe"
-                android:src="@android:drawable/ic_menu_edit"
+                android:src="@drawable/ic_transcribe_note"
                 android:visibility="gone" />
         </LinearLayout>
 
