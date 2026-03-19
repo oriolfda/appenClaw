@@ -31,7 +31,6 @@ class ChatAdapter(
     private var showTranscriptionOption: Boolean = false
     private val durationCache = mutableMapOf<Long, String>()
     private val durationLoading = mutableSetOf<Long>()
-    private val playbackProgress = mutableMapOf<Long, Float>()
 
     companion object {
         private const val VIEW_USER = 1
@@ -194,9 +193,9 @@ class ChatAdapter(
                 holder.play.setImageResource(playIcon)
                 holder.play.setColorFilter(if (item.role == "user") theme.userText else theme.botText)
                 holder.play.setOnClickListener { onMessageClick?.invoke(item) }
-                holder.wave.setColors(theme.messageHintColor, theme.sendTint)
-                holder.wave.setProgress(playbackProgress[item.ts] ?: 0f)
-                holder.wave.alpha = if (playingMessageTs == item.ts) 1f else 0.9f
+                holder.wave.setColors(theme.messageHintColor, theme.messageHintColor)
+                holder.wave.setProgress(0f)
+                holder.wave.alpha = 1f
 
                 holder.caption.text = if (item.text.isBlank()) "Àudio" else item.text
 
@@ -317,17 +316,11 @@ class ChatAdapter(
     }
 
     fun setPlaybackProgress(ts: Long?, progress: Float) {
-        if (ts == null) return
-        playbackProgress[ts] = progress.coerceIn(0f, 1f)
-        val idx = items.indexOfFirst { it.ts == ts }
-        if (idx >= 0) notifyItemChanged(idx)
+        // No-op to avoid item rebind flicker during playback updates.
     }
 
     fun resetPlaybackProgress(ts: Long?) {
-        if (ts == null) return
-        playbackProgress.remove(ts)
-        val idx = items.indexOfFirst { it.ts == ts }
-        if (idx >= 0) notifyItemChanged(idx)
+        // No-op.
     }
 
     fun setShowTranscriptionOption(enabled: Boolean) {
