@@ -31,6 +31,7 @@ class ChatAdapter(
     private var showTranscriptionOption: Boolean = false
     private val durationCache = mutableMapOf<Long, String>()
     private val durationLoading = mutableSetOf<Long>()
+    private val playbackProgress = mutableMapOf<Long, Float>()
 
     companion object {
         private const val VIEW_USER = 1
@@ -68,7 +69,7 @@ class ChatAdapter(
     class AudioVH(view: View) : RecyclerView.ViewHolder(view) {
         val bubble: View = view.findViewById(R.id.audioBubble)
         val play: ImageButton = view.findViewById(R.id.audioPlayButton)
-        val wave: ImageView = view.findViewById(R.id.audioWaveImage)
+        val wave: AudioWaveProgressView = view.findViewById(R.id.audioWaveImage)
         val transcribe: ImageButton = view.findViewById(R.id.audioTranscribeButton)
         val duration: TextView = view.findViewById(R.id.audioDurationText)
         val caption: TextView = view.findViewById(R.id.audioCaptionText)
@@ -193,8 +194,9 @@ class ChatAdapter(
                 holder.play.setImageResource(playIcon)
                 holder.play.setColorFilter(if (item.role == "user") theme.userText else theme.botText)
                 holder.play.setOnClickListener { onMessageClick?.invoke(item) }
-                holder.wave.setColorFilter(theme.statusColor)
-                holder.wave.alpha = if (playingMessageTs == item.ts) 1f else 0.85f
+                holder.wave.setColors(theme.messageHintColor, theme.sendTint)
+                holder.wave.setProgress(playbackProgress[item.ts] ?: 0f)
+                holder.wave.alpha = if (playingMessageTs == item.ts) 1f else 0.9f
 
                 holder.caption.text = if (item.text.isBlank()) "Àudio" else item.text
 
@@ -210,9 +212,9 @@ class ChatAdapter(
                 holder.transcribe.visibility = if (showTranscriptionOption) View.VISIBLE else View.GONE
                 holder.transcribe.setColorFilter(theme.botText)
                 if (!item.transcriptText.isNullOrBlank()) {
-                    holder.transcribe.setImageResource(if (item.transcriptVisible) android.R.drawable.ic_menu_close_clear_cancel else android.R.drawable.ic_menu_edit)
+                    holder.transcribe.setImageResource(if (item.transcriptVisible) android.R.drawable.ic_menu_close_clear_cancel else R.drawable.ic_transcribe_note)
                 } else {
-                    holder.transcribe.setImageResource(android.R.drawable.ic_menu_edit)
+                    holder.transcribe.setImageResource(R.drawable.ic_transcribe_note)
                 }
                 holder.transcribe.setOnClickListener { onAudioTranscribeClick?.invoke(item) }
 
@@ -312,6 +314,20 @@ class ChatAdapter(
     fun setPlayingMessage(ts: Long?) {
         playingMessageTs = ts
         notifyDataSetChanged()
+    }
+
+    fun setPlaybackProgress(ts: Long?, progress: Float) {
+        if (ts == null) return
+        playbackProgress[ts] = progress.coerceIn(0f, 1f)
+        val idx = items.indexOfFirst { it.ts == ts }
+        if (idx >= 0) notifyItemChanged(idx)
+    }
+
+    fun resetPlaybackProgress(ts: Long?) {
+        if (ts == null) return
+        playbackProgress.remove(ts)
+        val idx = items.indexOfFirst { it.ts == ts }
+        if (idx >= 0) notifyItemChanged(idx)
     }
 
     fun setShowTranscriptionOption(enabled: Boolean) {

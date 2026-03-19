@@ -35,6 +35,11 @@
     .row{display:flex;margin:6px 0}.row.user{justify-content:flex-end}
     .bubble{border-radius:18px;padding:10px 12px;max-width:82%}.bubble.bot{background:var(--bot-bubble)}.bubble.user{background:var(--user-bubble)}
     .txt{font-size:18px;color:var(--bubble-text);line-height:1.35}
+    .typingDots{display:flex;gap:6px;align-items:flex-end;height:16px}
+    .typingDots span{width:7px;height:7px;border-radius:999px;background:var(--audio-wave);animation:dotWave 900ms ease-in-out infinite}
+    .typingDots span:nth-child(2){animation-delay:120ms}
+    .typingDots span:nth-child(3){animation-delay:240ms}
+    @keyframes dotWave{0%,100%{transform:translateY(0) scale(.9);opacity:.45}40%{transform:translateY(-5px) scale(1.05);opacity:1}70%{transform:translateY(2px) scale(.95);opacity:.7}}
     .audio .top{display:flex;align-items:center;gap:10px}
     .play{width:22px;height:22px;display:grid;place-items:center;color:var(--bubble-text);font-size:16px}
     .wave{height:8px;flex:1;border-radius:10px;background:repeating-linear-gradient(90deg,var(--audio-wave) 0 4px,transparent 4px 7px);opacity:.85}
@@ -88,6 +93,7 @@
           <div class="row"><div class="bubble bot audio" style="width:82%"><div class="top"><div class="play">▶</div><div class="wave"></div><div class="dur">0:11</div><div class="act">✕</div></div><div class="cap">Àudio de resposta</div><div class="trans">Avui a Barcelona fa catorze graus amb intervals de núvols...</div></div></div>
           <div class="row user"><div class="bubble user" style="width:82%"><div class="imgbox"><img src="./Aigor-app_ui.jpg" alt="preview"><div class="imgname">🔗 aigir-app.png</div></div></div></div>
           <div class="row"><div class="bubble bot"><div class="txt">És una imatge en blanc i negre d’un home amb caputxa...</div></div></div>
+          <div class="row"><div class="bubble bot"><div class="typingDots"><span></span><span></span><span></span></div></div></div>
         </div>
         <div class="status">Estat: enviat OK (200)</div>
         <div class="composerWrap"><div class="composer"><div class="input"><span class="hint">Escriu un missatge...</span><span><span class="ico">📎</span><span class="ico">📷</span></span></div><div class="round mic">🎤</div></div></div>
@@ -98,8 +104,7 @@
       <div class="card">
         <h3>Preset</h3>
         <select id="preset">
-          <option value="darkRed">Fosc vermell</option>
-          <option value="darkRed2">Fosc vermell 2</option>
+          <option value="darkRed">Fosc vermell (actual)</option>
           <option value="darkBlue">Fosc blau</option>
           <option value="light">Clar net</option>
         </select>
@@ -107,6 +112,11 @@
       <div class="card">
         <h3>Colors</h3>
         <div class="grid" id="pickers"></div>
+      </div>
+      <div class="card">
+        <h3>Previsualitzar CSS (custom)</h3>
+        <textarea id="cssVars" placeholder=":root { --screen-bg:#0B1018; --send-bg:#FF5C5C; }"></textarea>
+        <button class="approve" id="applyCss">👁️ Aplicar CSS</button>
       </div>
       <div class="card">
         <h3>Export</h3>
@@ -123,19 +133,36 @@ const labels={
 };
 const presets={
   darkRed:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#7C879A','bot-bubble':'#242833','user-bubble':'#34242B','bubble-text':'#F9FAFB','audio-wave':'#9CB9D5','audio-time':'#C7D2E0','audio-caption':'#E5E7EB','audio-transcript-bg':'#1F2937','input-bg':'#101623','input-stroke':'#20283A','input-focus':'#FF5C5C','input-hint':'#7C879A','send-bg':'#FF5C5C'},
-  darkRed2:{'screen-bg':'#0b1018','toolbar-bg':'#0b1018','title':'#f3f4f6','status':'#7c879a','bot-bubble':'#000000','user-bubble':'#34242b','bubble-text':'#f9fafb','audio-wave':'#9cb9d5','audio-time':'#c7d2e0','audio-caption':'#e5e7eb','audio-transcript-bg':'#1f1f1f','input-bg':'#101623','input-stroke':'#20283a','input-focus':'#ff5c5c','input-hint':'#7c879a','send-bg':'#ff5c5c'},
   darkBlue:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#94A3B8','bot-bubble':'#1E293B','user-bubble':'#1D4ED8','bubble-text':'#F8FAFC','audio-wave':'#93C5FD','audio-time':'#BFDBFE','audio-caption':'#E2E8F0','audio-transcript-bg':'#0F172A','input-bg':'#0F172A','input-stroke':'#1E293B','input-focus':'#2563EB','input-hint':'#94A3B8','send-bg':'#2563EB'},
   light:{'screen-bg':'#F8FAFC','toolbar-bg':'#F8FAFC','title':'#0F172A','status':'#64748B','bot-bubble':'#E2E8F0','user-bubble':'#BFDBFE','bubble-text':'#0F172A','audio-wave':'#475569','audio-time':'#334155','audio-caption':'#0F172A','audio-transcript-bg':'#E2E8F0','input-bg':'#FFFFFF','input-stroke':'#CBD5E1','input-focus':'#2563EB','input-hint':'#64748B','send-bg':'#2563EB'}
 };
 const pickers=document.getElementById('pickers');
 vars.forEach(v=>{const d=document.createElement('div');d.innerHTML=`<label>${labels[v]}</label><input type='color' id='${v}'>`;pickers.appendChild(d)});
-function apply(){const out={themeId:preset.value,colors:{},approved:false,updatedAt:new Date().toISOString()};vars.forEach(v=>{const val=document.getElementById(v).value;out.colors[v]=val;document.documentElement.style.setProperty('--'+v,val)});document.documentElement.style.setProperty('--menu',out.colors.title);document.documentElement.style.setProperty('--mic-bg',out.colors['send-bg']);json.value=JSON.stringify(out,null,2)}
+function updateCssText(){
+  const lines = vars.map(v=>`  --${v}: ${document.getElementById(v).value};`);
+  cssVars.value = `:root {\n${lines.join('\n')}\n}`;
+}
+function apply(){const out={themeId:preset.value,colors:{},approved:false,updatedAt:new Date().toISOString()};vars.forEach(v=>{const val=document.getElementById(v).value;out.colors[v]=val;document.documentElement.style.setProperty('--'+v,val)});document.documentElement.style.setProperty('--menu',out.colors.title);document.documentElement.style.setProperty('--mic-bg',out.colors['send-bg']);json.value=JSON.stringify(out,null,2);updateCssText()}
 function loadPreset(id){const p=presets[id];vars.forEach(v=>document.getElementById(v).value=p[v]);apply()}
 vars.forEach(v=>document.addEventListener('input',e=>{if(e.target.id===v)apply()}));
 preset.addEventListener('change',()=>loadPreset(preset.value));
+applyCss.addEventListener('click',()=>{
+  const t = cssVars.value || '';
+  const re = /--([a-zA-Z0-9-_]+)\s*:\s*([^;\n}]+)/g;
+  let m;
+  while((m=re.exec(t))!==null){
+    const key=m[1], val=m[2].trim();
+    if(vars.includes(key)){
+      document.documentElement.style.setProperty('--'+key,val);
+      const inp=document.getElementById(key);
+      if(inp && /^#[0-9a-fA-F]{6}$/.test(val)) inp.value=val;
+    }
+  }
+  apply();
+});
 approve.addEventListener('click',()=>{const data=JSON.parse(json.value);data.approved=true;data.updatedAt=new Date().toISOString();json.value=JSON.stringify(data,null,2);localStorage.setItem('aigor_theme_approved',json.value);alert('Tema aprovat. Passa\'m aquest JSON i l\'aplico a l\'app.')});
 document.getElementById('togglePanel').addEventListener('click',()=>{const p=document.getElementById('panel');p.style.display=(p.style.display==='none'?'block':'none')});
-loadPreset('darkRed2');
+loadPreset('darkRed');
 if(window.matchMedia('(max-width:980px)').matches){document.getElementById('panel').style.display='none'}
 </script>
 </body>

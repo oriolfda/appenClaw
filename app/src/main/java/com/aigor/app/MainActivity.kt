@@ -97,6 +97,20 @@ class MainActivity : AppCompatActivity() {
     private var micStartX = 0f
     private var recordingStartMs = 0L
     private val recordingHandler = Handler(Looper.getMainLooper())
+    private val playbackHandler = Handler(Looper.getMainLooper())
+    private val playbackProgressTick = object : Runnable {
+        override fun run() {
+            val mp = mediaPlayer
+            val ts = currentPlayingTs
+            if (mp != null && ts != null && mp.isPlaying) {
+                val dur = mp.duration.takeIf { it > 0 } ?: 0
+                val pos = mp.currentPosition.coerceAtLeast(0)
+                val progress = if (dur > 0) pos.toFloat() / dur.toFloat() else 0f
+                adapter.setPlaybackProgress(ts, progress)
+                playbackHandler.postDelayed(this, 180)
+            }
+        }
+    }
 
     private val pickMediaLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) handlePickedMedia(uri)
@@ -397,6 +411,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             cleanupRecorderState()
         }
+        playbackHandler.removeCallbacks(playbackProgressTick)
         try { mediaPlayer?.release() } catch (_: Exception) {}
         mediaPlayer = null
     }
@@ -458,6 +473,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        statusText.text = getString(R.string.transcribing_audio)
+
         thread {
             try {
                 val bytes = when {
@@ -516,6 +533,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread {
                     adapter.setTranscript(msg.ts, transcript, true)
                     statusText.text = getString(R.string.transcription_ready)
+                    statusText.postDelayed({ statusText.text = getString(R.string.status_ready) }, 2000)
                 }
             } catch (e: Exception) {
                 runOnUiThread { statusText.text = getString(R.string.attachment_error, e.message) }
@@ -529,11 +547,14 @@ class MainActivity : AppCompatActivity() {
             val mp = mediaPlayer!!
             if (mp.isPlaying) {
                 mp.pause()
+                playbackHandler.removeCallbacks(playbackProgressTick)
                 adapter.setPlayingMessage(null)
                 statusText.text = getString(R.string.audio_paused)
             } else {
                 mp.start()
                 adapter.setPlayingMessage(msg.ts)
+                playbackHandler.removeCallbacks(playbackProgressTick)
+                playbackHandler.post(playbackProgressTick)
                 statusText.text = getString(R.string.playing_audio)
             }
             return
@@ -551,16 +572,24 @@ class MainActivity : AppCompatActivity() {
     private fun playLocalAudio(file: File, ts: Long? = null) {
         try {
             mediaPlayer?.release()
+            playbackHandler.removeCallbacks(playbackProgressTick)
             currentPlayingTs = ts
             adapter.setPlayingMessage(ts)
+            adapter.setPlaybackProgress(ts, 0f)
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(file.absolutePath)
-                setOnPreparedListener { it.start() }
+                setOnPreparedListener {
+                    it.start()
+                    playbackHandler.post(playbackProgressTick)
+                }
                 setOnCompletionListener { mp ->
                     mp.release()
+                    playbackHandler.removeCallbacks(playbackProgressTick)
                     mediaPlayer = null
+                    val doneTs = currentPlayingTs
                     currentPlayingTs = null
                     adapter.setPlayingMessage(null)
+                    adapter.resetPlaybackProgress(doneTs)
                     runOnUiThread { statusText.text = getString(R.string.status_ready) }
                 }
                 prepareAsync()
@@ -579,24 +608,35 @@ class MainActivity : AppCompatActivity() {
         if (!looksAudio) return
         try {
             mediaPlayer?.release()
+            playbackHandler.removeCallbacks(playbackProgressTick)
             currentPlayingTs = ts
             adapter.setPlayingMessage(ts)
+            adapter.setPlaybackProgress(ts, 0f)
             mediaPlayer = MediaPlayer().apply {
                 setDataSource(url)
-                setOnPreparedListener { it.start() }
+                setOnPreparedListener {
+                    it.start()
+                    playbackHandler.post(playbackProgressTick)
+                }
                 setOnCompletionListener { mp ->
                     mp.release()
+                    playbackHandler.removeCallbacks(playbackProgressTick)
                     mediaPlayer = null
+                    val doneTs = currentPlayingTs
                     currentPlayingTs = null
                     adapter.setPlayingMessage(null)
+                    adapter.resetPlaybackProgress(doneTs)
                     runOnUiThread { statusText.text = getString(R.string.status_ready) }
                 }
                 prepareAsync()
             }
             statusText.text = getString(R.string.playing_reply_audio)
         } catch (_: Exception) {
+            playbackHandler.removeCallbacks(playbackProgressTick)
+            val doneTs = currentPlayingTs
             currentPlayingTs = null
             adapter.setPlayingMessage(null)
+            adapter.resetPlaybackProgress(doneTs)
         }
     }
 
