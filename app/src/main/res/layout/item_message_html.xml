@@ -28,6 +28,15 @@
             android:layout_height="220dp"
             android:layout_marginTop="6dp" />
 
+        <TextView
+            android:id="@+id/htmlOpenHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text=""
+            android:textColor="#9CA3AF"
+            android:textSize="12sp" />
+
     </LinearLayout>
 
     <Space
