@@ -71,6 +71,9 @@ Recommended environment variables:
 - `AIGOR_BRIDGE_PUBLIC_BASE_URL`
 - `AIGOR_BRIDGE_MEDIA_DIR`
 - `AIGOR_BRIDGE_EDGE_TTS`
+- `AIGOR_APP_E2EE_ENABLED` (optional, phase 2)
+- `AIGOR_APP_E2EE_REQUIRED` (optional, phase 2 strict mode)
+- `AIGOR_APP_E2EE_PROTOCOL` (default: `signal-x3dh-dr-v1`)
 
 Bridge-TTS note:
 - Configure bridge-TTS after collecting the interactive TTS mode (`auto`/`specific-voice`).
