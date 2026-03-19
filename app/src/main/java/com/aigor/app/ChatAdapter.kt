@@ -210,7 +210,7 @@ class ChatAdapter(
                 holder.duration.setTextColor(theme.statusColor)
 
                 holder.transcribe.visibility = if (showTranscriptionOption) View.VISIBLE else View.GONE
-                holder.transcribe.setColorFilter(theme.botText)
+                holder.transcribe.clearColorFilter()
                 if (!item.transcriptText.isNullOrBlank()) {
                     holder.transcribe.setImageResource(if (item.transcriptVisible) android.R.drawable.ic_menu_close_clear_cancel else R.drawable.ic_transcribe_note)
                 } else {
