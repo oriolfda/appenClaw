@@ -6,6 +6,7 @@ import sys
 import tempfile
 import time
 import urllib.request
+import socket
 
 
 def post(url: str, token: str, payload: dict):
@@ -56,7 +57,9 @@ def main():
     bridge_script = os.path.abspath(sys.argv[1])
     env_prefix = sys.argv[2].strip().upper()
 
-    port = 18989
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
     token = "strict-smoke-token"
 
     tmpdir = tempfile.mkdtemp(prefix="e2ee-strict-smoke-")
@@ -74,7 +77,12 @@ def main():
     try:
         url = f"http://127.0.0.1:{port}/chat"
         if not wait_ready(url, token):
-            raise RuntimeError("bridge did not become ready")
+            err = ""
+            try:
+                err = (proc.stderr.read() or b"").decode("utf-8", errors="ignore") if proc.stderr else ""
+            except Exception:
+                err = ""
+            raise RuntimeError(f"bridge did not become ready on port {port}. stderr={err[-400:]}")
 
         cases = []
 
