@@ -19,7 +19,7 @@ Branch: `feature/signal-e2ee-phase2`
 6. Header-based skipped cache usable (`headerId+counter`) — IN PROGRESS (~85%)
 7. Persistence/recovery after restart — IN PROGRESS (~55%)
 8. Strict checks/fallback policy — DONE (100%)
-9. Final tests/validation — IN PROGRESS (~94%)
+9. Final tests/validation — IN PROGRESS (~95%)
 
 ## Pending tasks (next exact order)
 1) Finish inbound decrypt path to prioritize and advance `recvChainSeed` state per message.
@@ -61,6 +61,7 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder re-run (09:37 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
 - reminder re-run (09:52 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
 - reminder re-run (10:02 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
+- reminder re-run (10:12 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
