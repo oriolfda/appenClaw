@@ -1,6 +1,6 @@
 # E2EE Resume TODO (safe stop point)
 
-Last updated: 2026-03-20 05:53 UTC
+Last updated: 2026-03-20 06:33 UTC
 Branch: `feature/signal-e2ee-phase2`
 
 ## Safe-stop status
@@ -40,6 +40,7 @@ Branch: `feature/signal-e2ee-phase2`
 - headerId-isolated skipped validation check (`A1,A3,B2,A2`) => `T,T,F,T` (both bridges, no cross-header acceptance)
 - repeatable smoke script `scripts/e2ee_headerid_smoke.py` sequence `A1,A3,B2,A2,A2(replay)` => `T,T,F,T,F` (both bridges)
 - repeatable seed-persistence smoke script `scripts/e2ee_seed_progress_smoke.py` => `ok=true`, out counters `1,2`, recv/send chain counters `2,2` (both bridges)
+- re-run smoke at 06:33 UTC: `e2ee_headerid_smoke.py` => `T,T,F,T,F`; `e2ee_seed_progress_smoke.py` => `ok=true` (both bridges)
 - Android build check: `openclaw-app ./gradlew :app:assembleDebug` => BUILD SUCCESSFUL; `aigor-app ./gradlew :app:assembleRelease` => BUILD SUCCESSFUL
 
 ## Resume checklist
