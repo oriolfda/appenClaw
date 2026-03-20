@@ -99,5 +99,5 @@
     <string name="html_open_expanded">↗ Obre ampliat</string>
     <string name="transcribing_audio">Transcrivint àudio...</string>
     <string name="transcription_ready">Transcripció preparada</string>
-    <string name="transcribe_only_prompt">Transcriu només aquest àudio i prou.</string>
+    <string name="transcribe_only_prompt">Transcriu aquest àudio de forma literal i completa. No el resumeixis, no el retallis i no afegeixis comentaris. Retorna només la transcripció íntegra.</string>
 </resources>

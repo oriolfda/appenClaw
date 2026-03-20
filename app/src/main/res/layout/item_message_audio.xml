@@ -71,7 +71,10 @@
             android:background="#1F2937"
             android:padding="8dp"
             android:textColor="#E5E7EB"
+            android:textIsSelectable="true"
             android:textSize="13sp"
+            android:ellipsize="none"
+            android:maxLines="200"
             android:visibility="gone" />
 
     </LinearLayout>
