@@ -1,6 +1,6 @@
 # E2EE Resume TODO (safe stop point)
 
-Last updated: 2026-03-20 08:18 UTC
+Last updated: 2026-03-20 08:24 UTC
 Branch: `feature/signal-e2ee-phase2`
 
 ## Safe-stop status
@@ -52,6 +52,7 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder re-run (08:02 UTC): `openclaw e2ee_headerid_smoke.py` => `T,T,F,T,F`; `openclaw e2ee_seed_progress_smoke.py openclaw_chat_bridge.py OPENCLAW_APP` => `{"ok": true, "outCounters": [1, 2], "recvChainCounter": 2, "sendChainCounter": 2}`; `aigor e2ee_headerid_smoke.py` => `T,T,F,T,F`; `aigor e2ee_seed_progress_smoke.py aigor_chat_bridge.py AIGOR_APP` => same `ok`.
 - reminder resume (08:07 UTC): controlled re-seed on peer DH ratchet change (`recvChainSeed=""`, `recv.chainCounter=0` when `ratchetPub` rotates) + smoke re-run OK on both bridges (`header` => `T,T,F,T,F`, `seed` => `ok=true`).
 - reminder re-run (08:17 UTC): `openclaw e2ee_headerid_smoke.py` => `T,T,F,T,F`; `openclaw e2ee_seed_progress_smoke.py openclaw_chat_bridge.py OPENCLAW_APP` => `{"ok": true, "outCounters": [1, 2], "recvChainCounter": 2, "sendChainCounter": 2}`; `aigor e2ee_headerid_smoke.py` => `T,T,F,T,F`; `aigor e2ee_seed_progress_smoke.py aigor_chat_bridge.py AIGOR_APP` => same `ok`.
+- reminder resume (08:22 UTC): added repeatable strict-mode smoke script `scripts/e2ee_strict_mode_smoke.py` (both repos) and fixed bridge env wiring (`*_BRIDGE_HOST/PORT/TOKEN`); execution exit code `0` in both bridges.
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
