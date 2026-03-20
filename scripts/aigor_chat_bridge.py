@@ -308,6 +308,10 @@ def _ratchet_check_and_advance(session_id: str, inbound_counter: int, header_id:
     skipped_by_header = recv.get("skippedByHeader", {}) if isinstance(recv.get("skippedByHeader"), dict) else {}
     header_skipped = set(int(x) for x in skipped_by_header.get(header_id, []) if isinstance(x, int) or str(x).isdigit())
 
+    # Out-of-order receive path must match previously registered skipped counters.
+    if inbound_counter <= max_in and (inbound_counter not in skipped or inbound_counter not in header_skipped):
+        return False
+
     if inbound_counter > max_in + 1:
         missing = set(range(max_in + 1, inbound_counter))
         skipped.update(missing)
