@@ -1,6 +1,6 @@
 # E2EE Resume TODO (safe stop point)
 
-Last updated: 2026-03-20 08:58 UTC
+Last updated: 2026-03-20 09:09 UTC
 Branch: `feature/signal-e2ee-phase2`
 
 ## Safe-stop status
@@ -55,6 +55,7 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder resume (08:22 UTC): added repeatable strict-mode smoke script `scripts/e2ee_strict_mode_smoke.py` (both repos) and fixed bridge env wiring (`*_BRIDGE_HOST/PORT/TOKEN`); execution exit code `0` in both bridges.
 - reminder re-run (08:37 UTC): `e2ee_strict_mode_smoke.py` PASS on both bridges (`missing_e2ee=400/e2ee_required`, `missing_ciphertext=400/e2ee_ciphertext_required`, `clear_attachment=400/e2ee_attachment_required`).
 - reminder re-run (08:57 UTC): full smoke triad PASS on both bridges — `e2ee_headerid_smoke.py` => `T,T,F,T,F`; `e2ee_seed_progress_smoke.py` => `{"ok": true, "outCounters": [1,2], "recvChainCounter": 2, "sendChainCounter": 2}`; `e2ee_strict_mode_smoke.py` => all 3 strict cases PASS.
+- reminder resume (09:07 UTC): added repeatable encrypted-attachment smoke script `scripts/e2ee_attachment_smoke.py`; run PASS => `{"ok": true, "name": "sample.txt", "mime": "text/plain", "bytes": 49}` (both bridges).
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
