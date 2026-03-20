@@ -19,7 +19,7 @@ Branch: `feature/signal-e2ee-phase2`
 6. Header-based skipped cache usable (`headerId+counter`) — IN PROGRESS (~85%)
 7. Persistence/recovery after restart — IN PROGRESS (~55%)
 8. Strict checks/fallback policy — DONE (100%)
-9. Final tests/validation — IN PROGRESS (~80%)
+9. Final tests/validation — IN PROGRESS (~82%)
 
 ## Pending tasks (next exact order)
 1) Finish inbound decrypt path to prioritize and advance `recvChainSeed` state per message.
@@ -43,6 +43,7 @@ Branch: `feature/signal-e2ee-phase2`
 - re-run smoke at 06:33 UTC: `e2ee_headerid_smoke.py` => `T,T,F,T,F`; `e2ee_seed_progress_smoke.py` => `ok=true` (both bridges)
 - Android build check: `openclaw-app ./gradlew :app:assembleDebug` => BUILD SUCCESSFUL; `aigor-app ./gradlew :app:assembleRelease` => BUILD SUCCESSFUL
 - recv-seed priority mix check (06:44 UTC): persistent `recvChainSeed` mixed before inbound per-message ratchet; smoke re-run OK (`e2ee_headerid_smoke.py` => `T,T,F,T,F`, `e2ee_seed_progress_smoke.py` => `ok=true`)
+- send-seed priority check re-run (06:57 UTC): `e2ee_headerid_smoke.py` => `T,T,F,T,F`; `e2ee_seed_progress_smoke.py` => `{"ok":true,"outCounters":[1,2],"recvChainCounter":2,"sendChainCounter":2}` (both bridges)
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
