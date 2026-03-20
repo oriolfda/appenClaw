@@ -1,6 +1,6 @@
 # E2EE Resume TODO (safe stop point)
 
-Last updated: 2026-03-20 07:57 UTC
+Last updated: 2026-03-20 08:03 UTC
 Branch: `feature/signal-e2ee-phase2`
 
 ## Safe-stop status
@@ -49,6 +49,7 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder re-run (07:32 UTC): `openclaw` seed/header smoke => `ok=true` + `T,T,F,T,F`; `aigor` seed/header smoke => `ok=true` + `T,T,F,T,F`; Android build re-check => openclaw Debug OK, aigor Release OK
 - root-seed lifecycle step (07:44 UTC): `_ratchet_mix_chain_key` now mixes previous `rootKeySeed` into per-message derivation and advances `rootKeySeed` every chain step; seed smoke re-run OK (`ok=true`, counters unchanged) on both bridges.
 - reminder re-run (07:57 UTC): `openclaw e2ee_headerid_smoke.py` => `T,T,F,T,F`; `openclaw e2ee_seed_progress_smoke.py openclaw_chat_bridge.py OPENCLAW_APP` => `{"ok": true, "outCounters": [1, 2], "recvChainCounter": 2, "sendChainCounter": 2}`; `aigor e2ee_headerid_smoke.py` => `T,T,F,T,F`; `aigor e2ee_seed_progress_smoke.py aigor_chat_bridge.py AIGOR_APP` => same `ok`.
+- reminder re-run (08:02 UTC): `openclaw e2ee_headerid_smoke.py` => `T,T,F,T,F`; `openclaw e2ee_seed_progress_smoke.py openclaw_chat_bridge.py OPENCLAW_APP` => `{"ok": true, "outCounters": [1, 2], "recvChainCounter": 2, "sendChainCounter": 2}`; `aigor e2ee_headerid_smoke.py` => `T,T,F,T,F`; `aigor e2ee_seed_progress_smoke.py aigor_chat_bridge.py AIGOR_APP` => same `ok`.
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
