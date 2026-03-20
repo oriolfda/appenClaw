@@ -287,7 +287,7 @@ def _ratchet_compact_recv_state(recv: dict, floor: int):
     recv["skippedIn"] = sorted(c for c in skipped if c >= floor and c not in seen)
 
 
-def _ratchet_check_and_advance(session_id: str, inbound_counter: int, window: int = 64) -> bool:
+def _ratchet_check_and_advance(session_id: str, inbound_counter: int, header_id: str = "default", window: int = 64) -> bool:
     store = _load_ratchet_store()
     sessions = store.setdefault("sessions", {})
     st = _ensure_session_chains(sessions.setdefault(session_id, {}))
@@ -304,7 +304,7 @@ def _ratchet_check_and_advance(session_id: str, inbound_counter: int, window: in
     if inbound_counter < max_in - window:
         return False
 
-    header_id = str(recv.get("currentHeaderId", "default"))
+    header_id = str(header_id or recv.get("currentHeaderId", "default"))
     skipped_by_header = recv.get("skippedByHeader", {}) if isinstance(recv.get("skippedByHeader"), dict) else {}
     header_skipped = set(int(x) for x in skipped_by_header.get(header_id, []) if isinstance(x, int) or str(x).isdigit())
 
@@ -804,7 +804,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 inbound_counter = 0
 
-            if not _ratchet_check_and_advance(session_id, inbound_counter):
+            inbound_header_id = str(e2ee_req.get("headerId", "default"))
+            if not _ratchet_check_and_advance(session_id, inbound_counter, inbound_header_id):
                 self._send(409, {"ok": False, "error": "e2ee_replay_or_reorder", "details": "Inbound counter not monotonic"})
                 return
 
