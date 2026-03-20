@@ -779,6 +779,15 @@ class Handler(BaseHTTPRequestHandler):
         message = (data.get("message") or "").strip()
         if e2ee_req and (not message) and e2ee_req.get("ciphertext"):
             try:
+                inbound_counter = int(e2ee_req.get("counter", 0))
+            except Exception:
+                inbound_counter = 0
+
+            if not _ratchet_check_and_advance(session_id, inbound_counter):
+                self._send(409, {"ok": False, "error": "e2ee_replay_or_reorder", "details": "Inbound counter not monotonic"})
+                return
+
+            try:
                 message, reply_key, reply_ad, inbound_counter = decrypt_real_envelope(e2ee_req, session_id)
                 message = message.strip()
                 otk_id = str(e2ee_req.get("otkId", "")).strip()
@@ -786,11 +795,6 @@ class Handler(BaseHTTPRequestHandler):
                     _consume_otk(otk_id)
             except Exception as e:
                 self._send(400, {"ok": False, "error": "e2ee_decrypt_failed", "details": str(e)})
-                return
-
-        if e2ee_req and e2ee_req.get("ciphertext"):
-            if not _ratchet_check_and_advance(session_id, inbound_counter):
-                self._send(409, {"ok": False, "error": "e2ee_replay_or_reorder", "details": "Inbound counter not monotonic"})
                 return
 
         attachment = data.get("attachment") if isinstance(data.get("attachment"), dict) else None
