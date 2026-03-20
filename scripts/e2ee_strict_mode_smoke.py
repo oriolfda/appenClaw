@@ -119,3 +119,7 @@ def main():
             proc.wait(timeout=3)
         except Exception:
             proc.kill()
+
+
+if __name__ == "__main__":
+    main()
