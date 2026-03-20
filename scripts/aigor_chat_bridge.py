@@ -322,7 +322,11 @@ def _ratchet_check_and_advance(session_id: str, inbound_counter: int, window: in
     recv["maxIn"] = max_in
     recv["seenIn"] = sorted(seen)
     recv["skippedIn"] = sorted(skipped)
-    skipped_by_header[header_id] = sorted(c for c in header_skipped if c >= floor)
+    compact_header_skipped = sorted(c for c in header_skipped if c >= floor)
+    if compact_header_skipped:
+        skipped_by_header[header_id] = compact_header_skipped
+    elif header_id in skipped_by_header:
+        skipped_by_header.pop(header_id, None)
     recv["skippedByHeader"] = skipped_by_header
     _ratchet_compact_recv_state(recv, floor)
     _save_ratchet_store(store)
@@ -932,6 +936,11 @@ def main():
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"AIGOR bridge listening on http://{HOST}:{PORT} (/chat, /status)")
     srv.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
+)
 
 
 if __name__ == "__main__":
