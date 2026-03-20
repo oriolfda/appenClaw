@@ -1,6 +1,6 @@
 # E2EE Resume TODO (safe stop point)
 
-Last updated: 2026-03-20 09:37 UTC
+Last updated: 2026-03-20 10:02 UTC
 Branch: `feature/signal-e2ee-phase2`
 
 ## Safe-stop status
@@ -60,6 +60,7 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder resume (09:24 UTC): added repeatable wrapper `scripts/e2ee_full_matrix_smoke.py` to execute full quad in one shot; run PASS on both bridges (`ok=true` + all 4 subtests PASS).
 - reminder re-run (09:37 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
 - reminder re-run (09:52 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
+- reminder re-run (10:02 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 3/3 PASS`, `attachment PASS`).
 
 ## Resume checklist
 - Confirm branch: `feature/signal-e2ee-phase2`
