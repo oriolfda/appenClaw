@@ -78,3 +78,5 @@ Branch: `feature/signal-e2ee-phase2`
 - reminder resume (10:27 UTC): strict-mode hardening adds required `headerId` for encrypted envelopes (`e2ee_header_required`); updated `e2ee_strict_mode_smoke.py` now checks 4/4 strict cases (`missing_e2ee`, `missing_ciphertext`, `missing_header`, `clear_attachment`) and full matrix re-run PASS on both bridges.
 
 - reminder re-run (10:32 UTC): `e2ee_full_matrix_smoke.py` PASS on both bridges; all 4 subtests PASS (`header=T,T,F,T,F`, `seed ok=true`, `strict-mode 4/4 PASS`, `attachment PASS`).
+
+- reminder re-run (19:06 UTC): e2ee_full_matrix_smoke.py PASS on both bridges; all 4 subtests PASS (header=T,T,F,T,F; seed ok=true; strict-mode 4/4 PASS; attachment PASS).
