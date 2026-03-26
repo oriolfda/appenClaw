@@ -1,0 +1,52 @@
+{
+  "timestampUtc": "2026-03-26T17:17:00Z",
+  "mode": "AIGOR-ONLY WATCHDOG RESET",
+  "repo": {
+    "name": "aigor-app",
+    "path": "~/.openclaw/workspace/aigor-app",
+    "branch": "feature/signal-e2ee-phase2"
+  },
+  "scope": {
+    "openclawApp": "DEFERRED",
+    "crossRepoSync": "DEFERRED",
+    "blocking": false
+  },
+  "status": {
+    "inProgress": true,
+    "realProgress": true,
+    "stalled": false
+  },
+  "checks": {
+    "releaseGate": {
+      "ok": true,
+      "fullMatrixScripts": 19,
+      "strictCases": 100,
+      "assembleRelease": true
+    }
+  },
+  "matrix": {
+    "requiredPass": 13,
+    "requiredFail": 0,
+    "regressionPass": 3,
+    "regressionFail": 0,
+    "failingRequired": [],
+    "failingRegression": [],
+    "coverageGaps": [
+      "Formalitzar gate de tancament de fase al pipeline",
+      "Unificar evidència watchdog en sortida canònica",
+      "Completar checklist final de fase"
+    ]
+  },
+  "actionExecuted": "WATCHDOG RESET aplicat: tracking reorientat exclusivament a aigor-app i fitxers de governança regenerats.",
+  "evidence": {
+    "releaseGateBaseline": "fullMatrix=19/19, strictCases=100, assembleRelease PASS",
+    "branch": "feature/signal-e2ee-phase2",
+    "docsUpdated": [
+      "docs/SIGNAL_E2EE_PHASE2.md",
+      "docs/e2ee_strict_coverage_matrix.md",
+      "docs/watchdog_state.json",
+      "docs/watchdog_report_latest.txt"
+    ]
+  },
+  "nextStepImmediate": "Executar validació final i marcar SIGNAL_E2EE_PHASE2 com DONE si es mantenen requiredFail=0, regressionFail=0 i releaseGate PASS."
+}

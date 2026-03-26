@@ -1,0 +1,29 @@
+[WATCHDOG REPORT] aigor-app SIGNAL_E2EE_PHASE2
+Timestamp UTC: 2026-03-26 17:17
+Mode: AIGOR-ONLY WATCHDOG RESET
+
+estat de aigor-app
+- IN_PROGRESS orientat a tancament de fase.
+- Baseline actual: release gate PASS (fullMatrix=19/19, strictCases=100, assembleRelease PASS).
+
+required failing aigor-app
+- cap
+
+regression failing aigor-app
+- cap
+
+coverage gaps aigor-app
+1) Formalitzar gate de tancament de fase al pipeline.
+2) Unificar evidència watchdog en una sortida canònica.
+3) Completar checklist final de fase.
+
+acció executada
+- Aplicat WATCHDOG RESET i reescriptura de governança/docs perquè el seguiment sigui exclusiu d’aigor-app.
+
+evidència
+- Branca activa: feature/signal-e2ee-phase2
+- Baseline tècnic vigent: fullMatrix=19/19, strictCases=100, assembleRelease PASS
+- Fitxers actualitzats: docs/SIGNAL_E2EE_PHASE2.md, docs/e2ee_strict_coverage_matrix.md, docs/watchdog_state.json, docs/watchdog_report_latest.txt
+
+proper pas immediat aigor-app
+- Executar validació final i tancar SIGNAL_E2EE_PHASE2 com DONE si es manté requiredFail=0, regressionFail=0 i release gate PASS.
