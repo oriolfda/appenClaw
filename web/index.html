@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ca">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AIGOR Web Chat</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <h1>AIGOR</h1>
+        <p id="statusLine">No connectat</p>
+      </div>
+      <button id="toggleSettings" class="ghost">⚙️</button>
+    </header>
+
+    <section id="settingsPanel" class="panel hidden">
+      <label>Bridge endpoint
+        <input id="endpoint" placeholder="http://192.168.0.210:8091" />
+      </label>
+      <label>Token
+        <input id="token" type="password" placeholder="Bearer token" />
+      </label>
+      <label>Session ID
+        <input id="sessionId" placeholder="aigor-app-chat" />
+      </label>
+      <label>Idioma
+        <select id="language">
+          <option value="auto">Auto</option>
+          <option value="ca">Català</option>
+          <option value="es">Español</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+      <label class="check"><input id="showTranscription" type="checkbox" checked /> Mostrar transcripció d'àudio</label>
+      <div class="settings-actions">
+        <button id="saveSettings">Desa</button>
+        <button id="checkStatus" class="ghost">Comprova estat</button>
+      </div>
+    </section>
+
+    <section id="messages" class="messages" aria-live="polite"></section>
+
+    <section id="composer" class="composer">
+      <textarea id="messageInput" rows="2" placeholder="Escriu un missatge..."></textarea>
+      <div class="composer-row">
+        <label class="file-btn">📎 <input id="fileInput" type="file" /></label>
+        <button id="sendBtn">Envia</button>
+      </div>
+      <p id="attachmentHint" class="hint"></p>
+      <audio id="player" controls class="hidden"></audio>
+    </section>
+  </main>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
