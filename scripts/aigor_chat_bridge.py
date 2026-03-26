@@ -325,9 +325,13 @@ def _ratchet_check_and_advance(session_id: str, inbound_counter: int, header_id:
         return False
 
     if inbound_counter > max_in + 1:
-        missing = set(range(max_in + 1, inbound_counter))
-        skipped.update(missing)
-        header_skipped.update(missing)
+        # Bound skipped-gap materialization to replay window to avoid huge allocations
+        # on attacker-controlled large counter jumps.
+        gap_start = max(max_in + 1, inbound_counter - window)
+        if gap_start < inbound_counter:
+            missing = set(range(gap_start, inbound_counter))
+            skipped.update(missing)
+            header_skipped.update(missing)
 
     seen.add(inbound_counter)
     skipped.discard(inbound_counter)
@@ -360,14 +364,53 @@ def _ratchet_next_out_counter(session_id: str) -> int:
     return nxt
 
 
-def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, counter: int) -> bytes:
-    import hashlib
+def _ratchet_snapshot_recv(session_id: str) -> dict:
     store = _load_ratchet_store()
     sessions = store.setdefault("sessions", {})
     st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+    send = st["send"]
+    return {
+        "maxIn": int(recv.get("maxIn", 0)),
+        "seenIn": list(recv.get("seenIn", []) or []),
+        "skippedIn": list(recv.get("skippedIn", []) or []),
+        "skippedByHeader": json.loads(json.dumps(recv.get("skippedByHeader", {}) or {})),
+        "recvChainCounter": int(recv.get("chainCounter", 0)),
+        "recvRatchetStep": int(recv.get("ratchetStep", 0)),
+        "recvLastPeerRatchetPub": str(recv.get("lastPeerRatchetPub", "") or ""),
+        "recvChainSeed": str(st.get("recvChainSeed", "") or ""),
+        "sendChainSeed": str(st.get("sendChainSeed", "") or ""),
+        "rootKeySeed": str(st.get("rootKeySeed", "") or ""),
+        "sendChainCounter": int(send.get("chainCounter", 0)),
+    }
 
+
+def _ratchet_restore_recv(session_id: str, snapshot: dict):
+    if not isinstance(snapshot, dict):
+        return
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+    send = st["send"]
+    recv["maxIn"] = int(snapshot.get("maxIn", 0))
+    recv["seenIn"] = list(snapshot.get("seenIn", []) or [])
+    recv["skippedIn"] = list(snapshot.get("skippedIn", []) or [])
+    raw = snapshot.get("skippedByHeader", {})
+    recv["skippedByHeader"] = raw if isinstance(raw, dict) else {}
+    recv["chainCounter"] = int(snapshot.get("recvChainCounter", recv.get("chainCounter", 0)))
+    recv["ratchetStep"] = int(snapshot.get("recvRatchetStep", recv.get("ratchetStep", 0)))
+    recv["lastPeerRatchetPub"] = str(snapshot.get("recvLastPeerRatchetPub", recv.get("lastPeerRatchetPub", "")) or "")
+    st["recvChainSeed"] = str(snapshot.get("recvChainSeed", st.get("recvChainSeed", "")) or "")
+    st["sendChainSeed"] = str(snapshot.get("sendChainSeed", st.get("sendChainSeed", "")) or "")
+    st["rootKeySeed"] = str(snapshot.get("rootKeySeed", st.get("rootKeySeed", "")) or "")
+    send["chainCounter"] = int(snapshot.get("sendChainCounter", send.get("chainCounter", 0)))
+    _save_ratchet_store(store)
+
+
+def _ratchet_preview_chain_key(st: dict, base_key: bytes, direction: str, counter: int) -> tuple[bytes, bytes]:
+    import hashlib
     is_recv = direction == "c2s"
-    chain_box = st["recv"] if is_recv else st["send"]
     seed_name = "recvChainSeed" if is_recv else "sendChainSeed"
 
     prev_b64 = st.get(seed_name, "")
@@ -383,6 +426,19 @@ def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, cou
     root_next = hashlib.sha256(
         root_prev + mixed + direction.encode("utf-8") + str(counter).encode("utf-8") + b"root-step"
     ).digest()
+    return mixed, root_next
+
+
+def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, counter: int) -> bytes:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+
+    mixed, root_next = _ratchet_preview_chain_key(st, base_key, direction, counter)
+
+    is_recv = direction == "c2s"
+    chain_box = st["recv"] if is_recv else st["send"]
+    seed_name = "recvChainSeed" if is_recv else "sendChainSeed"
 
     st[seed_name] = base64.b64encode(mixed).decode("ascii")
     st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
@@ -534,22 +590,25 @@ def decrypt_real_envelope(env: dict, session_id: str):
     store = _load_ratchet_store()
     sessions = store.setdefault("sessions", {})
     st = _ensure_session_chains(sessions.setdefault(session_id, {}))
-    st["recv"]["currentHeaderId"] = header_id
     recv_seed_b64 = st.get("recvChainSeed", "")
     if recv_seed_b64:
         import hashlib
         recv_seed = base64.b64decode(recv_seed_b64)
         base_key = hashlib.sha256(recv_seed + base_key + b"recv-priority").digest()
-    else:
-        st["recvChainSeed"] = base64.b64encode(base_key).decode("ascii")
-    _save_ratchet_store(store)
 
-    base_key = _ratchet_mix_chain_key(session_id, base_key, "c2s", counter)
-    recv_chain_key = _derive_chain_key(base_key, "recv")
+    mixed_key, root_next = _ratchet_preview_chain_key(st, base_key, "c2s", counter)
+
+    recv_chain_key = _derive_chain_key(mixed_key, "recv")
     key = _derive_message_key(recv_chain_key, counter, "c2s")
     aes = AESGCM(key)
     pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
-    return pt, base_key, ad, counter
+
+    st["recvChainSeed"] = base64.b64encode(mixed_key).decode("ascii")
+    st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
+    st["recv"]["chainCounter"] = int(st["recv"].get("chainCounter", 0)) + 1
+    _save_ratchet_store(store)
+
+    return pt, mixed_key, ad, counter
 
 
 def e2ee_bundle_payload() -> dict:
@@ -660,10 +719,18 @@ def process_attachment(att: dict):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _send_cors(self):
+        origin = self.headers.get("Origin") or "*"
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
     def _send(self, code: int, payload: dict):
         body = json.dumps(payload).encode("utf-8")
         try:
             self.send_response(code)
+            self._send_cors()
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -671,6 +738,12 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             # Client disconnected before response was written.
             return
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _auth_ok(self):
         if not TOKEN:
@@ -711,6 +784,7 @@ class Handler(BaseHTTPRequestHandler):
                 with open(path, "rb") as f:
                     body = f.read()
                 self.send_response(200)
+                self._send_cors()
                 self.send_header("Content-Type", "audio/mpeg")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
@@ -846,16 +920,173 @@ class Handler(BaseHTTPRequestHandler):
                     "message": "Encrypted envelope requires non-empty string headerId."
                 })
                 return
+            if len(raw_header_id.strip()) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_header_too_long",
+                    "message": "Encrypted envelope headerId exceeds 128-char limit."
+                })
+                return
 
 
         if e2ee_req and e2ee_req.get("ciphertext"):
             raw_counter = e2ee_req.get("counter", 0)
-            # Strict hardening: require JSON integer type (no strings/floats/bools) and >0.
+            # Strict hardening: require JSON integer type (no strings/floats/bools)
+            # and a bounded positive range to avoid abuse/overflow edge cases.
             if isinstance(raw_counter, bool) or not isinstance(raw_counter, int) or raw_counter <= 0:
                 self._send(400, {
                     "ok": False,
                     "error": "e2ee_counter_required",
                     "message": "Encrypted envelope requires a positive integer counter."
+                })
+                return
+            if raw_counter > 2_147_483_647:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_counter_out_of_range",
+                    "message": "Encrypted envelope counter exceeds max allowed value (2^31-1)."
+                })
+                return
+
+            raw_iv = e2ee_req.get("iv")
+            if not isinstance(raw_iv, str) or not raw_iv.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_required",
+                    "message": "Encrypted envelope requires non-empty string iv."
+                })
+                return
+
+            raw_salt = e2ee_req.get("salt")
+            if not isinstance(raw_salt, str) or not raw_salt.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_required",
+                    "message": "Encrypted envelope requires non-empty string salt."
+                })
+                return
+
+            raw_ephemeral_pub = e2ee_req.get("ephemeralPub")
+            if not isinstance(raw_ephemeral_pub, str) or not raw_ephemeral_pub.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_required",
+                    "message": "Encrypted envelope requires non-empty string ephemeralPub."
+                })
+                return
+
+            # Pre-decode size guard to avoid decoding very large attacker-controlled base64 strings.
+            if len(str(raw_ciphertext)) > 1_500_000:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_too_large",
+                    "message": "Encrypted envelope ciphertext exceeds 1 MiB limit."
+                })
+                return
+
+            try:
+                decoded_ciphertext = base64.b64decode(str(raw_ciphertext), validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_invalid",
+                    "message": "Encrypted envelope requires valid base64 ciphertext."
+                })
+                return
+
+            # AES-GCM ciphertext must at least include 16-byte auth tag.
+            if len(decoded_ciphertext) < 16:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_invalid",
+                    "message": "Encrypted envelope requires ciphertext with at least 16 bytes (GCM tag)."
+                })
+                return
+
+            # Basic abuse guard: reject oversized envelopes before expensive crypto.
+            if len(decoded_ciphertext) > 1024 * 1024:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_too_large",
+                    "message": "Encrypted envelope ciphertext exceeds 1 MiB limit."
+                })
+                return
+
+            if len(raw_iv) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope iv is too large."
+                })
+                return
+
+            try:
+                decoded_iv = base64.b64decode(raw_iv, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope requires valid base64 iv."
+                })
+                return
+
+            if len(decoded_iv) != 12:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope requires 12-byte iv."
+                })
+                return
+
+            if len(raw_salt) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope salt is too large."
+                })
+                return
+
+            try:
+                decoded_salt = base64.b64decode(raw_salt, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope requires valid base64 salt."
+                })
+                return
+
+            if len(decoded_salt) != 16:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope requires 16-byte salt."
+                })
+                return
+
+            if len(raw_ephemeral_pub) > 256:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope ephemeralPub is too large."
+                })
+                return
+
+            try:
+                decoded_ephemeral_pub = base64.b64decode(raw_ephemeral_pub, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope requires valid base64 ephemeralPub."
+                })
+                return
+
+            if len(decoded_ephemeral_pub) != 32:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope requires 32-byte ephemeralPub key material."
                 })
                 return
 
@@ -865,7 +1096,8 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 inbound_counter = 0
 
-            inbound_header_id = str(e2ee_req.get("headerId", "default"))
+            inbound_header_id = str(e2ee_req.get("headerId", "default")).strip() or "default"
+            recv_snapshot = _ratchet_snapshot_recv(session_id)
             if not _ratchet_check_and_advance(session_id, inbound_counter, inbound_header_id):
                 self._send(409, {"ok": False, "error": "e2ee_replay_or_reorder", "details": "Inbound counter not monotonic"})
                 return
@@ -877,6 +1109,8 @@ class Handler(BaseHTTPRequestHandler):
                 if otk_id:
                     _consume_otk(otk_id)
             except Exception as e:
+                # Failed decrypt must not consume replay window slots/counters.
+                _ratchet_restore_recv(session_id, recv_snapshot)
                 self._send(400, {"ok": False, "error": "e2ee_decrypt_failed", "details": str(e)})
                 return
 
