@@ -572,8 +572,8 @@ def _decode_pubkey_spki(b64: str):
     return pub
 
 
-def _hkdf_key(shared: bytes, salt: bytes) -> bytes:
-    hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=b"aigor-e2ee-v1")
+def _hkdf_key(shared: bytes, salt: bytes, info: bytes = b"aigor-e2ee-v1") -> bytes:
+    hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=info)
     return hkdf.derive(shared)
 
 
