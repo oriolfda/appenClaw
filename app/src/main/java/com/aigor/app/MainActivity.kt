@@ -22,6 +22,7 @@ import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.MediaController
+import androidx.drawerlayout.widget.DrawerLayout
 import android.widget.VideoView
 import android.widget.Button
 import android.widget.EditText
@@ -34,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.core.view.GravityCompat
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -61,9 +63,8 @@ class MainActivity : AppCompatActivity() {
         val base64: String,
     )
 
-    private lateinit var rootLayout: View
+    private lateinit var rootLayout: DrawerLayout
     private lateinit var topToolbar: MaterialToolbar
-    private lateinit var newChatQuickButton: ImageButton
     private lateinit var composerRow: LinearLayout
     private lateinit var clipButton: ImageButton
     private lateinit var cameraButton: ImageButton
@@ -71,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
     private lateinit var chatRecycler: RecyclerView
+    private lateinit var conversationsRecycler: RecyclerView
     private lateinit var sendButton: ImageButton
     private lateinit var pendingAttachmentRow: LinearLayout
     private lateinit var pendingAttachmentPreview: ImageView
@@ -85,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var recordDotsText: TextView
 
     private lateinit var adapter: ChatAdapter
+    private lateinit var conversationsAdapter: ConversationListAdapter
     private val messages = mutableListOf<ChatMessage>()
     private var pendingAttachment: AttachmentData? = null
     private var mediaPlayer: MediaPlayer? = null
@@ -153,7 +156,6 @@ class MainActivity : AppCompatActivity() {
 
         rootLayout = findViewById(R.id.rootLayout)
         topToolbar = findViewById(R.id.topToolbar)
-        newChatQuickButton = findViewById(R.id.newChatQuickButton)
         composerRow = findViewById(R.id.composerRow)
         clipButton = findViewById(R.id.clipButton)
         cameraButton = findViewById(R.id.cameraButton)
@@ -161,6 +163,7 @@ class MainActivity : AppCompatActivity() {
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
         chatRecycler = findViewById(R.id.chatRecycler)
+        conversationsRecycler = findViewById(R.id.conversationsRecycler)
         sendButton = findViewById(R.id.sendButton)
         pendingAttachmentRow = findViewById(R.id.pendingAttachmentRow)
         pendingAttachmentPreview = findViewById(R.id.pendingAttachmentPreview)
@@ -206,10 +209,17 @@ class MainActivity : AppCompatActivity() {
         )
         chatRecycler.layoutManager = LinearLayoutManager(this)
         chatRecycler.adapter = adapter
+        conversationsAdapter = ConversationListAdapter(emptyList(), activeConversation.threadId, { thread -> conversationTitle(thread) }) { thread ->
+            switchToConversation(thread.threadId)
+            rootLayout.closeDrawer(GravityCompat.END)
+        }
+        conversationsRecycler.layoutManager = LinearLayoutManager(this)
+        conversationsRecycler.adapter = conversationsAdapter
         applyTheme(theme)
         val showTranscriptions = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getBoolean("show_transcriptions", true)
         adapter.setShowTranscriptionOption(!showTranscriptions)
 
+        refreshConversationsDrawer()
         loadHistory()
         consumeSharedText(intent)
         updatePendingAttachmentUi()
@@ -225,10 +235,6 @@ class MainActivity : AppCompatActivity() {
 
         messageEdit.setOnFocusChangeListener { _, hasFocus ->
             messageInputContainer.isSelected = hasFocus
-        }
-
-        newChatQuickButton.setOnClickListener {
-            startNewChat()
         }
 
         topToolbar.setOnMenuItemClickListener { item ->
@@ -250,7 +256,7 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.menu_conversations -> {
-                    showConversationsSelector()
+                    toggleConversationsDrawer()
                     true
                 }
                 R.id.menu_clear_chat -> {
@@ -1380,31 +1386,28 @@ class MainActivity : AppCompatActivity() {
         updatePendingAttachmentUi()
         messageEdit.setText("")
         statusText.text = getString(R.string.status_new_chat_started)
+        refreshConversationsDrawer()
     }
 
-    private fun showConversationsSelector() {
+    private fun toggleConversationsDrawer() {
+        if (rootLayout.isDrawerOpen(GravityCompat.END)) {
+            rootLayout.closeDrawer(GravityCompat.END)
+        } else {
+            refreshConversationsDrawer()
+            rootLayout.openDrawer(GravityCompat.END)
+        }
+    }
+
+    private fun refreshConversationsDrawer() {
         val state = ConversationStore.ensureState(this)
         val threads = state.threads.sortedByDescending { it.updatedAt }
-        if (threads.isEmpty()) {
-            statusText.text = getString(R.string.status_no_conversations)
-            return
-        }
+        conversationsAdapter.update(threads, activeConversation.threadId)
+    }
 
-        val dateFmt = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-        val items = threads.mapIndexed { index, thread ->
-            val activeMark = if (thread.threadId == activeConversation.threadId) "• " else ""
-            val updated = dateFmt.format(Date(thread.updatedAt))
-            "$activeMark${getString(R.string.conversation_label, index + 1, updated)}"
-        }.toTypedArray()
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.menu_conversations))
-            .setItems(items) { _, which ->
-                val selected = threads[which]
-                switchToConversation(selected.threadId)
-            }
-            .setNegativeButton(getString(R.string.close), null)
-            .show()
+    private fun conversationTitle(thread: ConversationThread): String {
+        return thread.title
+            ?: ConversationStore.suggestTitleFromHistoryJson(ConversationStore.loadHistoryJson(this, thread.threadId))
+            ?: getString(R.string.menu_new_chat)
     }
 
     private fun switchToConversation(threadId: String) {
@@ -1419,11 +1422,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         activeConversation = selected
+        refreshConversationsDrawer()
         loadHistory()
         pendingAttachment = null
         updatePendingAttachmentUi()
         messageEdit.setText("")
         statusText.text = getString(R.string.status_conversation_switched)
+        refreshConversationsDrawer()
     }
 
     private fun addMessage(msg: ChatMessage) {
@@ -1479,6 +1484,9 @@ class MainActivity : AppCompatActivity() {
                 put("videoPath", it.videoPath ?: "")
             })
         }
-        ConversationStore.saveHistoryJson(this, activeConversation.threadId, arr.toString())
+        val historyJson = arr.toString()
+        ConversationStore.saveHistoryJson(this, activeConversation.threadId, historyJson)
+        ConversationStore.assignTitleIfMissing(this, activeConversation.threadId, messages.firstOrNull { it.role == "user" && it.text.isNotBlank() }?.text ?: "")
+        refreshConversationsDrawer()
     }
 }

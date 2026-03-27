@@ -10,6 +10,7 @@ data class ConversationThread(
     val sessionId: String,
     val createdAt: Long,
     val updatedAt: Long,
+    val title: String? = null,
 )
 
 object ConversationStore {
@@ -85,6 +86,44 @@ object ConversationStore {
         touchThreadUpdatedAt(context, threadId)
     }
 
+
+    fun suggestTitleFromHistoryJson(historyJson: String): String? {
+        return try {
+            val arr = JSONArray(historyJson)
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                val role = o.optString("role", "")
+                val text = o.optString("text", "").trim()
+                if (role == "user" && text.isNotBlank()) {
+                    return summarizeTitle(text)
+                }
+            }
+            null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    fun assignTitleIfMissing(context: Context, threadId: String, candidate: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val current = loadThreads(prefs)
+        val updated = current.map { thread ->
+            if (thread.threadId == threadId && thread.title.isNullOrBlank()) {
+                thread.copy(title = summarizeTitle(candidate), updatedAt = System.currentTimeMillis())
+            } else thread
+        }
+        if (updated != current) saveThreads(prefs, updated)
+    }
+
+    private fun summarizeTitle(text: String): String {
+        val compact = text
+            .replace(Regex("\\s+"), " ")
+            .trim()
+            .trim('"', '\'', '`')
+        if (compact.isBlank()) return "Nou xat"
+        return compact.take(48).trimEnd().let { if (compact.length > 48) "$it…" else it }
+    }
+
     fun touchThreadUpdatedAt(context: Context, threadId: String, now: Long = System.currentTimeMillis()) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val current = loadThreads(prefs)
@@ -105,6 +144,7 @@ object ConversationStore {
             sessionId = "aigor-app-chat-${UUID.randomUUID()}",
             createdAt = now,
             updatedAt = now,
+            title = null,
         )
     }
 
@@ -127,6 +167,7 @@ object ConversationStore {
                             sessionId = sessionId,
                             createdAt = o.optLong("createdAt", 0L).takeIf { it > 0 } ?: System.currentTimeMillis(),
                             updatedAt = o.optLong("updatedAt", 0L).takeIf { it > 0 } ?: System.currentTimeMillis(),
+                            title = o.optString("title", "").ifBlank { null },
                         )
                     )
                 }
@@ -144,6 +185,7 @@ object ConversationStore {
                 put("sessionId", t.sessionId)
                 put("createdAt", t.createdAt)
                 put("updatedAt", t.updatedAt)
+                if (!t.title.isNullOrBlank()) put("title", t.title)
             })
         }
         prefs.edit().putString(KEY_THREADS, arr.toString()).apply()
