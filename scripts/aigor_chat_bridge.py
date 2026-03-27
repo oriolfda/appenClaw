@@ -129,17 +129,18 @@ def parse_tts_from_text(text: str):
     if not text:
         return text, None
     import re
-    m = re.search(r"\[\[tts:(.+?)\]\]", text, flags=re.DOTALL)
-    if m:
-        tts_text = m.group(1).strip()
-        cleaned = text.replace(m.group(0), "").strip()
+
+    # 1) Prioritza el bloc explícit de text TTS
+    m_text = re.search(r"\[\[tts:text\]\](.+?)\[\[/tts:text\]\]", text, flags=re.DOTALL)
+    if m_text:
+        tts_text = m_text.group(1).strip()
+        cleaned = re.sub(r"\[\[tts:[^\]]+\]\]", "", text)
+        cleaned = cleaned.replace(m_text.group(0), "").strip()
         return cleaned, tts_text
-    m2 = re.search(r"\[\[tts:text\]\](.+?)\[\[/tts:text\]\]", text, flags=re.DOTALL)
-    if m2:
-        tts_text = m2.group(1).strip()
-        cleaned = text.replace(m2.group(0), "").strip()
-        return cleaned, tts_text
-    return text, None
+
+    # 2) Si només hi ha [[tts:...]], tracta-ho com a metadada de veu, no com a text a locutar
+    cleaned = re.sub(r"\[\[tts:[^\]]+\]\]", "", text).strip()
+    return cleaned, None
 
 
 def extract_audio_transcript(extra_prompt: str) -> str:
@@ -872,7 +873,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"ok": False, "error": str(e)})
 
     def do_POST(self):
-        if self.path != "/chat":
+        if self.path not in ("/", "/chat"):
             self._send(404, {"ok": False, "error": "Not found"})
             return
 
