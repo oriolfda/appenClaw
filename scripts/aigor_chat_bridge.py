@@ -750,7 +750,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 
+    def _debug(self, message: str, **fields):
+        try:
+            suffix = " ".join(f"{k}={json.dumps(v, ensure_ascii=False)}" for k, v in fields.items())
+            print(f"[bridge-debug] {message}" + (f" {suffix}" if suffix else ""), flush=True)
+        except Exception:
+            return
+
     def _send(self, code: int, payload: dict):
+        if code >= 400:
+            self._debug("http-error", code=code, payload=payload, path=self.path)
         body = json.dumps(payload).encode("utf-8")
         try:
             self.send_response(code)
