@@ -102,4 +102,10 @@
     <string name="transcribing_audio">Transcrivint àudio...</string>
     <string name="transcription_ready">Transcripció preparada</string>
     <string name="transcribe_only_prompt">Transcriu aquest àudio de forma literal i completa. No el resumeixis, no el retallis i no afegeixis comentaris. Retorna només la transcripció íntegra.</string>
+    <string name="menu_conversations">Converses</string>
+    <string name="conversation_label">Conversa %1$d · %2$s</string>
+    <string name="status_no_conversations">Estat: no hi ha converses disponibles</string>
+    <string name="status_conversation_switched">Estat: conversa canviada</string>
+    <string name="status_conversation_not_found">Estat: conversa no trobada</string>
+    <string name="status_conversation_already_active">Estat: aquesta conversa ja està activa</string>
 </resources>

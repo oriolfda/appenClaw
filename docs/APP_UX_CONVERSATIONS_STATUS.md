@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:22 UTC
+Last updated: 2026-03-27 21:35 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:22 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 8
-- Tasques pendents: 2
-- Percentatge completat: 80%
+- Tasques completades: 9
+- Tasques pendents: 1
+- Percentatge completat: 90%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -88,17 +88,29 @@ Last updated: 2026-03-27 21:22 UTC
     - Les converses i els seus missatges locals queden persistits per conversa i sobreviuen a reinicis.
     - Cada conversa conserva el seu historial sense sobreescriure globalment la resta.
 
+- ✅ **3.2 UI per veure converses anteriors i seleccionar-ne una**
+  - Implementació:
+    - Nou item visible `menu_conversations` a `main_overflow_menu.xml` per obrir el selector de converses.
+    - `MainActivity` incorpora `showConversationsSelector()` amb un diàleg (`AlertDialog`) que llista les converses persistides, ordenades per `updatedAt`, i marca la conversa activa.
+    - `MainActivity` incorpora `switchToConversation(threadId)` per activar una conversa existent, carregar el seu historial i refrescar l'estat del composer.
+    - `ConversationStore` incorpora `activateThread(context, threadId)` per canviar la conversa activa de manera persistent.
+  - Cobertura del criteri “done”:
+    - Hi ha un selector visible per veure converses anteriors.
+    - Es pot obrir una conversa existent i carregar-ne l'historial local.
+
 ## Tasques pendents
-- 3.2 UI per veure converses anteriors
 - 3.3 Recuperació de context i continuació sobre `sessionId` correcte
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
   - `app/src/main/java/com/aigor/app/ConversationStore.kt`
-    - Nova persistència d'historial per conversa (`chat_history_thread_<threadId>`).
-    - Migració compatible des de `chat_history` legacy quan falta historial específic de thread.
-    - Actualització de `updatedAt` quan es desa historial d'una conversa.
+    - Nova API `activateThread(context, threadId)` per canviar i persistir la conversa activa.
   - `app/src/main/java/com/aigor/app/MainActivity.kt`
-    - `loadHistory()` i `saveHistory()` ara operen sobre la conversa activa (`activeConversation.threadId`).
+    - Nou flux `showConversationsSelector()` + `switchToConversation(threadId)` per llistar i obrir converses existents.
+    - Integració del nou selector dins del menú overflow.
+  - `app/src/main/res/menu/main_overflow_menu.xml`
+    - Nou item visible `menu_conversations`.
+  - `app/src/main/res/values*/strings.xml`
+    - Noves cadenes UI/estat per al selector i canvi de conversa.
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)

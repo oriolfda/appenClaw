@@ -56,6 +56,14 @@ object ConversationStore {
         return created
     }
 
+    fun activateThread(context: Context, threadId: String): ConversationThread? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val threads = loadThreads(prefs)
+        val target = threads.firstOrNull { it.threadId == threadId } ?: return null
+        prefs.edit().putString(KEY_ACTIVE_THREAD_ID, target.threadId).apply()
+        return target
+    }
+
     fun loadHistoryJson(context: Context, threadId: String): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val key = historyKey(threadId)

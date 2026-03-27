@@ -100,4 +100,10 @@
     <string name="transcribing_audio">Audioa transkribatzen...</string>
     <string name="transcribe_only_prompt">Transkribatu audio hau bakarrik.</string>
     <string name="transcription_ready">Transkripzioa prest</string>
+    <string name="menu_conversations">Elkarrizketak</string>
+    <string name="conversation_label">Elkarrizketa %1$d · %2$s</string>
+    <string name="status_no_conversations">Egoera: ez dago elkarrizketarik erabilgarri</string>
+    <string name="status_conversation_switched">Egoera: elkarrizketa aldatuta</string>
+    <string name="status_conversation_not_found">Egoera: elkarrizketa ez da aurkitu</string>
+    <string name="status_conversation_already_active">Egoera: elkarrizketa hau dagoeneko aktibo dago</string>
 </resources>

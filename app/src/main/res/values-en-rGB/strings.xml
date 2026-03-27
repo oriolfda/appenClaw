@@ -100,4 +100,10 @@
     <string name="transcribing_audio">Transcribing audio...</string>
     <string name="transcribe_only_prompt">Transcribe only this audio.</string>
     <string name="transcription_ready">Transcription ready</string>
+    <string name="menu_conversations">Conversations</string>
+    <string name="conversation_label">Conversation %1$d · %2$s</string>
+    <string name="status_no_conversations">Status: no conversations available</string>
+    <string name="status_conversation_switched">Status: conversation switched</string>
+    <string name="status_conversation_not_found">Status: conversation not found</string>
+    <string name="status_conversation_already_active">Status: this conversation is already active</string>
 </resources>

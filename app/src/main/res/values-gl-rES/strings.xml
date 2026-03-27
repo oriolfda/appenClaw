@@ -96,4 +96,10 @@
     <string name="transcribing_audio">Transcribindo audio...</string>
     <string name="transcribe_only_prompt">Transcribe só este audio.</string>
     <string name="transcription_ready">Transcrición preparada</string>
+    <string name="menu_conversations">Conversas</string>
+    <string name="conversation_label">Conversa %1$d · %2$s</string>
+    <string name="status_no_conversations">Estado: non hai conversas dispoñibles</string>
+    <string name="status_conversation_switched">Estado: conversa cambiada</string>
+    <string name="status_conversation_not_found">Estado: conversa non atopada</string>
+    <string name="status_conversation_already_active">Estado: esta conversa xa está activa</string>
 </resources>

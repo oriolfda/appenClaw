@@ -42,6 +42,8 @@ import java.io.File
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.DateFormat
+import java.util.Date
 import java.util.regex.Pattern
 import kotlin.concurrent.thread
 
@@ -239,6 +241,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.menu_new_chat -> {
                     startNewChat()
+                    true
+                }
+                R.id.menu_conversations -> {
+                    showConversationsSelector()
                     true
                 }
                 R.id.menu_clear_chat -> {
@@ -1312,6 +1318,50 @@ class MainActivity : AppCompatActivity() {
         updatePendingAttachmentUi()
         messageEdit.setText("")
         statusText.text = getString(R.string.status_new_chat_started)
+    }
+
+    private fun showConversationsSelector() {
+        val state = ConversationStore.ensureState(this)
+        val threads = state.threads.sortedByDescending { it.updatedAt }
+        if (threads.isEmpty()) {
+            statusText.text = getString(R.string.status_no_conversations)
+            return
+        }
+
+        val dateFmt = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+        val items = threads.mapIndexed { index, thread ->
+            val activeMark = if (thread.threadId == activeConversation.threadId) "• " else ""
+            val updated = dateFmt.format(Date(thread.updatedAt))
+            "$activeMark${getString(R.string.conversation_label, index + 1, updated)}"
+        }.toTypedArray()
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.menu_conversations))
+            .setItems(items) { _, which ->
+                val selected = threads[which]
+                switchToConversation(selected.threadId)
+            }
+            .setNegativeButton(getString(R.string.close), null)
+            .show()
+    }
+
+    private fun switchToConversation(threadId: String) {
+        if (threadId == activeConversation.threadId) {
+            statusText.text = getString(R.string.status_conversation_already_active)
+            return
+        }
+
+        val selected = ConversationStore.activateThread(this, threadId) ?: run {
+            statusText.text = getString(R.string.status_conversation_not_found)
+            return
+        }
+
+        activeConversation = selected
+        loadHistory()
+        pendingAttachment = null
+        updatePendingAttachmentUi()
+        messageEdit.setText("")
+        statusText.text = getString(R.string.status_conversation_switched)
     }
 
     private fun addMessage(msg: ChatMessage) {
