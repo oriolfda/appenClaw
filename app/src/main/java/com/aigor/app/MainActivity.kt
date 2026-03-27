@@ -170,6 +170,7 @@ class MainActivity : AppCompatActivity() {
         recordDotsText = findViewById(R.id.recordDotsText)
 
         appliedUiLocale = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
+        runCatching { E2eeKeyManager(this).ensureLocalBundle() }
 
         val theme = currentTheme()
         adapter = ChatAdapter(
@@ -499,19 +500,34 @@ class MainActivity : AppCompatActivity() {
                     return@thread
                 }
 
-                val attachment = JSONObject().apply {
-                    put("name", "transcription-audio.m4a")
-                    put("mime", "audio/mp4")
-                    put("dataBase64", Base64.encodeToString(bytes, Base64.NO_WRAP))
-                }
-
+                val e2eeSessionId = "aigor-app-chat"
+                val audioBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                val bridgeTarget = fetchE2eeBridgeTarget(endpoint, token)
+                val bridgePub = bridgeTarget?.first
+                val bridgeOtkPub = bridgeTarget?.second
+                val bridgeOtkId = bridgeTarget?.third
                 val payload = JSONObject().apply {
-                    put("message", getString(R.string.transcribe_only_prompt))
-                    put("sessionId", "aigor-app-chat")
+                    put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
                         put("showTranscription", true)
                     })
-                    put("attachment", attachment)
+
+                    if (!bridgePub.isNullOrBlank()) {
+                        val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
+                        prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
+                        val encResult = DevE2ee.encryptForBridge(getString(R.string.transcribe_only_prompt), bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
+                        prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult.responseKey, Base64.NO_WRAP)).apply()
+                        put("message", "")
+                        put("e2ee", encResult.envelope)
+                        put("e2eeAttachment", DevE2ee.encryptAttachment(audioBase64, encResult.responseKey, "transcription-audio.m4a", "audio/mp4", e2eeSessionId, nextCounter))
+                    } else {
+                        put("message", getString(R.string.transcribe_only_prompt))
+                        put("attachment", JSONObject().apply {
+                            put("name", "transcription-audio.m4a")
+                            put("mime", "audio/mp4")
+                            put("dataBase64", audioBase64)
+                        })
+                    }
                 }
 
                 val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -528,7 +544,19 @@ class MainActivity : AppCompatActivity() {
                 else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
                 conn.disconnect()
 
-                val transcript = parseAssistantText(body, code)
+                val transcript = try {
+                    val obj = JSONObject(body)
+                    if (obj.has("e2eeReply")) {
+                        val env = obj.getJSONObject("e2eeReply")
+                        val baseKey = prefs.getString("e2ee_base_${e2eeSessionId}", null)
+                            ?.let { Base64.decode(it, Base64.DEFAULT) }
+                        if (baseKey != null) DevE2ee.decryptWithKey(baseKey, env) else parseAssistantText(body, code)
+                    } else {
+                        parseAssistantText(body, code)
+                    }
+                } catch (_: Exception) {
+                    parseAssistantText(body, code)
+                }
                 runOnUiThread {
                     adapter.setTranscript(msg.ts, transcript, true)
                     statusText.text = getString(R.string.transcription_ready)
@@ -826,7 +854,7 @@ class MainActivity : AppCompatActivity() {
         sendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         sendButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
-        recordPauseButton.setColorFilter(0xFFFF4D67.toInt())
+        recordPauseButton.setColorFilter(theme.statusColor)
         recordSendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
@@ -851,18 +879,42 @@ class MainActivity : AppCompatActivity() {
 
                 val urls = extractUrls(message)
                 val payloadText = if (urls.isEmpty()) message else "$message\n\nURLs detectades: ${urls.joinToString(", ")}"
+                val bridgeTarget = fetchE2eeBridgeTarget(endpoint, token)
+                val bridgePub = bridgeTarget?.first
+                val bridgeOtkPub = bridgeTarget?.second
+                val bridgeOtkId = bridgeTarget?.third
+                var encResult: DevE2ee.EncryptResult? = null
+                var messageCounter = 0
+
+                val e2eeSessionId = "aigor-app-chat"
                 val payload = JSONObject().apply {
-                    put("message", payloadText)
-                    put("sessionId", "aigor-app-chat")
+                    put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
                         put("showTranscription", showTranscriptions)
                     })
+
+                    if (!bridgePub.isNullOrBlank()) {
+                        val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
+                        prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
+                        messageCounter = nextCounter
+                        encResult = DevE2ee.encryptForBridge(payloadText, bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
+                        prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult!!.responseKey, Base64.NO_WRAP)).apply()
+                        put("message", "")
+                        put("e2ee", encResult!!.envelope)
+                    } else {
+                        put("message", payloadText)
+                    }
+
                     attachment?.let {
-                        put("attachment", JSONObject().apply {
-                            put("name", it.name)
-                            put("mime", it.mime)
-                            put("dataBase64", it.base64)
-                        })
+                        if (encResult != null) {
+                            put("e2eeAttachment", DevE2ee.encryptAttachment(it.base64, encResult!!.responseKey, it.name, it.mime, "aigor-app-chat", messageCounter))
+                        } else {
+                            put("attachment", JSONObject().apply {
+                                put("name", it.name)
+                                put("mime", it.mime)
+                                put("dataBase64", it.base64)
+                            })
+                        }
                     }
                 }
 
@@ -887,7 +939,32 @@ class MainActivity : AppCompatActivity() {
                     val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
                     val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
 
-                    val assistantTextRaw = parseAssistantText(body, code)
+                    val assistantTextRaw = try {
+                        val obj = JSONObject(body)
+                        if (obj.has("e2eeReply")) {
+                            val env = obj.getJSONObject("e2eeReply")
+                            val inCounter = env.optInt("counter", 0)
+                            if (inCounter > 0 && !acceptIncomingCounter(prefs, inCounter, e2eeSessionId)) {
+                                "[E2EE] Resposta descartada (replay/finestra)"
+                            } else {
+                                val baseKey = encResult?.responseKey ?: run {
+                                    val stored = prefs.getString("e2ee_base_${e2eeSessionId}", "").orEmpty()
+                                    if (stored.isBlank()) null else Base64.decode(stored, Base64.DEFAULT)
+                                }
+                                if (baseKey != null) {
+                                    try {
+                                        DevE2ee.decryptWithKey(baseKey, env)
+                                    } catch (e: Exception) {
+                                        "[E2EE] Error desencriptant resposta: ${e.javaClass.simpleName}: ${e.message}"
+                                    }
+                                } else parseAssistantText(body, code)
+                            }
+                        } else {
+                            parseAssistantText(body, code)
+                        }
+                    } catch (_: Exception) {
+                        parseAssistantText(body, code)
+                    }
                     val mediaUrl = try {
                         JSONObject(body).optString("mediaUrl", "")
                     } catch (_: Exception) { "" }
@@ -921,6 +998,106 @@ class MainActivity : AppCompatActivity() {
                     scrollBottom()
                 }
             }
+        }
+    }
+
+    private fun loadSeenCounters(prefs: android.content.SharedPreferences, key: String): MutableSet<Int> {
+        val raw = prefs.getString(key, "").orEmpty()
+        if (raw.isBlank()) return mutableSetOf()
+        return try {
+            if (raw.trimStart().startsWith("[")) {
+                val arr = org.json.JSONArray(raw)
+                MutableList(arr.length()) { i -> arr.optInt(i, -1) }
+                    .filter { it > 0 }
+                    .toMutableSet()
+            } else {
+                raw.split(',').mapNotNull { it.toIntOrNull() }.filter { it > 0 }.toMutableSet()
+            }
+        } catch (_: Exception) {
+            mutableSetOf()
+        }
+    }
+
+    private fun saveSeenCounters(prefs: android.content.SharedPreferences, key: String, values: List<Int>) {
+        val arr = org.json.JSONArray()
+        values.forEach { arr.put(it) }
+        prefs.edit().putString(key, arr.toString()).apply()
+    }
+
+    private fun acceptIncomingCounter(prefs: android.content.SharedPreferences, counter: Int, sessionId: String = "aigor-app-chat", window: Int = 64): Boolean {
+        val maxKey = "e2ee_in_max_${sessionId}"
+        val seenKey = "e2ee_in_seen_${sessionId}"
+        val skippedKey = "e2ee_in_skipped_${sessionId}"
+
+        val maxIn = prefs.getInt(maxKey, 0)
+        val seen = loadSeenCounters(prefs, seenKey)
+        val skipped = loadSeenCounters(prefs, skippedKey)
+
+        if (counter <= 0) return false
+        if (seen.contains(counter)) return false
+        if (counter < maxIn - window) return false
+
+        if (counter > maxIn + 1) {
+            for (c in (maxIn + 1) until counter) skipped.add(c)
+        }
+
+        seen.add(counter)
+        skipped.remove(counter)
+
+        val newMax = kotlin.math.max(maxIn, counter)
+        val floor = newMax - window
+        val keptSeen = seen.filter { it >= floor }.sorted()
+        val keptSkipped = skipped.filter { it >= floor }.sorted()
+
+        prefs.edit().putInt(maxKey, newMax).apply()
+        saveSeenCounters(prefs, seenKey, keptSeen)
+        saveSeenCounters(prefs, skippedKey, keptSkipped)
+        return true
+    }
+
+    private fun fetchE2eeBridgeTarget(endpoint: String, token: String): Triple<String, String?, String?>? {
+        return try {
+            val bundleUrl = endpoint.replace("/chat", "/e2ee/prekey-bundle")
+            val conn = (URL(bundleUrl).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("Authorization", "Bearer $token")
+                connectTimeout = 8000
+                readTimeout = 10000
+            }
+            val code = conn.responseCode
+            val body = if (code in 200..299) conn.inputStream.bufferedReader().use(BufferedReader::readText)
+            else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
+            conn.disconnect()
+            if (code !in 200..299) {
+                return null
+            }
+
+            val obj = JSONObject(body)
+            val e2ee = obj.optJSONObject("e2ee") ?: run {
+                return null
+            }
+            val bundle = e2ee.optJSONObject("bundle") ?: run {
+                return null
+            }
+            val signPub = bundle.optString("identitySignKey", "")
+            val spk = bundle.optJSONObject("signedPreKey") ?: run {
+                return null
+            }
+            val spkPub = spk.optString("publicKey", "")
+            val spkSig = spk.optString("signature", "")
+            val otkArr = bundle.optJSONArray("oneTimePreKeys")
+            val otkObj = if (otkArr != null && otkArr.length() > 0) otkArr.optJSONObject(0) else null
+            val otkId = otkObj?.optString("id", "")?.ifBlank { null }
+            val otkPub = otkObj?.optString("publicKey", "")?.ifBlank { null }
+
+            if (spkPub.isBlank() || signPub.isBlank() || spkSig.isBlank()) {
+                return null
+            }
+            val verified = DevE2ee.verifySignedPreKey(signPub, spkPub, spkSig)
+            if (!verified) return null
+            Triple(spkPub, otkPub, otkId)
+        } catch (_: Exception) {
+            null
         }
     }
 

@@ -1,6 +1,8 @@
 # AIGOR App
 
 > **OHARRA:** App hau eraikuntza fasean dago. Erabili zure ardurapean.
+>
+> **E2EE adarreko ohar garrantzitsua:** adar honetako E2EE inplementazioa AI laguntzaile batek garatu du osorik edo nagusiki garapen prozesuan zehar. Ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
 
 **AIGOR App Android aplikazioa da, zure OpenClaw laguntzailearekin komunikatzeko** testu, audio, irudi eta bideo bidez.
 

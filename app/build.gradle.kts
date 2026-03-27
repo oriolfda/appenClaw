@@ -17,11 +17,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aigor.app"
+        applicationId = "com.aigor.app.e2ee"
         minSdk = 24
         targetSdk = 34
-        versionCode = 48
-        versionName = "0.8.7"
+        versionCode = 50
+        versionName = "0.8.9-e2ee"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -65,4 +65,5 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
 }

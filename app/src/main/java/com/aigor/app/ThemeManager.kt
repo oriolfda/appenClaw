@@ -159,6 +159,25 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_ember,
             botBubble = R.drawable.bg_chat_bot_red,
             inputBg = R.drawable.bg_input_chat,
+        ),
+        UiTheme(
+            id = "darkred2",
+            label = "Dark Red 2",
+            screenBg = 0xFF0B1018.toInt(),
+            titleColor = 0xFFF3F4F6.toInt(),
+            statusColor = 0xFF7C879A.toInt(),
+            messageTextColor = 0xFFF9FAFB.toInt(),
+            messageHintColor = 0xFF7C879A.toInt(),
+            menuDotsColor = 0xFFF3F4F6.toInt(),
+            menuTint = 0x00000000,
+            sendTint = 0xFFFF5C5C.toInt(),
+            sendText = 0xFFFFFFFF.toInt(),
+            userText = 0xFFF9FAFB.toInt(),
+            botText = 0xFFF9FAFB.toInt(),
+            typingDots = 0xFF9CB9D5.toInt(),
+            userBubble = R.drawable.bg_chat_user_ember,
+            botBubble = R.drawable.bg_chat_bot_darkred2,
+            inputBg = R.drawable.bg_input_chat,
         )
     )
 

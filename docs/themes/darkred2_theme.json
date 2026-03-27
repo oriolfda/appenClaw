@@ -1,0 +1,23 @@
+{
+  "themeId": "darkRed",
+  "colors": {
+    "screen-bg": "#0b1018",
+    "toolbar-bg": "#0b1018",
+    "title": "#f3f4f6",
+    "status": "#7c879a",
+    "bot-bubble": "#000000",
+    "user-bubble": "#34242b",
+    "bubble-text": "#f9fafb",
+    "audio-wave": "#9cb9d5",
+    "audio-time": "#c7d2e0",
+    "audio-caption": "#e5e7eb",
+    "audio-transcript-bg": "#1f1f1f",
+    "input-bg": "#101623",
+    "input-stroke": "#20283a",
+    "input-focus": "#ff5c5c",
+    "input-hint": "#7c879a",
+    "send-bg": "#ff5c5c"
+  },
+  "approved": true,
+  "updatedAt": "2026-03-19T13:14:03.287Z"
+}
