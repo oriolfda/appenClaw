@@ -640,10 +640,13 @@ def decrypt_real_envelope(env: dict, session_id: str):
     ad = str(env.get("ad", ""))
     counter = int(env.get("counter", 0))
 
+    import hashlib
+
     eph_pub = _decode_pubkey_spki(eph_b64)
     shared = _BRIDGE_SPK_PRIVKEY.exchange(eph_pub)
     otk_priv = _get_otk_private(otk_id)
-    if otk_priv is not None:
+    otk_used = otk_priv is not None
+    if otk_used:
         shared += otk_priv.exchange(eph_pub)
     base_key = _hkdf_key(shared, salt)
 
@@ -653,16 +656,42 @@ def decrypt_real_envelope(env: dict, session_id: str):
         try:
             ratchet_pub = _decode_pubkey_spki(ratchet_b64)
             ratchet_shared = _BRIDGE_SPK_PRIVKEY.exchange(ratchet_pub)
-            import hashlib
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
             base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"aigor-ratchet-step-v1")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[bridge-debug] ratchet-mix-failed {e}", flush=True)
+            raise
 
     recv_chain_key = _derive_chain_key(base_key, "recv", ratchet_step)
     key = _derive_message_key(recv_chain_key, counter, "c2s")
+
+    print(
+        "[bridge-debug] decrypt-input " + json.dumps({
+            "sessionId": session_id,
+            "headerId": header_id,
+            "counter": counter,
+            "ratchetStep": ratchet_step,
+            "otkId": otk_id,
+            "otkUsed": otk_used,
+            "saltSha256": hashlib.sha256(salt).hexdigest(),
+            "ivSha256": hashlib.sha256(iv).hexdigest(),
+            "ctSha256": hashlib.sha256(ct).hexdigest(),
+            "ephSha256": hashlib.sha256(base64.b64decode(eph_b64)).hexdigest(),
+            "ratchetSha256": hashlib.sha256(base64.b64decode(ratchet_b64)).hexdigest() if ratchet_b64 else None,
+            "sharedSha256": hashlib.sha256(shared).hexdigest(),
+            "baseKeySha256": hashlib.sha256(base_key).hexdigest(),
+            "recvChainKeySha256": hashlib.sha256(recv_chain_key).hexdigest(),
+            "messageKeySha256": hashlib.sha256(key).hexdigest(),
+        }, ensure_ascii=False),
+        flush=True,
+    )
+
     aes = AESGCM(key)
-    pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
+    try:
+        pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
+    except Exception as e:
+        print(f"[bridge-debug] decrypt-failed {type(e).__name__}: {e}", flush=True)
+        raise
 
     _ratchet_apply_peer_pub(session_id, ratchet_b64, mix_material=base_key + ratchet_shared)
     store = _load_ratchet_store()
