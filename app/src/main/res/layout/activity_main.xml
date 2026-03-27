@@ -217,6 +217,19 @@
     </LinearLayout>
 </LinearLayout>
 
+    <ImageButton
+        android:id="@+id/scrollToBottomButton"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="108dp"
+        android:background="@drawable/bg_round_send"
+        android:contentDescription="@string/cd_scroll_to_bottom"
+        android:padding="12dp"
+        android:src="@android:drawable/arrow_down_float"
+        android:visibility="gone" />
+
     <include
         android:id="@+id/conversationsDrawer"
         layout="@layout/conversations_drawer_content"

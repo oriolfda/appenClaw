@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var conversationsDrawer: View
     private lateinit var conversationsRecycler: RecyclerView
     private lateinit var sendButton: ImageButton
+    private lateinit var scrollToBottomButton: ImageButton
     private lateinit var pendingAttachmentRow: LinearLayout
     private lateinit var pendingAttachmentPreview: ImageView
     private lateinit var pendingAttachmentText: TextView
@@ -167,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         conversationsDrawer = findViewById(R.id.conversationsDrawer)
         conversationsRecycler = findViewById(R.id.conversationsRecycler)
         sendButton = findViewById(R.id.sendButton)
+        scrollToBottomButton = findViewById(R.id.scrollToBottomButton)
         pendingAttachmentRow = findViewById(R.id.pendingAttachmentRow)
         pendingAttachmentPreview = findViewById(R.id.pendingAttachmentPreview)
         pendingAttachmentText = findViewById(R.id.pendingAttachmentText)
@@ -231,6 +233,12 @@ class MainActivity : AppCompatActivity() {
         refreshConversationsDrawer()
         loadHistory()
         consumeSharedText(intent)
+        scrollToBottomButton.setOnClickListener { scrollBottom() }
+        chatRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollToBottomVisibility()
+            }
+        })
         updatePendingAttachmentUi()
         updateComposerActionButton()
 
@@ -889,6 +897,8 @@ class MainActivity : AppCompatActivity() {
         micButton.setColorFilter(theme.sendText)
         sendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         sendButton.setColorFilter(theme.sendText)
+        scrollToBottomButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
+        scrollToBottomButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
         recordPauseButton.setColorFilter(theme.statusColor)
         recordSendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
@@ -1472,6 +1482,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun scrollBottom() {
         if (messages.isNotEmpty()) chatRecycler.scrollToPosition(messages.lastIndex)
+        updateScrollToBottomVisibility()
+    }
+
+    private fun updateScrollToBottomVisibility() {
+        val lm = chatRecycler.layoutManager as? LinearLayoutManager ?: return
+        val lastVisible = lm.findLastVisibleItemPosition()
+        val shouldShow = messages.isNotEmpty() && lastVisible < messages.lastIndex - 2
+        scrollToBottomButton.visibility = if (shouldShow) View.VISIBLE else View.GONE
     }
 
     private fun loadHistory() {
