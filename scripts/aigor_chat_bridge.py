@@ -607,42 +607,32 @@ def decrypt_real_envelope(env: dict, session_id: str):
     base_key = _hkdf_key(shared, salt)
 
     ratchet_shared = b""
+    ratchet_step = int(env.get("ratchetStep", 1) or 1)
     if ratchet_b64:
         try:
             ratchet_pub = _decode_pubkey_spki(ratchet_b64)
             ratchet_shared = _BRIDGE_PRIVKEY.exchange(ratchet_pub)
             import hashlib
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
-            base_key = _hkdf_key(base_key + ratchet_shared, mix_salt)
+            base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"aigor-ratchet-step-v1")
         except Exception:
             pass
+
+    recv_chain_key = _derive_chain_key(base_key, "recv", ratchet_step)
+    key = _derive_message_key(recv_chain_key, counter, "c2s")
+    aes = AESGCM(key)
+    pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
 
     _ratchet_apply_peer_pub(session_id, ratchet_b64, mix_material=base_key + ratchet_shared)
     store = _load_ratchet_store()
     sessions = store.setdefault("sessions", {})
     st = _ensure_session_chains(sessions.setdefault(session_id, {}))
-    recv_seed_b64 = st.get("recvChainSeed", "")
-    if recv_seed_b64:
-        import hashlib
-        recv_seed = base64.b64decode(recv_seed_b64)
-        base_key = hashlib.sha256(recv_seed + base_key + b"recv-priority").digest()
-
-    mixed_key, root_next = _ratchet_preview_chain_key(st, base_key, "c2s", counter)
-    # Prefer explicit envelope step when provided; keep backward compatibility
-    # with legacy envelopes that did not carry ratchetStep.
-    ratchet_step = int(env.get("ratchetStep", 0) or 0)
-
-    recv_chain_key = _derive_chain_key(mixed_key, "recv", ratchet_step)
-    key = _derive_message_key(recv_chain_key, counter, "c2s")
-    aes = AESGCM(key)
-    pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
-
-    st["recvChainSeed"] = base64.b64encode(mixed_key).decode("ascii")
-    st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
-    st["recv"]["chainCounter"] = int(st["recv"].get("chainCounter", 0)) + 1
+    st["recvChainSeed"] = base64.b64encode(base_key).decode("ascii")
+    st["rootKeySeed"] = base64.b64encode(base_key).decode("ascii")
+    st["recv"]["chainCounter"] = max(int(st["recv"].get("chainCounter", 0)), counter)
     _save_ratchet_store(store)
 
-    return pt, mixed_key, ad, counter
+    return pt, base_key, ad, counter
 
 
 def e2ee_bundle_payload() -> dict:
