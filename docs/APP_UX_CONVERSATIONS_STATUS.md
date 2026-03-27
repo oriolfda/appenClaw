@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:35 UTC
+Last updated: 2026-03-27 21:46 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:35 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 9
-- Tasques pendents: 1
-- Percentatge completat: 90%
+- Tasques completades: 10
+- Tasques pendents: 0
+- Percentatge completat: 100%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -98,14 +98,25 @@ Last updated: 2026-03-27 21:35 UTC
     - Hi ha un selector visible per veure converses anteriors.
     - Es pot obrir una conversa existent i carregar-ne l'historial local.
 
+- ✅ **3.3 Recuperació de context i continuació sobre `sessionId` correcte**
+  - Implementació:
+    - `sendToOpenClaw(...)` rep ara una instantània explícita de la conversa origen (`ConversationThread`) i envia sempre amb el `sessionId` d'aquella conversa, evitant desalineacions si l'usuari canvia de conversa mentre la resposta és en vol.
+    - Quan arriba una resposta i la conversa activa ja és una altra, `MainActivity` no toca la UI de la conversa actual: persisteix la resposta al thread origen amb `persistAssistantReplyForThread(...)`, substituint el `typing` pendent o afegint el missatge final segons calgui.
+    - El mateix comportament de persistència s'aplica en errors de xarxa per no perdre continuïtat de context al thread original.
+  - Cobertura del criteri “done”:
+    - Reobrir una conversa restaura el seu historial amb les respostes associades al thread correcte.
+    - Els nous enviaments continuen sobre el `sessionId` correcte de la conversa seleccionada.
+
 ## Tasques pendents
-- 3.3 Recuperació de context i continuació sobre `sessionId` correcte
+- Cap (planning completat)
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
   - `app/src/main/java/com/aigor/app/ConversationStore.kt`
     - Nova API `activateThread(context, threadId)` per canviar i persistir la conversa activa.
   - `app/src/main/java/com/aigor/app/MainActivity.kt`
+    - `sendToOpenClaw(...)` ara treballa amb instantània de conversa origen i session routing estable per thread.
+    - Nou helper `persistAssistantReplyForThread(...)` per persistir respostes/errors al thread correcte quan l'usuari canvia de conversa durant una resposta en vol.
     - Nou flux `showConversationsSelector()` + `switchToConversation(threadId)` per llistar i obrir converses existents.
     - Integració del nou selector dins del menú overflow.
   - `app/src/main/res/menu/main_overflow_menu.xml`

@@ -394,7 +394,7 @@ class MainActivity : AppCompatActivity() {
             messageEdit.setText("")
             addMessage(ChatMessage("typing", ""))
 
-            sendToOpenClaw(endpoint, token, message, attachmentToSend)
+            sendToOpenClaw(endpoint, token, message, attachmentToSend, activeConversation)
             pendingAttachment = null
             updatePendingAttachmentUi()
         }
@@ -884,7 +884,7 @@ class MainActivity : AppCompatActivity() {
         return urls.distinct()
     }
 
-    private fun sendToOpenClaw(endpoint: String, token: String, message: String, attachment: AttachmentData?) {
+    private fun sendToOpenClaw(endpoint: String, token: String, message: String, attachment: AttachmentData?, conversation: ConversationThread) {
         statusText.text = getString(R.string.status_sending)
 
         thread {
@@ -901,7 +901,7 @@ class MainActivity : AppCompatActivity() {
                 var encResult: DevE2ee.EncryptResult? = null
                 var messageCounter = 0
 
-                val e2eeSessionId = activeConversation.sessionId
+                val e2eeSessionId = conversation.sessionId
                 val payload = JSONObject().apply {
                     put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
@@ -986,6 +986,11 @@ class MainActivity : AppCompatActivity() {
                     } catch (_: Exception) { "" }
                     val (assistantText, ttsText) = extractTtsBlock(assistantTextRaw)
 
+                    if (activeConversation.threadId != conversation.threadId) {
+                        persistAssistantReplyForThread(conversation.threadId, assistantText, ttsText, mediaUrl)
+                        return@runOnUiThread
+                    }
+
                     if (!showTranscriptions && mediaUrl.isNotBlank()) {
                         val audioMsg = ChatMessage("assistant", getString(R.string.reply_audio), audioUrl = mediaUrl)
                         adapter.replaceLast(audioMsg)
@@ -1008,6 +1013,16 @@ class MainActivity : AppCompatActivity() {
                 conn.disconnect()
             } catch (e: Exception) {
                 runOnUiThread {
+                    if (activeConversation.threadId != conversation.threadId) {
+                        persistAssistantReplyForThread(
+                            conversation.threadId,
+                            getString(R.string.connection_error, e.message),
+                            ttsText = null,
+                            mediaUrl = null,
+                        )
+                        return@runOnUiThread
+                    }
+
                     adapter.replaceLast(ChatMessage("assistant", getString(R.string.connection_error, e.message)))
                     statusText.text = getString(R.string.status_error, e.message)
                     saveHistory()
@@ -1015,6 +1030,47 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun persistAssistantReplyForThread(threadId: String, assistantText: String, ttsText: String?, mediaUrl: String?) {
+        val raw = ConversationStore.loadHistoryJson(this, threadId)
+        val arr = try {
+            JSONArray(raw)
+        } catch (_: Exception) {
+            JSONArray()
+        }
+
+        val assistantObj = JSONObject().apply {
+            put("role", "assistant")
+            put("text", assistantText)
+            put("ts", System.currentTimeMillis())
+            put("audioPath", "")
+            put("audioUrl", "")
+            put("ttsText", ttsText ?: "")
+            put("imagePath", "")
+            put("videoPath", "")
+        }
+
+        if (arr.length() > 0 && arr.optJSONObject(arr.length() - 1)?.optString("role") == "typing") {
+            arr.put(arr.length() - 1, assistantObj)
+        } else {
+            arr.put(assistantObj)
+        }
+
+        if (!mediaUrl.isNullOrBlank()) {
+            arr.put(JSONObject().apply {
+                put("role", "assistant")
+                put("text", getString(R.string.reply_audio))
+                put("ts", System.currentTimeMillis() + 1)
+                put("audioPath", "")
+                put("audioUrl", mediaUrl)
+                put("ttsText", "")
+                put("imagePath", "")
+                put("videoPath", "")
+            })
+        }
+
+        ConversationStore.saveHistoryJson(this, threadId, arr.toString())
     }
 
     private fun loadSeenCounters(prefs: android.content.SharedPreferences, key: String): MutableSet<Int> {
