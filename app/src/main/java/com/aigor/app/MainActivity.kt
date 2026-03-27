@@ -508,7 +508,7 @@ class MainActivity : AppCompatActivity() {
                     return@thread
                 }
 
-                val e2eeSessionId = "aigor-app-chat"
+                val e2eeSessionId = activeConversation.sessionId
                 val audioBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
                 val bridgeTarget = fetchE2eeBridgeTarget(endpoint, token)
                 val bridgePub = bridgeTarget?.first
@@ -521,8 +521,9 @@ class MainActivity : AppCompatActivity() {
                     })
 
                     if (!bridgePub.isNullOrBlank()) {
-                        val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
-                        prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
+                        val sendCounterKey = "e2ee_send_counter_${e2eeSessionId}"
+                        val nextCounter = prefs.getInt(sendCounterKey, 0) + 1
+                        prefs.edit().putInt(sendCounterKey, nextCounter).apply()
                         val encResult = DevE2ee.encryptForBridge(getString(R.string.transcribe_only_prompt), bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
                         prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult.responseKey, Base64.NO_WRAP)).apply()
                         put("message", "")
@@ -894,7 +895,7 @@ class MainActivity : AppCompatActivity() {
                 var encResult: DevE2ee.EncryptResult? = null
                 var messageCounter = 0
 
-                val e2eeSessionId = "aigor-app-chat"
+                val e2eeSessionId = activeConversation.sessionId
                 val payload = JSONObject().apply {
                     put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
@@ -902,8 +903,9 @@ class MainActivity : AppCompatActivity() {
                     })
 
                     if (!bridgePub.isNullOrBlank()) {
-                        val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
-                        prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
+                        val sendCounterKey = "e2ee_send_counter_${e2eeSessionId}"
+                        val nextCounter = prefs.getInt(sendCounterKey, 0) + 1
+                        prefs.edit().putInt(sendCounterKey, nextCounter).apply()
                         messageCounter = nextCounter
                         encResult = DevE2ee.encryptForBridge(payloadText, bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
                         prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult!!.responseKey, Base64.NO_WRAP)).apply()
@@ -915,7 +917,7 @@ class MainActivity : AppCompatActivity() {
 
                     attachment?.let {
                         if (encResult != null) {
-                            put("e2eeAttachment", DevE2ee.encryptAttachment(it.base64, encResult!!.responseKey, it.name, it.mime, "aigor-app-chat", messageCounter))
+                            put("e2eeAttachment", DevE2ee.encryptAttachment(it.base64, encResult!!.responseKey, it.name, it.mime, e2eeSessionId, messageCounter))
                         } else {
                             put("attachment", JSONObject().apply {
                                 put("name", it.name)
@@ -1032,7 +1034,7 @@ class MainActivity : AppCompatActivity() {
         prefs.edit().putString(key, arr.toString()).apply()
     }
 
-    private fun acceptIncomingCounter(prefs: android.content.SharedPreferences, counter: Int, sessionId: String = "aigor-app-chat", window: Int = 64): Boolean {
+    private fun acceptIncomingCounter(prefs: android.content.SharedPreferences, counter: Int, sessionId: String, window: Int = 64): Boolean {
         val maxKey = "e2ee_in_max_${sessionId}"
         val seenKey = "e2ee_in_seen_${sessionId}"
         val skippedKey = "e2ee_in_skipped_${sessionId}"

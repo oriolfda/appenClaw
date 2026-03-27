@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:09 UTC
+Last updated: 2026-03-27 21:15 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:09 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 6
-- Tasques pendents: 4
-- Percentatge completat: 60%
+- Tasques completades: 7
+- Tasques pendents: 3
+- Percentatge completat: 70%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -68,18 +68,28 @@ Last updated: 2026-03-27 21:09 UTC
     - Es genera `sessionId` nou per a la conversa creada.
     - La conversa activa canvia correctament al nou context.
 
+- ✅ **2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE**
+  - Implementació:
+    - `MainActivity` deixa d'usar el valor fix `aigor-app-chat` en els fluxos de `sendToOpenClaw()` i `requestTranscription()`; ara usa `activeConversation.sessionId`.
+    - `DevE2ee.encryptAttachment(...)` rep també el `sessionId` actiu en lloc d'un identificador global fix.
+    - El comptador de sortida E2EE passa a ser per conversa (`e2ee_send_counter_<sessionId>`) tant en missatgeria com en transcripció.
+    - `acceptIncomingCounter(...)` passa a requerir explícitament `sessionId`, evitant fallback implícit a un id global.
+  - Cobertura del criteri “done”:
+    - El codi d'enviament/transcripció usa el `sessionId` actiu de la conversa.
+    - S'elimina la dependència funcional d'un únic `aigor-app-chat` fix per a totes les converses.
+
 ## Tasques pendents
-- 2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE
 - 3.1 Persistència local d'historial de converses i missatges
 - 3.2 UI per veure converses anteriors
 - 3.3 Recuperació de context i continuació sobre `sessionId` correcte
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
-  - `app/src/main/java/com/aigor/app/ConversationStore.kt` (alta de `createNewAndActivate` i factorització de generació de thread/session)
-  - `app/src/main/java/com/aigor/app/MainActivity.kt` (gestió de menú `menu_new_chat` i `startNewChat()` per canviar conversa activa)
-  - `app/src/main/res/menu/main_overflow_menu.xml` (nova acció visible "Nou xat")
-  - `app/src/main/res/values*/strings.xml` (cadenes `menu_new_chat` i `status_new_chat_started`)
+  - `app/src/main/java/com/aigor/app/MainActivity.kt`
+    - Substitució de `sessionId` fix per `activeConversation.sessionId` a `sendToOpenClaw()` i `requestTranscription()`.
+    - `encryptAttachment(...)` ara usa el `sessionId` actiu.
+    - Comptador E2EE de sortida per conversa: `e2ee_send_counter_<sessionId>`.
+    - `acceptIncomingCounter(...)` sense id per defecte global.
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Observació (no convertida en tasca): el flux de missatgeria/E2EE encara usa `sessionId` fix en diversos punts; queda cobert explícitament per la tasca 2.3 del planning.
+- Observació (no convertida en tasca): la persistència d'historial continua global (`chat_history`), pendent d'abordar-se a la tasca 3.1 segons planning.
