@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.BitmapFactory
+import android.graphics.Typeface
 import android.media.MediaMetadataRetriever
 import android.view.LayoutInflater
 import android.view.View
@@ -42,6 +43,7 @@ class ChatAdapter(
         private const val VIEW_HTML = 4
         private const val VIEW_IMAGE_USER = 5
         private const val VIEW_AUDIO = 6
+        private const val VIEW_CODE = 7
     }
 
     class MessageVH(view: View) : RecyclerView.ViewHolder(view) {
@@ -82,10 +84,12 @@ class ChatAdapter(
         val item = items[position]
         val hasHtml = Regex("<\\s*[a-zA-Z][^>]*>").containsMatchIn(item.text)
         val hasAudio = !item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()
+        val hasCodeBlock = RichTextRenderer.hasScrollableCodeBlock(item.text)
         return when {
             item.role == "typing" -> VIEW_TYPING
             item.role == "user" && (!item.imagePath.isNullOrBlank() || !item.videoPath.isNullOrBlank()) -> VIEW_IMAGE_USER
             hasAudio -> VIEW_AUDIO
+            hasCodeBlock -> VIEW_CODE
             item.role == "user" -> VIEW_USER
             hasHtml -> VIEW_HTML
             else -> VIEW_BOT
@@ -100,6 +104,7 @@ class ChatAdapter(
             VIEW_HTML -> HtmlVH(inflater.inflate(R.layout.item_message_html, parent, false))
             VIEW_IMAGE_USER -> ImageUserVH(inflater.inflate(R.layout.item_message_image_user, parent, false))
             VIEW_AUDIO -> AudioVH(inflater.inflate(R.layout.item_message_audio, parent, false))
+            VIEW_CODE -> MessageVH(inflater.inflate(R.layout.item_message_code, parent, false))
             else -> MessageVH(inflater.inflate(R.layout.item_message_bot, parent, false))
         }
     }
@@ -108,6 +113,9 @@ class ChatAdapter(
         when (holder) {
             is MessageVH -> {
                 val item = items[position]
+                val hasAudio = !item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()
+                val hasCodeBlock = RichTextRenderer.hasScrollableCodeBlock(item.text)
+
                 if (item.role == "user") {
                     holder.text.setBackgroundResource(theme.userBubble)
                     holder.text.setTextColor(theme.userText)
@@ -115,7 +123,6 @@ class ChatAdapter(
                     holder.text.setBackgroundResource(theme.botBubble)
                     holder.text.setTextColor(theme.botText)
                 }
-                val hasAudio = !item.audioPath.isNullOrBlank() || !item.audioUrl.isNullOrBlank() || !item.ttsText.isNullOrBlank()
 
                 if (hasAudio) {
                     val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
@@ -124,6 +131,15 @@ class ChatAdapter(
                     holder.text.setOnLongClickListener {
                         copyMessageToClipboard(holder.text.context, item.text)
                         true
+                    }
+                } else if (hasCodeBlock) {
+                    holder.text.typeface = Typeface.MONOSPACE
+                    holder.text.textSize = 14f
+                    holder.text.text = RichTextRenderer.extractScrollableCodeText(item.text)
+                    holder.text.setOnClickListener(null)
+                    holder.text.setOnLongClickListener {
+                        copyMessageToClipboard(holder.text.context, RichTextRenderer.extractScrollableCodeText(item.text), label = "aigor-code")
+                        false
                     }
                 } else {
                     RichTextRenderer.bind(holder.text, item.text, selectable = true)

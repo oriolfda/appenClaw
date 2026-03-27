@@ -24,7 +24,7 @@ object RichTextRenderer {
         if (looksLikeCode(raw)) {
             textView.typeface = Typeface.MONOSPACE
             textView.textSize = 14f
-            textView.setHorizontallyScrolling(selectable)
+            textView.setHorizontallyScrolling(false)
         } else {
             textView.typeface = Typeface.DEFAULT
             textView.textSize = 16f
@@ -48,6 +48,18 @@ object RichTextRenderer {
 
         val hasIndentedCode = indentedCodeRegex.containsMatchIn(normalized)
         return if (looksLikeCode(normalized) || hasIndentedCode) normalized else null
+    }
+
+    fun hasScrollableCodeBlock(raw: String): Boolean {
+        val normalized = raw.trim()
+        if (normalized.isBlank()) return false
+        if (codeFenceRegex.containsMatchIn(normalized)) return true
+        val hasIndentedCode = indentedCodeRegex.containsMatchIn(normalized)
+        return hasIndentedCode && looksLikeCode(normalized)
+    }
+
+    fun extractScrollableCodeText(raw: String): String {
+        return extractCopyableCode(raw)?.trimEnd() ?: raw.trimEnd()
     }
 
     private fun toSafeHtml(raw: String): String {

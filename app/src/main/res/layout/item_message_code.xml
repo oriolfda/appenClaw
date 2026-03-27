@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
+
+    <TextView
+        android:id="@+id/codeSpacer"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="0.12"
+        android:visibility="gone" />
+
+    <HorizontalScrollView
+        android:id="@+id/codeScroll"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.76"
+        android:fillViewport="false"
+        android:scrollbars="horizontal">
+
+        <TextView
+            android:id="@+id/messageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chat_bot"
+            android:fontFamily="monospace"
+            android:padding="12dp"
+            android:textColor="#F9FAFB"
+            android:textSize="14sp"
+            android:textIsSelectable="true" />
+    </HorizontalScrollView>
+
+    <Space
+        android:id="@+id/codeTrailingSpace"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:layout_weight="0.12" />
+
+</LinearLayout>

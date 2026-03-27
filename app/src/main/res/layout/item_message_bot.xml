@@ -11,7 +11,10 @@
         android:layout_height="wrap_content"
         android:layout_weight="0.82"
         android:background="@drawable/bg_chat_bot"
+        android:breakStrategy="high_quality"
+        android:hyphenationFrequency="full"
         android:textColor="#F9FAFB"
+        android:textIsSelectable="true"
         android:textSize="16sp" />
 
     <Space
