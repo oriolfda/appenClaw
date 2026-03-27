@@ -12,6 +12,7 @@ object RichTextRenderer {
     // ```python\n...\n```
     // ```python ... ```
     private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\s*([\\s\\S]*?)```")
+    private val indentedCodeRegex = Regex("(?m)^(?:\\t| {4,}).+")
 
     fun bind(textView: TextView, raw: String, selectable: Boolean = true) {
         val html = toSafeHtml(raw)
@@ -29,6 +30,24 @@ object RichTextRenderer {
             textView.textSize = 16f
             textView.setHorizontallyScrolling(false)
         }
+    }
+
+    fun extractCopyableCode(raw: String): String? {
+        val normalized = raw.trim()
+        if (normalized.isBlank()) return null
+
+        val fencedBlocks = codeFenceRegex
+            .findAll(normalized)
+            .mapNotNull { it.groupValues.getOrNull(2)?.trim('\n', '\r') }
+            .filter { it.isNotBlank() }
+            .toList()
+
+        if (fencedBlocks.isNotEmpty()) {
+            return fencedBlocks.joinToString("\n\n")
+        }
+
+        val hasIndentedCode = indentedCodeRegex.containsMatchIn(normalized)
+        return if (looksLikeCode(normalized) || hasIndentedCode) normalized else null
     }
 
     private fun toSafeHtml(raw: String): String {

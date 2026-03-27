@@ -129,7 +129,12 @@ class ChatAdapter(
                     RichTextRenderer.bind(holder.text, item.text, selectable = true)
                     holder.text.setOnClickListener(null)
                     holder.text.setOnLongClickListener {
-                        copyMessageToClipboard(holder.text.context, item.text)
+                        val copyableCode = RichTextRenderer.extractCopyableCode(item.text)
+                        if (copyableCode != null) {
+                            copyMessageToClipboard(holder.text.context, copyableCode, label = "aigor-code")
+                        } else {
+                            copyMessageToClipboard(holder.text.context, item.text)
+                        }
                         false
                     }
                 }
@@ -239,12 +244,13 @@ class ChatAdapter(
         }
     }
 
-    private fun copyMessageToClipboard(context: Context, text: String) {
+    private fun copyMessageToClipboard(context: Context, text: String, label: String = "aigor-message"): Boolean {
         val normalized = text.trimEnd()
-        if (normalized.isBlank()) return
+        if (normalized.isBlank()) return false
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("aigor-message", normalized))
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, normalized))
         Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
+        return true
     }
 
     private fun resolveDurationAsync(item: ChatMessage) {

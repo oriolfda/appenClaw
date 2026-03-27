@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 20:58 UTC
+Last updated: 2026-03-27 21:09 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 20:58 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 3
-- Tasques pendents: 7
-- Percentatge completat: 30%
+- Tasques completades: 4
+- Tasques pendents: 6
+- Percentatge completat: 40%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -40,8 +40,16 @@ Last updated: 2026-03-27 20:58 UTC
     - El text és seleccionable en els casos suportats (missatges text user/assistant).
     - No es trenca la interacció principal en missatges amb àudio.
 
+- ✅ **1.4 Còpia de blocs de codi o fragments multilínia**
+  - Implementació:
+    - `RichTextRenderer` incorpora `extractCopyableCode(raw)` per detectar i extreure codi copiable a partir de blocs fenced (` ```...``` `) o text amb patró clar de codi/indentació.
+    - `ChatAdapter` (missatges text sense àudio) ara detecta codi en long-press i, si n'hi ha, copia el fragment de codi (label de clipboard `aigor-code`) en lloc del missatge complet.
+    - Si no hi ha codi detectable, es manté el comportament existent de còpia completa del missatge.
+  - Cobertura del criteri “done”:
+    - Hi ha una via raonable i implementada per copiar codi/fragments multilínia.
+    - El flux continua coherent amb la UX de selecció existent.
+
 ## Tasques pendents
-- 1.4 Còpia de blocs de codi o fragments multilínia
 - 2.1 Model local mínim de conversa/thread
 - 2.2 Acció visible de "Nou xat"
 - 2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE
@@ -59,8 +67,8 @@ Last updated: 2026-03-27 20:58 UTC
   - `app/src/main/res/layout/item_message_audio.xml`
   - `app/src/main/res/layout/item_message_image_user.xml`
 - Canvis de codi aplicats a:
-  - `app/src/main/java/com/aigor/app/ChatAdapter.kt` (selecció condicionada per tipus de missatge + comportament long-press compatible amb selecció en text)
-  - `app/src/main/java/com/aigor/app/RichTextRenderer.kt` (nou paràmetre `selectable` a `bind`)
+  - `app/src/main/java/com/aigor/app/ChatAdapter.kt` (long-press amb detecció de codi: copia bloc/fragments de codi quan existeixen, i manté fallback a còpia completa)
+  - `app/src/main/java/com/aigor/app/RichTextRenderer.kt` (nou extractor `extractCopyableCode(raw)` per blocs fenced i patrons de codi multilínia)
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
 - Observació (no convertida en tasca): la còpia en missatges HTML renderitzats amb `WebView` no comparteix el mateix flux de còpia de `messageText`.
