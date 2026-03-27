@@ -8,7 +8,9 @@ import java.security.MessageDigest
 import java.security.PublicKey
 import java.security.SecureRandom
 import java.security.Security
-import java.security.Signature
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
+import org.bouncycastle.crypto.signers.Ed25519Signer
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
@@ -151,12 +153,14 @@ object DevE2ee {
             val pubBytes = Base64.decode(identitySignPubB64, Base64.DEFAULT)
             val spkBytes = Base64.decode(signedPreKeyPubB64, Base64.DEFAULT)
             val sigBytes = Base64.decode(sigB64, Base64.DEFAULT)
-            val kf = KeyFactory.getInstance("Ed25519", "BC")
-            val pub = kf.generatePublic(X509EncodedKeySpec(pubBytes))
-            val verifier = Signature.getInstance("Ed25519", "BC")
-            verifier.initVerify(pub)
-            verifier.update(spkBytes)
-            val ok = verifier.verify(sigBytes)
+
+            val spki = SubjectPublicKeyInfo.getInstance(pubBytes)
+            val rawPub = spki.publicKeyData.bytes
+            val pub = Ed25519PublicKeyParameters(rawPub, 0)
+            val verifier = Ed25519Signer()
+            verifier.init(false, pub)
+            verifier.update(spkBytes, 0, spkBytes.size)
+            val ok = verifier.verifySignature(sigBytes)
             android.util.Log.i(
                 "AIGOR-E2EE",
                 "verifySignedPreKey ok=$ok pubLen=${pubBytes.size} spkLen=${spkBytes.size} sigLen=${sigBytes.size} " +
