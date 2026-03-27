@@ -88,8 +88,18 @@ Done quan:
 - nous enviaments continuen sobre el `sessionId` correcte
 - queda evidència al report
 
+## BACKLOG PENDENT DESPRÉS DEL TANCAMENT DE FASES
+
+### Tasca B1
+Descripció: Reintroduir de forma segura un botó flotant per anar al final del xat quan l'usuari està més amunt de la conversa.
+Done quan:
+- no provoca crash en obrir l'app
+- només apareix quan té sentit
+- fa scroll al final correctament
+- queda verificat amb build release
+
 ## Estat inicial
-- Tasques totals: 10
-- Tasques completades: 0
-- Tasques pendents: 10
-- Percentatge completat: 0%
+- Tasques totals: 11
+- Tasques completades: 10
+- Tasques pendents: 1
+- Percentatge completat: 90.9%

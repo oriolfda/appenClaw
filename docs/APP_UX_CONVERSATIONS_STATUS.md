@@ -129,4 +129,5 @@ Last updated: 2026-03-27 21:30 UTC
     - Noves cadenes UI/estat per al selector i canvi de conversa.
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Pendent UX: reintroduir amb seguretat un botó flotant per anar al final del xat; l'intent actual s'ha revertit perquè provocava crash en obrir l'app.
+- Backlog pendent B1: reintroduir amb seguretat un botó flotant per anar al final del xat; l'intent actual s'ha revertit perquè provocava crash en obrir l'app.
+- Estat global revisat després de crear el backlog B1: 11 tasques totals, 10 completades, 1 pendent, 90.9% completat.
