@@ -127,10 +127,7 @@ class ChatAdapter(
                 }
 
                 holder.text.setOnLongClickListener {
-                    val ctx = holder.text.context
-                    val clipboard = ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText("aigor-message", item.text))
-                    Toast.makeText(ctx, ctx.getString(R.string.copied), Toast.LENGTH_SHORT).show()
+                    copyMessageToClipboard(holder.text.context, item.text)
                     true
                 }
             }
@@ -237,6 +234,14 @@ class ChatAdapter(
                 startTypingAnimation(holder)
             }
         }
+    }
+
+    private fun copyMessageToClipboard(context: Context, text: String) {
+        val normalized = text.trimEnd()
+        if (normalized.isBlank()) return
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("aigor-message", normalized))
+        Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT).show()
     }
 
     private fun resolveDurationAsync(item: ChatMessage) {
