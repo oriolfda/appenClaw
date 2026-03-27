@@ -142,15 +142,28 @@ object DevE2ee {
     fun verifySignedPreKey(identitySignPubB64: String, signedPreKeyPubB64: String, sigB64: String): Boolean {
         return try {
             val pubBytes = Base64.decode(identitySignPubB64, Base64.DEFAULT)
+            val spkBytes = Base64.decode(signedPreKeyPubB64, Base64.DEFAULT)
+            val sigBytes = Base64.decode(sigB64, Base64.DEFAULT)
             val kf = KeyFactory.getInstance("Ed25519")
             val pub = kf.generatePublic(X509EncodedKeySpec(pubBytes))
-            val sig = Signature.getInstance("Ed25519")
-            sig.initVerify(pub)
-            sig.update(Base64.decode(signedPreKeyPubB64, Base64.DEFAULT))
-            sig.verify(Base64.decode(sigB64, Base64.DEFAULT))
-        } catch (_: Exception) {
+            val verifier = Signature.getInstance("Ed25519")
+            verifier.initVerify(pub)
+            verifier.update(spkBytes)
+            val ok = verifier.verify(sigBytes)
+            android.util.Log.i(
+                "AIGOR-E2EE",
+                "verifySignedPreKey ok=$ok pubLen=${pubBytes.size} spkLen=${spkBytes.size} sigLen=${sigBytes.size} " +
+                    "pubSha=${sha256Hex(pubBytes)} spkSha=${sha256Hex(spkBytes)} sigSha=${sha256Hex(sigBytes)}"
+            )
+            ok
+        } catch (e: Exception) {
+            android.util.Log.e("AIGOR-E2EE", "verifySignedPreKey exception", e)
             false
         }
+    }
+
+    private fun sha256Hex(bytes: ByteArray): String {
+        return MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
     }
 
     private fun decodePublicKey(b64: String): PublicKey {

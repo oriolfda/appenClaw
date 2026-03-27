@@ -255,7 +255,8 @@ def _consume_otk(otk_id: str) -> bool:
 def _peek_otk_list(limit: int = 5):
     _ensure_otk_pool()
     store = _load_otk_store()
-    return (store.get("keys", []) or [])[:limit]
+    keys = (store.get("keys", []) or [])[:limit]
+    return [{"id": k.get("id"), "publicKey": k.get("publicKey")} for k in keys]
 
 
 def _ratchet_store_path() -> str:
@@ -676,7 +677,21 @@ def decrypt_real_envelope(env: dict, session_id: str):
 
 
 def e2ee_bundle_payload() -> dict:
-    signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(base64.b64decode(_BRIDGE_SPK_PUB_B64))).decode("ascii")
+    signed_prekey_raw = base64.b64decode(_BRIDGE_SPK_PUB_B64)
+    signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(signed_prekey_raw)).decode("ascii")
+    try:
+        import hashlib
+        print(
+            "[bridge-debug] spk-sign",
+            json.dumps({
+                "spkSha256": hashlib.sha256(signed_prekey_raw).hexdigest(),
+                "sigSha256": hashlib.sha256(base64.b64decode(signed_prekey_sig)).hexdigest(),
+                "signPubSha256": hashlib.sha256(base64.b64decode(_BRIDGE_SIGN_PUB_B64)).hexdigest(),
+            }, ensure_ascii=False),
+            flush=True,
+        )
+    except Exception:
+        pass
     one_time = _peek_otk_list(8)
     return {
         "ok": True,
