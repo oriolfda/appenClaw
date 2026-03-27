@@ -13,21 +13,20 @@ object RichTextRenderer {
     // ```python ... ```
     private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\s*([\\s\\S]*?)```")
 
-    fun bind(textView: TextView, raw: String) {
+    fun bind(textView: TextView, raw: String, selectable: Boolean = true) {
         val html = toSafeHtml(raw)
         val spanned: Spanned = HtmlCompat.fromHtml(html, HtmlCompat.FROM_HTML_MODE_LEGACY)
         textView.text = spanned
         textView.movementMethod = LinkMovementMethod.getInstance()
+        textView.setTextIsSelectable(selectable)
 
         if (looksLikeCode(raw)) {
             textView.typeface = Typeface.MONOSPACE
             textView.textSize = 14f
-            textView.setTextIsSelectable(true)
-            textView.setHorizontallyScrolling(true)
+            textView.setHorizontallyScrolling(selectable)
         } else {
             textView.typeface = Typeface.DEFAULT
             textView.textSize = 16f
-            textView.setTextIsSelectable(true)
             textView.setHorizontallyScrolling(false)
         }
     }

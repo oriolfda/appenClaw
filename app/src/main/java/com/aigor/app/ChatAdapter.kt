@@ -119,16 +119,19 @@ class ChatAdapter(
 
                 if (hasAudio) {
                     val icon = if (playingMessageTs == item.ts) "⏸" else "▶"
-                    RichTextRenderer.bind(holder.text, "$icon ${item.text}")
+                    RichTextRenderer.bind(holder.text, "$icon ${item.text}", selectable = false)
                     holder.text.setOnClickListener { onMessageClick?.invoke(item) }
+                    holder.text.setOnLongClickListener {
+                        copyMessageToClipboard(holder.text.context, item.text)
+                        true
+                    }
                 } else {
-                    RichTextRenderer.bind(holder.text, item.text)
+                    RichTextRenderer.bind(holder.text, item.text, selectable = true)
                     holder.text.setOnClickListener(null)
-                }
-
-                holder.text.setOnLongClickListener {
-                    copyMessageToClipboard(holder.text.context, item.text)
-                    true
+                    holder.text.setOnLongClickListener {
+                        copyMessageToClipboard(holder.text.context, item.text)
+                        false
+                    }
                 }
             }
             is HtmlVH -> {

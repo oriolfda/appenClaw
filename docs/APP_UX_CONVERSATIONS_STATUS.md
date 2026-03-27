@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:01 UTC
+Last updated: 2026-03-27 20:58 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:01 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 2
-- Tasques pendents: 8
-- Percentatge completat: 20%
+- Tasques completades: 3
+- Tasques pendents: 7
+- Percentatge completat: 30%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -31,8 +31,16 @@ Last updated: 2026-03-27 21:01 UTC
     - Còpia fiable de missatge complet per missatges de text user/assistant.
     - Evidència deixada en aquest report.
 
+- ✅ **1.3 Text seleccionable**
+  - Implementació:
+    - `RichTextRenderer.bind()` ara admet paràmetre `selectable` (per defecte `true`) per controlar selectabilitat segons context d'ús.
+    - En missatges de text (sense àudio), `ChatAdapter` força `selectable = true` i manté el long-press de còpia retornant `false` perquè la selecció nativa pugui continuar.
+    - En missatges amb àudio, `ChatAdapter` força `selectable = false` per no interferir amb la interacció principal de reproducció (`onClick`) i mantenir còpia ràpida per long-press.
+  - Cobertura del criteri “done”:
+    - El text és seleccionable en els casos suportats (missatges text user/assistant).
+    - No es trenca la interacció principal en missatges amb àudio.
+
 ## Tasques pendents
-- 1.3 Text seleccionable
 - 1.4 Còpia de blocs de codi o fragments multilínia
 - 2.1 Model local mínim de conversa/thread
 - 2.2 Acció visible de "Nou xat"
@@ -50,6 +58,9 @@ Last updated: 2026-03-27 21:01 UTC
   - `app/src/main/res/layout/item_message_html.xml`
   - `app/src/main/res/layout/item_message_audio.xml`
   - `app/src/main/res/layout/item_message_image_user.xml`
-- Canvi de codi aplicat a:
-  - `app/src/main/java/com/aigor/app/ChatAdapter.kt` (helper de còpia + ús des de long-press de `MessageVH`).
+- Canvis de codi aplicats a:
+  - `app/src/main/java/com/aigor/app/ChatAdapter.kt` (selecció condicionada per tipus de missatge + comportament long-press compatible amb selecció en text)
+  - `app/src/main/java/com/aigor/app/RichTextRenderer.kt` (nou paràmetre `selectable` a `bind`)
+- Verificació:
+  - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
 - Observació (no convertida en tasca): la còpia en missatges HTML renderitzats amb `WebView` no comparteix el mateix flux de còpia de `messageText`.
