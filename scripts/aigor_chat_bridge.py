@@ -9,7 +9,7 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
@@ -420,25 +420,40 @@ def _ratchet_restore_recv(session_id: str, snapshot: dict):
     _save_ratchet_store(store)
 
 
+def _kdf_rk(root_key: bytes, dh_out: bytes) -> tuple[bytes, bytes]:
+    import hmac
+    import hashlib
+    prk = hmac.new(root_key, dh_out, hashlib.sha256).digest()
+    root_next = hmac.new(prk, b"KDF_RK:root", hashlib.sha256).digest()
+    chain_init = hmac.new(prk, b"KDF_RK:chain", hashlib.sha256).digest()
+    return root_next[:32], chain_init[:32]
+
+
+def _kdf_ck(chain_key: bytes) -> tuple[bytes, bytes]:
+    import hmac
+    import hashlib
+    chain_next = hmac.new(chain_key, b"KDF_CK:chain", hashlib.sha256).digest()[:32]
+    message_key = hmac.new(chain_key, b"KDF_CK:msg", hashlib.sha256).digest()[:32]
+    return chain_next, message_key
+
+
 def _ratchet_preview_chain_key(st: dict, base_key: bytes, direction: str, counter: int) -> tuple[bytes, bytes]:
     import hashlib
+
     is_recv = direction == "c2s"
     seed_name = "recvChainSeed" if is_recv else "sendChainSeed"
 
-    prev_b64 = st.get(seed_name, "")
-    prev = base64.b64decode(prev_b64) if prev_b64 else base_key
-
     root_prev_b64 = st.get("rootKeySeed", "")
-    root_prev = base64.b64decode(root_prev_b64) if root_prev_b64 else hashlib.sha256(base_key + b"root-init").digest()
+    root_prev = base64.b64decode(root_prev_b64) if root_prev_b64 else hashlib.sha256(base_key + b"root-init").digest()[:32]
 
-    mixed = hashlib.sha256(
-        prev + base_key + root_prev + direction.encode("utf-8") + str(counter).encode("utf-8")
-    ).digest()
+    dh_material = hashlib.sha256(base_key + direction.encode("utf-8") + str(counter).encode("utf-8")).digest()
+    root_next, chain_init = _kdf_rk(root_prev, dh_material)
 
-    root_next = hashlib.sha256(
-        root_prev + mixed + direction.encode("utf-8") + str(counter).encode("utf-8") + b"root-step"
-    ).digest()
-    return mixed, root_next
+    prev_b64 = st.get(seed_name, "")
+    current_chain = base64.b64decode(prev_b64) if prev_b64 else chain_init
+    chain_next, _ = _kdf_ck(current_chain)
+
+    return chain_next, root_next
 
 
 def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, counter: int) -> bytes:
@@ -467,18 +482,18 @@ def _load_or_create_bridge_keys():
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             raw = json.load(f)
-        ecdh_priv = serialization.load_pem_private_key(raw["ecdhPrivatePem"].encode("utf-8"), password=None)
+        ecdh_pem = raw.get("x25519PrivatePem") or raw.get("ecdhPrivatePem")
+        ecdh_priv = serialization.load_pem_private_key(ecdh_pem.encode("utf-8"), password=None)
         sign_priv = serialization.load_pem_private_key(raw["signPrivatePem"].encode("utf-8"), password=None)
         kid = str(raw.get("kid", E2EE_BUNDLE_KID))
         return ecdh_priv, sign_priv, kid
 
-    ecdh_priv = ec.generate_private_key(ec.SECP256R1())
-    from cryptography.hazmat.primitives.asymmetric import ed25519
+    ecdh_priv = x25519.X25519PrivateKey.generate()
     sign_priv = ed25519.Ed25519PrivateKey.generate()
 
     raw = {
         "kid": str(E2EE_BUNDLE_KID),
-        "ecdhPrivatePem": ecdh_priv.private_bytes(
+        "x25519PrivatePem": ecdh_priv.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
@@ -513,8 +528,11 @@ _ensure_otk_pool()
 
 
 def _decode_pubkey_spki(b64: str):
-    raw = base64.b64decode(b64)
-    return serialization.load_der_public_key(raw)
+    raw = base64.b64decode(b64, validate=True)
+    pub = serialization.load_der_public_key(raw)
+    if not isinstance(pub, x25519.X25519PublicKey):
+        raise ValueError("expected X25519 public key")
+    return pub
 
 
 def _hkdf_key(shared: bytes, salt: bytes) -> bytes:
@@ -522,9 +540,10 @@ def _hkdf_key(shared: bytes, salt: bytes) -> bytes:
     return hkdf.derive(shared)
 
 
-def _derive_chain_key(base_key: bytes, direction: str) -> bytes:
+def _derive_chain_key(base_key: bytes, direction: str, ratchet_step: int = 0) -> bytes:
     import hmac, hashlib
-    return hmac.new(base_key, f"chain:{direction}".encode("utf-8"), hashlib.sha256).digest()[:32]
+    label = f"chain:{direction}:step:{int(ratchet_step)}"
+    return hmac.new(base_key, label.encode("utf-8"), hashlib.sha256).digest()[:32]
 
 
 def _derive_message_key(chain_key: bytes, counter: int, label: str) -> bytes:
@@ -538,7 +557,7 @@ def encrypt_real_envelope(plaintext: str, key: bytes, ad: str = "") -> dict:
     ct = aes.encrypt(iv, plaintext.encode("utf-8"), ad.encode("utf-8"))
     return {
         "v": 1,
-        "alg": "ecdh-p256-aesgcm-v1",
+        "alg": "x25519-aesgcm-v1",
         "iv": base64.b64encode(iv).decode("ascii"),
         "ciphertext": base64.b64encode(ct).decode("ascii"),
         "ad": ad,
@@ -584,14 +603,14 @@ def decrypt_real_envelope(env: dict, session_id: str):
     counter = int(env.get("counter", 0))
 
     eph_pub = _decode_pubkey_spki(eph_b64)
-    shared = _BRIDGE_PRIVKEY.exchange(ec.ECDH(), eph_pub)
+    shared = _BRIDGE_PRIVKEY.exchange(eph_pub)
     base_key = _hkdf_key(shared, salt)
 
     ratchet_shared = b""
     if ratchet_b64:
         try:
             ratchet_pub = _decode_pubkey_spki(ratchet_b64)
-            ratchet_shared = _BRIDGE_PRIVKEY.exchange(ec.ECDH(), ratchet_pub)
+            ratchet_shared = _BRIDGE_PRIVKEY.exchange(ratchet_pub)
             import hashlib
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
             base_key = _hkdf_key(base_key + ratchet_shared, mix_salt)
@@ -609,8 +628,11 @@ def decrypt_real_envelope(env: dict, session_id: str):
         base_key = hashlib.sha256(recv_seed + base_key + b"recv-priority").digest()
 
     mixed_key, root_next = _ratchet_preview_chain_key(st, base_key, "c2s", counter)
+    # Prefer explicit envelope step when provided; keep backward compatibility
+    # with legacy envelopes that did not carry ratchetStep.
+    ratchet_step = int(env.get("ratchetStep", 0) or 0)
 
-    recv_chain_key = _derive_chain_key(mixed_key, "recv")
+    recv_chain_key = _derive_chain_key(mixed_key, "recv", ratchet_step)
     key = _derive_message_key(recv_chain_key, counter, "c2s")
     aes = AESGCM(key)
     pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
@@ -1076,7 +1098,7 @@ class Handler(BaseHTTPRequestHandler):
                 })
                 return
 
-            if len(raw_ephemeral_pub) > 256:
+            if len(raw_ephemeral_pub) > 512:
                 self._send(400, {
                     "ok": False,
                     "error": "e2ee_ephemeral_invalid",
@@ -1085,22 +1107,33 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             try:
-                decoded_ephemeral_pub = base64.b64decode(raw_ephemeral_pub, validate=True)
+                _decode_pubkey_spki(raw_ephemeral_pub)
             except Exception:
                 self._send(400, {
                     "ok": False,
                     "error": "e2ee_ephemeral_invalid",
-                    "message": "Encrypted envelope requires valid base64 ephemeralPub."
+                    "message": "Encrypted envelope requires valid base64 X25519 SPKI ephemeralPub."
                 })
                 return
 
-            if len(decoded_ephemeral_pub) != 32:
-                self._send(400, {
-                    "ok": False,
-                    "error": "e2ee_ephemeral_invalid",
-                    "message": "Encrypted envelope requires 32-byte ephemeralPub key material."
-                })
-                return
+            raw_ratchet_pub = e2ee_req.get("ratchetPub")
+            if raw_ratchet_pub is not None and str(raw_ratchet_pub).strip():
+                if len(str(raw_ratchet_pub)) > 512:
+                    self._send(400, {
+                        "ok": False,
+                        "error": "e2ee_ratchet_invalid",
+                        "message": "Encrypted envelope ratchetPub is too large."
+                    })
+                    return
+                try:
+                    _decode_pubkey_spki(str(raw_ratchet_pub))
+                except Exception:
+                    self._send(400, {
+                        "ok": False,
+                        "error": "e2ee_ratchet_invalid",
+                        "message": "Encrypted envelope requires valid base64 X25519 SPKI ratchetPub."
+                    })
+                    return
 
         if e2ee_req and (not message) and e2ee_req.get("ciphertext"):
             try:
@@ -1257,10 +1290,12 @@ class Handler(BaseHTTPRequestHandler):
                 _save_ratchet_store(store)
 
                 reply_key = _ratchet_mix_chain_key(session_id, reply_key, "s2c", out_counter)
-                send_chain_key = _derive_chain_key(reply_key, "send")
+                ratchet_step = int(st.get("recv", {}).get("ratchetStep", 0))
+                send_chain_key = _derive_chain_key(reply_key, "send", ratchet_step)
                 msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")
                 envelope = encrypt_real_envelope(reply, key=msg_key, ad=(reply_ad or session_id))
                 envelope["counter"] = out_counter
+                envelope["ratchetStep"] = ratchet_step
                 payload["e2eeReply"] = envelope
                 payload["reply"] = ""
 

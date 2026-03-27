@@ -1,52 +1,57 @@
 {
-  "timestampUtc": "2026-03-26T17:17:00Z",
-  "mode": "AIGOR-ONLY WATCHDOG RESET",
-  "repo": {
-    "name": "aigor-app",
-    "path": "~/.openclaw/workspace/aigor-app",
-    "branch": "feature/signal-e2ee-phase2"
+  "timestampUtc": "2026-03-27T10:41:56Z",
+  "mode": "STRICT E2EE GOVERNANCE MODE",
+  "repo": "aigor-app",
+  "branch": "feature/signal-e2ee-phase2",
+  "gitStatus": {
+    "dirty": true,
+    "notes": "Working tree amb canvis de docs/scripts pendents de neteja"
   },
-  "scope": {
-    "openclawApp": "DEFERRED",
-    "crossRepoSync": "DEFERRED",
-    "blocking": false
-  },
-  "status": {
-    "inProgress": true,
-    "realProgress": true,
-    "stalled": false
+  "minimStrictCases": {
+    "value": 100,
+    "changed": false
   },
   "checks": {
     "releaseGate": {
       "ok": true,
       "fullMatrixScripts": 19,
+      "fullMatrixUniqueScripts": 19,
       "strictCases": 100,
+      "strictUniqueCaseNames": 100,
       "assembleRelease": true
     }
   },
   "matrix": {
-    "requiredPass": 13,
+    "requiredPass": 14,
     "requiredFail": 0,
     "regressionPass": 3,
     "regressionFail": 0,
     "failingRequired": [],
     "failingRegression": [],
-    "coverageGaps": [
-      "Formalitzar gate de tancament de fase al pipeline",
-      "Unificar evidència watchdog en sortida canònica",
-      "Completar checklist final de fase"
-    ]
+    "newRequired": 0,
+    "newRegression": 0,
+    "newCandidate": 0
   },
-  "actionExecuted": "WATCHDOG RESET aplicat: tracking reorientat exclusivament a aigor-app i fitxers de governança regenerats.",
+  "functionalGaps": [],
+  "doneCriteria": {
+    "allRequiredPass": true,
+    "allRegressionPass": true,
+    "criticalGaps": false,
+    "lifecycleCorrect": true,
+    "releaseGateStable": true,
+    "doneFunctionalAigorApp": true
+  },
+  "realProgress": true,
+  "stalled": false,
+  "actionExecuted": "Revalidació tècnica d'aigor-app + alineació final de documentació a criteri de DONE funcional sense ampliar scope.",
   "evidence": {
-    "releaseGateBaseline": "fullMatrix=19/19, strictCases=100, assembleRelease PASS",
-    "branch": "feature/signal-e2ee-phase2",
+    "releaseGate": "python3 scripts/e2ee_release_gate_smoke.py => ok=true, fullMatrixScripts=19/19, strictCases=100, assembleRelease=PASS",
     "docsUpdated": [
-      "docs/SIGNAL_E2EE_PHASE2.md",
       "docs/e2ee_strict_coverage_matrix.md",
+      "docs/SIGNAL_E2EE_PHASE2.md",
       "docs/watchdog_state.json",
       "docs/watchdog_report_latest.txt"
     ]
   },
-  "nextStepImmediate": "Executar validació final i marcar SIGNAL_E2EE_PHASE2 com DONE si es mantenen requiredFail=0, regressionFail=0 i releaseGate PASS."
+  "nextStep": "Manteniment: no crear nous REQUIRED; només actuar si apareix FAIL real o nou gap funcional crític."
 }

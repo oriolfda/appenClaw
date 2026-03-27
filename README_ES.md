@@ -1,6 +1,8 @@
 # AIGOR App
 
 > **AVISO:** Esta app está en fase de construcción. Úsala bajo tu propia responsabilidad.
+>
+> **Aviso importante sobre la rama E2EE:** la implementación E2EE de esta rama ha sido desarrollada íntegramente o principalmente por un asistente AI durante el proceso de desarrollo. No ha sido certificada, auditada ni validada por ninguna entidad externa independiente. No debe presentarse como una implementación canónica o certificada de Signal. Cualquier uso del proyecto, del APK o de sus funciones criptográficas se realiza bajo el riesgo y responsabilidad de quien decida utilizarlo.
 
 **AIGOR App es una app Android para comunicarte con tu asistente OpenClaw** por texto, audio, imágenes y vídeo.
 

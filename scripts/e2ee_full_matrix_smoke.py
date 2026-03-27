@@ -18,6 +18,17 @@ SCRIPTS = [
     ["e2ee_state_lifecycle_smoke.py", BRIDGE, "AIGOR_APP"],
     ["e2ee_skipped_cache_lifecycle_smoke.py", BRIDGE, "AIGOR_APP"],
     ["e2ee_window_eviction_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_large_gap_window_cap_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_large_gap_header_scope_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_no_drift_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_replay_slot_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_dh_step_rollback_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_dh_step_failed_then_success_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_same_counter_success_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_next_counter_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_next_counter_dh_step_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_failed_decrypt_next_counter_dh_step_header_norm_smoke.py", BRIDGE, "AIGOR_APP"],
+    ["e2ee_header_normalization_smoke.py", BRIDGE, "AIGOR_APP"],
 ]
 
 

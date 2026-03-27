@@ -1,5 +1,7 @@
 # AIGOR App
 
+> **Avís important sobre la branca E2EE:** la implementació E2EE d'aquesta branca ha estat realitzada íntegrament o principalment per un assistent AI durant el procés de desenvolupament. No està certificada, auditada ni validada per cap entitat externa independent. No s'ha de presentar com una implementació canònica o certificada de Signal. Qualsevol ús del projecte, de l'APK o de les seves funcions criptogràfiques es fa sota el risc i responsabilitat de qui decideixi utilitzar-lo.
+
 **AIGOR App és una app Android per comunicar-te amb el teu assistent OpenClaw** de forma natural: text, àudio, imatges i vídeo, amb una interfície de xat moderna.
 
 Aquest repositori està pensat perquè qualsevol persona (encara que no sigui tècnica) pugui:

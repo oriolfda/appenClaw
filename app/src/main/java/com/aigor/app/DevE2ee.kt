@@ -21,13 +21,27 @@ object DevE2ee {
         val responseKey: ByteArray,
     )
 
+    data class CanonicalRatchetState(
+        val rootKey: ByteArray,
+        val sendChainKey: ByteArray,
+        val recvChainKey: ByteArray,
+        val ratchetStep: Int,
+        val lastPeerRatchetPubB64: String? = null,
+    ) {
+        fun messageKey(counter: Int, label: String, direction: Direction): ByteArray {
+            val chainKey = if (direction == Direction.SEND) sendChainKey else recvChainKey
+            return deriveMessageKey(chainKey, counter, label)
+        }
+    }
+
+    enum class Direction { SEND, RECV }
+
     fun encryptForBridge(plaintext: String, bridgePublicKeyB64: String, ad: String, otkId: String? = null, counter: Int = 0): EncryptResult {
-        val kpg = KeyPairGenerator.getInstance("EC")
-        kpg.initialize(256)
+        val kpg = KeyPairGenerator.getInstance("X25519")
         val eph = kpg.generateKeyPair()
 
         val bridgePub = decodePublicKey(bridgePublicKeyB64)
-        val ka = KeyAgreement.getInstance("ECDH")
+        val ka = KeyAgreement.getInstance("X25519")
         ka.init(eph.private)
         ka.doPhase(bridgePub, true)
         val shared = ka.generateSecret()
@@ -36,7 +50,7 @@ object DevE2ee {
         var baseKey = hkdfSha256(shared, salt, "aigor-e2ee-v1", 32)
 
         val ratchet = kpg.generateKeyPair()
-        val kaRatchet = KeyAgreement.getInstance("ECDH")
+        val kaRatchet = KeyAgreement.getInstance("X25519")
         kaRatchet.init(ratchet.private)
         kaRatchet.doPhase(bridgePub, true)
         val ratchetShared = kaRatchet.generateSecret()
@@ -44,8 +58,12 @@ object DevE2ee {
         val ratchetSalt = MessageDigest.getInstance("SHA-256").digest(ratchetPubBytes).copyOfRange(0, 16)
         baseKey = hkdfSha256(baseKey + ratchetShared, ratchetSalt, "aigor-ratchet-step-v1", 32)
 
-        val sendChainKey = deriveChainKey(baseKey, "send")
-        val key = deriveMessageKey(sendChainKey, counter, "c2s")
+        val state = canonicalStateFromRoot(
+            rootKey = baseKey,
+            ratchetStep = 1,
+            lastPeerRatchetPubB64 = Base64.encodeToString(bridgePub.encoded, Base64.NO_WRAP),
+        )
+        val key = state.messageKey(counter, "c2s", Direction.SEND)
         val iv = ByteArray(12).also { SecureRandom().nextBytes(it) }
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -55,7 +73,7 @@ object DevE2ee {
 
         val env = JSONObject().apply {
             put("v", 1)
-            put("alg", "ecdh-p256-aesgcm-v1")
+            put("alg", "x25519-aesgcm-v1")
             put("headerId", "h-${Base64.encodeToString(MessageDigest.getInstance("SHA-256").digest(ratchetPubBytes), Base64.NO_WRAP).take(10)}")
             put("ephemeralPub", Base64.encodeToString(eph.public.encoded, Base64.NO_WRAP))
             put("ratchetPub", Base64.encodeToString(ratchetPubBytes, Base64.NO_WRAP))
@@ -64,6 +82,8 @@ object DevE2ee {
             put("ciphertext", Base64.encodeToString(ct, Base64.NO_WRAP))
             put("ad", ad)
             put("counter", counter)
+            put("ratchetStep", state.ratchetStep)
+            put("keyModel", "canonical-v1")
             if (!otkId.isNullOrBlank()) put("otkId", otkId)
             put("expectEncryptedReply", true)
         }
@@ -76,8 +96,13 @@ object DevE2ee {
         val iv = Base64.decode(env.optString("iv", ""), Base64.DEFAULT)
         val ct = Base64.decode(env.optString("ciphertext", ""), Base64.DEFAULT)
         val counter = env.optInt("counter", 0)
-        val recvChainKey = deriveChainKey(baseKey, "recv")
-        val key = deriveMessageKey(recvChainKey, counter, "s2c")
+        val ratchetStep = env.optInt("ratchetStep", 1)
+        val state = canonicalStateFromRoot(
+            rootKey = baseKey,
+            ratchetStep = ratchetStep,
+            lastPeerRatchetPubB64 = env.optString("ratchetPub", "").ifBlank { null },
+        )
+        val key = state.messageKey(counter, "s2c", Direction.RECV)
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
@@ -88,8 +113,8 @@ object DevE2ee {
 
     fun encryptAttachment(base64Data: String, baseKey: ByteArray, name: String, mime: String, ad: String, counter: Int): JSONObject {
         val raw = Base64.decode(base64Data, Base64.DEFAULT)
-        val sendChainKey = deriveChainKey(baseKey, "send")
-        val key = deriveMessageKey(sendChainKey, counter, "att")
+        val state = canonicalStateFromRoot(rootKey = baseKey, ratchetStep = 1)
+        val key = state.messageKey(counter, "att", Direction.SEND)
         val iv = ByteArray(12).also { SecureRandom().nextBytes(it) }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
@@ -122,14 +147,30 @@ object DevE2ee {
 
     private fun decodePublicKey(b64: String): PublicKey {
         val bytes = Base64.decode(b64, Base64.DEFAULT)
-        val kf = KeyFactory.getInstance("EC")
+        val kf = KeyFactory.getInstance("X25519")
         return kf.generatePublic(X509EncodedKeySpec(bytes))
     }
 
-    private fun deriveChainKey(baseKey: ByteArray, direction: String): ByteArray {
+    private fun canonicalStateFromRoot(
+        rootKey: ByteArray,
+        ratchetStep: Int,
+        lastPeerRatchetPubB64: String? = null,
+    ): CanonicalRatchetState {
+        val sendChainKey = deriveChainKey(rootKey, "send", ratchetStep)
+        val recvChainKey = deriveChainKey(rootKey, "recv", ratchetStep)
+        return CanonicalRatchetState(
+            rootKey = rootKey,
+            sendChainKey = sendChainKey,
+            recvChainKey = recvChainKey,
+            ratchetStep = ratchetStep,
+            lastPeerRatchetPubB64 = lastPeerRatchetPubB64,
+        )
+    }
+
+    private fun deriveChainKey(rootKey: ByteArray, direction: String, ratchetStep: Int): ByteArray {
         val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(baseKey, "HmacSHA256"))
-        val d = mac.doFinal("chain:$direction".toByteArray(Charsets.UTF_8))
+        mac.init(SecretKeySpec(rootKey, "HmacSHA256"))
+        val d = mac.doFinal("chain:$direction:step:$ratchetStep".toByteArray(Charsets.UTF_8))
         return d.copyOfRange(0, 32)
     }
 

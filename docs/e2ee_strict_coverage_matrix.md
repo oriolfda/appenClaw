@@ -1,34 +1,34 @@
-# E2EE Strict Coverage Matrix — aigor-app (WATCHDOG RESET)
+# E2EE Strict Coverage Matrix
 
-Last updated (UTC): 2026-03-26 17:17
-Governance mode: AIGOR-ONLY STRICT TRACKING
+Last updated (UTC): 2026-03-27 10:41
+Governance mode: STRICT E2EE GOVERNANCE MODE
+minimStrictCases baseline: **100 (FROZEN, unchanged)**
 
-| ID | Category | Type | Status | Notes |
-|---|---|---|---|---|
-| REQ-001 | session_init | REQUIRED | PASS | Inicialització i persistència de sessió validades |
-| REQ-002 | send_message | REQUIRED | PASS | Comptador de sortida i xifrat en flux normal |
-| REQ-003 | receive_message | REQUIRED | PASS | Decrypt vàlid i validació de sobre xifrat |
-| REQ-004 | out_of_order | REQUIRED | PASS | Finestra reorder i anti-replay correctes |
-| REQ-005 | skipped_key_recovery | REQUIRED | PASS | Recuperació/consum segur de claus skipped |
-| REQ-006 | replay_protection | REQUIRED | PASS | Repeticions bloquejades |
-| REQ-007 | counter_enforcement | REQUIRED | PASS | Counter obligatori i rang validat |
-| REQ-008 | restart_persistence | REQUIRED | PASS | Estat recuperable després de restart |
-| REQ-009 | lifecycle_management | REQUIRED | PASS | Mutacions només en camins vàlids |
-| REQ-010 | window_eviction | REQUIRED | PASS | Evicció i límits de finestra estables |
-| REQ-011 | malformed_input | REQUIRED | PASS | Rebuig determinista d’entrada malformada |
-| REQ-012 | dh_ratchet_step | REQUIRED | PASS | Pas DH i cadenes coherents |
-| REQ-013 | state_consistency | REQUIRED | PASS | Sense drift després de fallades de decrypt |
-| REG-001 | replay_counter_reuse | REGRESSION | PASS | Regressió replay coberta |
-| REG-002 | failed_decrypt_state_drift | REGRESSION | PASS | Regressió de drift coberta |
-| REG-003 | large_gap_dos | REGRESSION | PASS | Regressió de gap gran coberta |
+| ID | Category | Invariant | Type (REQUIRED / REGRESSION / CANDIDATE) | Required (yes/no) | Regression (yes/no) | Status (PASS / FAIL / MISSING / CANDIDATE) | Scope | Notes |
+|---|---|---|---|---|---|---|---|---|
+| REQ-001 | session_init | Sessió E2EE inicialitzable amb estat persistent vàlid | REQUIRED | yes | no | PASS | aigor-app | Flux base operatiu |
+| REQ-002 | send_message | Enviament xifrat incrementa comptador de sortida correctament | REQUIRED | yes | no | PASS | aigor-app | Cobert per `e2ee_seed_progress_smoke.py` |
+| REQ-003 | receive_message | Recepció xifrada només accepta payload vàlid desencriptable | REQUIRED | yes | no | PASS | aigor-app | Cobert per full matrix |
+| REQ-004 | out_of_order | Missatges fora d'ordre dins finestra acceptats; replay rebutjat | REQUIRED | yes | no | PASS | aigor-app | Cobert per `e2ee_headerid_smoke.py` |
+| REQ-005 | skipped_key_recovery | Claus skipped es recuperen/consumeixen sense contaminació entre headers | REQUIRED | yes | no | PASS | aigor-app | Cobertura funcional present |
+| REQ-006 | replay_protection | Reutilització de counter no processa missatge repetit | REQUIRED | yes | no | PASS | aigor-app | Smokes de replay PASS |
+| REQ-007 | counter_enforcement | Counter obligatori, positiu i dins rang segur | REQUIRED | yes | no | PASS | aigor-app | Cobertura strict present |
+| REQ-008 | restart_persistence | Estat persisteix després de restart sense regressions | REQUIRED | yes | no | PASS | aigor-app | Cobertura de lifecycle |
+| REQ-009 | lifecycle_management | Mutacions d'estat només en camins vàlids/commit controlat | REQUIRED | yes | no | PASS | aigor-app | Rollback/no-drift cobert |
+| REQ-010 | window_eviction | Finestra limita memòria i rebutja fora de finestra | REQUIRED | yes | no | PASS | aigor-app | Window eviction cobert |
+| REQ-011 | malformed_input | Envelope malformat rebutjat de forma determinista | REQUIRED | yes | no | PASS | aigor-app | Cobertura strict present |
+| REQ-012 | dh_ratchet_step | DH ratchet avança només quan toca i reseteja cadenes | REQUIRED | yes | no | PASS | aigor-app | DH-step cobert |
+| REQ-013 | state_consistency | Fallades decrypt no causen drift ni consumeixen slots replay | REQUIRED | yes | no | PASS | aigor-app | Failed-decrypt rollback PASS |
+| REQ-014 | attachments_path | Adjunt xifrat manté flux funcional correcte | REQUIRED | yes | no | PASS | aigor-app | Attachment smoke PASS |
+| REG-001 | replay_protection | Bug real: reutilització de counter | REGRESSION | no | yes | PASS | aigor-app | No regressió detectada |
+| REG-002 | lifecycle_management | Bug real: drift d'estat després decrypt fallit | REGRESSION | no | yes | PASS | aigor-app | Cobert per rollback/no-drift |
+| REG-003 | window_eviction | Bug real: DoS per gaps grans | REGRESSION | no | yes | PASS | aigor-app | Gap capat a finestra |
 
-## Resum
-- Required PASS: **13**
-- Required FAIL: **0**
-- Regression PASS: **3**
-- Regression FAIL: **0**
+## Coverage gaps crítics
+Cap gap crític extern de sincronització. Només s'han de considerar gaps reals que afectin el comportament funcional d'`aigor-app`.
 
-## Coverage gaps (aigor-app)
-1. Formalitzar criteri de tancament de fase com a gate explícit en pipeline.
-2. Unificar traça d’evidència per execució watchdog (format canònic únic).
-3. Checklist final de fase pendent de marcatge definitiu.
+## Regles de governança aplicades en aquesta execució
+- minimStrictCases **no modificat**.
+- **0** nous REQUIRED.
+- **0** nous REGRESSION.
+- No s'usa cap paritat amb altres repos com a criteri de DONE.
