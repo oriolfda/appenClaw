@@ -105,6 +105,10 @@ object DevE2ee {
             put("expectEncryptedReply", true)
         }
 
+        android.util.Log.i(
+            "AIGOR-E2EE",
+            "encryptForBridge responseKeySha=${sha256Hex(baseKey)} ratchetStep=${state.ratchetStep} counter=$counter"
+        )
         return EncryptResult(env, baseKey)
     }
 
@@ -118,6 +122,10 @@ object DevE2ee {
             rootKey = baseKey,
             ratchetStep = ratchetStep,
             lastPeerRatchetPubB64 = env.optString("ratchetPub", "").ifBlank { null },
+        )
+        android.util.Log.i(
+            "AIGOR-E2EE",
+            "decryptWithKey baseKeySha=${sha256Hex(baseKey)} ratchetStep=$ratchetStep counter=$counter"
         )
         val key = state.messageKey(counter, "s2c", Direction.SEND)
 

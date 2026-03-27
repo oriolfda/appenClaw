@@ -1375,6 +1375,13 @@ class Handler(BaseHTTPRequestHandler):
                 # Simplified symmetric s2c path for interoperability with the current client.
                 # TODO(watchdog): reintroduce ratchet_mix_chain symmetrically on bridge + client.
                 ratchet_step = int(st.get("recv", {}).get("ratchetStep", 0))
+                import hashlib
+                print("[bridge-debug] reply-key " + json.dumps({
+                    "sessionId": session_id,
+                    "replyKeySha256": hashlib.sha256(reply_key).hexdigest(),
+                    "outCounter": out_counter,
+                    "ratchetStep": ratchet_step,
+                }, ensure_ascii=False), flush=True)
                 send_chain_key = _derive_chain_key(reply_key, "send", ratchet_step)
                 msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")
                 envelope = encrypt_real_envelope(reply, key=msg_key, ad=(reply_ad or session_id))
