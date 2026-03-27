@@ -1346,7 +1346,6 @@ class Handler(BaseHTTPRequestHandler):
                 envelope["ratchetStep"] = ratchet_step
                 payload["e2eeReply"] = envelope
                 payload["reply"] = ""
-            else:
 
             self._send(200, payload)
         except subprocess.TimeoutExpired:
