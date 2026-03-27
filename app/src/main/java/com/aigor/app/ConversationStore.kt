@@ -35,18 +35,32 @@ object ConversationStore {
             return State(threads, active.threadId)
         }
 
-        val now = System.currentTimeMillis()
-        val fallback = threads.firstOrNull() ?: ConversationThread(
-            threadId = UUID.randomUUID().toString(),
-            sessionId = "aigor-app-chat-${UUID.randomUUID()}",
-            createdAt = now,
-            updatedAt = now,
-        )
+        val fallback = threads.firstOrNull() ?: newThread()
 
         val normalizedThreads = if (threads.isEmpty()) listOf(fallback) else threads
         saveThreads(prefs, normalizedThreads)
         prefs.edit().putString(KEY_ACTIVE_THREAD_ID, fallback.threadId).apply()
         return State(normalizedThreads, fallback.threadId)
+    }
+
+    fun createNewAndActivate(context: Context): ConversationThread {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        val current = loadThreads(prefs)
+        val created = newThread(now)
+        val updatedThreads = current + created
+        saveThreads(prefs, updatedThreads)
+        prefs.edit().putString(KEY_ACTIVE_THREAD_ID, created.threadId).apply()
+        return created
+    }
+
+    private fun newThread(now: Long = System.currentTimeMillis()): ConversationThread {
+        return ConversationThread(
+            threadId = UUID.randomUUID().toString(),
+            sessionId = "aigor-app-chat-${UUID.randomUUID()}",
+            createdAt = now,
+            updatedAt = now,
+        )
     }
 
     private fun loadThreads(prefs: android.content.SharedPreferences): List<ConversationThread> {

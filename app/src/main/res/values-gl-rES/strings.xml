@@ -11,6 +11,7 @@
     <string name="lang_auto">Automático (sistema)</string>
     <string name="menu_status">Estado de contexto</string>
     <string name="menu_settings">Axustes</string>
+    <string name="menu_new_chat">Novo chat</string>
     <string name="menu_about">Acerca de</string>
     <string name="menu_clear_chat">Limpar chat</string>
     <string name="hint_write_message">Escribe unha mensaxe...</string>
@@ -19,6 +20,7 @@
     <string name="recording_cancelled_swipe">Gravación cancelada (desliza esquerda)</string>
     <string name="recording_locked">Gravación bloqueada 🔒</string>
     <string name="recording_discarded">Gravación descartada</string>
+    <string name="status_new_chat_started">Estado: novo chat iniciado</string>
     <string name="status_chat_cleared">Estado: chat limpo</string>
     <string name="fill_endpoint_token">Completa endpoint e token</string>
     <string name="title_app">AIGOR</string>

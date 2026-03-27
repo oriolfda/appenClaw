@@ -11,6 +11,7 @@
     <string name="lang_auto">Automatikoa (sistema)</string>
     <string name="menu_status">Testuinguruaren egoera</string>
     <string name="menu_settings">Ezarpenak</string>
+    <string name="menu_new_chat">Txat berria</string>
     <string name="menu_about">Honi buruz</string>
     <string name="menu_clear_chat">Txata garbitu</string>
     <string name="hint_write_message">Idatzi mezua...</string>
@@ -19,6 +20,7 @@
     <string name="recording_cancelled_swipe">Grabazioa ezeztatuta (ezkerrera)</string>
     <string name="recording_locked">Grabazioa blokeatuta 🔒</string>
     <string name="recording_discarded">Grabazioa baztertuta</string>
+    <string name="status_new_chat_started">Egoera: txat berria hasita</string>
     <string name="status_chat_cleared">Egoera: txata garbituta</string>
     <string name="fill_endpoint_token">Bete endpoint eta tokena</string>
     <string name="title_app">AIGOR</string>

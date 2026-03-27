@@ -237,6 +237,10 @@ class MainActivity : AppCompatActivity() {
                     showAboutDialog()
                     true
                 }
+                R.id.menu_new_chat -> {
+                    startNewChat()
+                    true
+                }
                 R.id.menu_clear_chat -> {
                     messages.clear()
                     adapter.notifyDataSetChanged()
@@ -1295,6 +1299,17 @@ class MainActivity : AppCompatActivity() {
             .setMessage(info)
             .setPositiveButton(getString(R.string.close), null)
             .show()
+    }
+
+    private fun startNewChat() {
+        activeConversation = ConversationStore.createNewAndActivate(this)
+        messages.clear()
+        adapter.notifyDataSetChanged()
+        saveHistory()
+        pendingAttachment = null
+        updatePendingAttachmentUi()
+        messageEdit.setText("")
+        statusText.text = getString(R.string.status_new_chat_started)
     }
 
     private fun addMessage(msg: ChatMessage) {

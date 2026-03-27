@@ -11,6 +11,7 @@
     <string name="lang_auto">Automàtic (sistema)</string>
     <string name="menu_status">Estat context</string>
     <string name="menu_settings">Settings</string>
+    <string name="menu_new_chat">Nou xat</string>
     <string name="menu_about">Quant a</string>
     <string name="menu_clear_chat">Netejar xat</string>
     <string name="hint_write_message">Escriu un missatge...</string>
@@ -19,6 +20,7 @@
     <string name="recording_cancelled_swipe">Gravació cancel·lada (lliscar esquerra)</string>
     <string name="recording_locked">Enregistrament bloquejat 🔒</string>
     <string name="recording_discarded">Gravació descartada</string>
+    <string name="status_new_chat_started">Estat: nou xat iniciat</string>
     <string name="status_chat_cleared">Estat: xat netejat</string>
     <string name="fill_endpoint_token">Omple endpoint i token</string>
     <string name="title_app">AIGOR</string>

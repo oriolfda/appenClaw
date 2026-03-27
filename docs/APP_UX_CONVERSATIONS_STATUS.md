@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:06 UTC
+Last updated: 2026-03-27 21:09 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:06 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 5
-- Tasques pendents: 5
-- Percentatge completat: 50%
+- Tasques completades: 6
+- Tasques pendents: 4
+- Percentatge completat: 60%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -58,8 +58,17 @@ Last updated: 2026-03-27 21:06 UTC
     - Existeix model local persistent mínim de conversa/thread.
     - Hi ha conversa activa i identificació estable (`threadId`/`sessionId`) carregada a l'app.
 
+- ✅ **2.2 Acció visible de "Nou xat"**
+  - Implementació:
+    - Nou item visible `menu_new_chat` al menú overflow (`main_overflow_menu.xml`) amb cadenes localitzades.
+    - `ConversationStore` incorpora `createNewAndActivate(context)` per crear un `threadId`/`sessionId` nou i activar-lo immediatament.
+    - `MainActivity` incorpora `startNewChat()` i, en clicar "Nou xat", canvia la conversa activa, neteja la vista actual i deixa estat de confirmació.
+  - Cobertura del criteri “done”:
+    - L'usuari pot iniciar un xat nou des de la UI.
+    - Es genera `sessionId` nou per a la conversa creada.
+    - La conversa activa canvia correctament al nou context.
+
 ## Tasques pendents
-- 2.2 Acció visible de "Nou xat"
 - 2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE
 - 3.1 Persistència local d'historial de converses i missatges
 - 3.2 UI per veure converses anteriors
@@ -67,8 +76,10 @@ Last updated: 2026-03-27 21:06 UTC
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
-  - `app/src/main/java/com/aigor/app/ConversationStore.kt` (nou store/model local de converses amb conversa activa persistent)
-  - `app/src/main/java/com/aigor/app/MainActivity.kt` (inicialització de conversa activa persistent)
+  - `app/src/main/java/com/aigor/app/ConversationStore.kt` (alta de `createNewAndActivate` i factorització de generació de thread/session)
+  - `app/src/main/java/com/aigor/app/MainActivity.kt` (gestió de menú `menu_new_chat` i `startNewChat()` per canviar conversa activa)
+  - `app/src/main/res/menu/main_overflow_menu.xml` (nova acció visible "Nou xat")
+  - `app/src/main/res/values*/strings.xml` (cadenes `menu_new_chat` i `status_new_chat_started`)
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Observació (no convertida en tasca): el flux de missatgeria encara usa `sessionId` fix en diversos punts; queda cobert explícitament per la tasca 2.3 del planning.
+- Observació (no convertida en tasca): el flux de missatgeria/E2EE encara usa `sessionId` fix en diversos punts; queda cobert explícitament per la tasca 2.3 del planning.
