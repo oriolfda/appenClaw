@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:15 UTC
+Last updated: 2026-03-27 21:22 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:15 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 7
-- Tasques pendents: 3
-- Percentatge completat: 70%
+- Tasques completades: 8
+- Tasques pendents: 2
+- Percentatge completat: 80%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -78,18 +78,27 @@ Last updated: 2026-03-27 21:15 UTC
     - El codi d'enviament/transcripció usa el `sessionId` actiu de la conversa.
     - S'elimina la dependència funcional d'un únic `aigor-app-chat` fix per a totes les converses.
 
+- ✅ **3.1 Persistència local d'historial de converses i missatges**
+  - Implementació:
+    - `ConversationStore` incorpora persistència d'historial per conversa amb claus per `threadId` (`chat_history_thread_<threadId>`).
+    - `MainActivity.loadHistory()` i `MainActivity.saveHistory()` passen a carregar/desar contra la conversa activa (`activeConversation.threadId`) en lloc d'una clau global única.
+    - Migració compatible: si no existeix historial per thread però sí l'històric legacy `chat_history`, es reutilitza i es copia a la clau del thread actiu.
+    - `ConversationStore.saveHistoryJson(...)` actualitza `updatedAt` del thread quan canvia l'historial.
+  - Cobertura del criteri “done”:
+    - Les converses i els seus missatges locals queden persistits per conversa i sobreviuen a reinicis.
+    - Cada conversa conserva el seu historial sense sobreescriure globalment la resta.
+
 ## Tasques pendents
-- 3.1 Persistència local d'historial de converses i missatges
 - 3.2 UI per veure converses anteriors
 - 3.3 Recuperació de context i continuació sobre `sessionId` correcte
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
+  - `app/src/main/java/com/aigor/app/ConversationStore.kt`
+    - Nova persistència d'historial per conversa (`chat_history_thread_<threadId>`).
+    - Migració compatible des de `chat_history` legacy quan falta historial específic de thread.
+    - Actualització de `updatedAt` quan es desa historial d'una conversa.
   - `app/src/main/java/com/aigor/app/MainActivity.kt`
-    - Substitució de `sessionId` fix per `activeConversation.sessionId` a `sendToOpenClaw()` i `requestTranscription()`.
-    - `encryptAttachment(...)` ara usa el `sessionId` actiu.
-    - Comptador E2EE de sortida per conversa: `e2ee_send_counter_<sessionId>`.
-    - `acceptIncomingCounter(...)` sense id per defecte global.
+    - `loadHistory()` i `saveHistory()` ara operen sobre la conversa activa (`activeConversation.threadId`).
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Observació (no convertida en tasca): la persistència d'historial continua global (`chat_history`), pendent d'abordar-se a la tasca 3.1 segons planning.

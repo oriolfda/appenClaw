@@ -16,6 +16,8 @@ object ConversationStore {
     private const val PREFS_NAME = "aigor_prefs"
     private const val KEY_THREADS = "chat_threads"
     private const val KEY_ACTIVE_THREAD_ID = "chat_active_thread_id"
+    private const val KEY_LEGACY_CHAT_HISTORY = "chat_history"
+    private const val KEY_HISTORY_PREFIX = "chat_history_thread_"
 
     data class State(
         val threads: List<ConversationThread>,
@@ -54,6 +56,41 @@ object ConversationStore {
         return created
     }
 
+    fun loadHistoryJson(context: Context, threadId: String): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = historyKey(threadId)
+        val direct = prefs.getString(key, null)
+        if (direct != null) return direct
+
+        val legacy = prefs.getString(KEY_LEGACY_CHAT_HISTORY, null)
+        if (!legacy.isNullOrBlank()) {
+            prefs.edit().putString(key, legacy).apply()
+            return legacy
+        }
+
+        return "[]"
+    }
+
+    fun saveHistoryJson(context: Context, threadId: String, historyJson: String) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(historyKey(threadId), historyJson).apply()
+        touchThreadUpdatedAt(context, threadId)
+    }
+
+    fun touchThreadUpdatedAt(context: Context, threadId: String, now: Long = System.currentTimeMillis()) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val current = loadThreads(prefs)
+        if (current.isEmpty()) return
+
+        val updated = current.map { thread ->
+            if (thread.threadId == threadId) thread.copy(updatedAt = now) else thread
+        }
+
+        if (updated != current) {
+            saveThreads(prefs, updated)
+        }
+    }
+
     private fun newThread(now: Long = System.currentTimeMillis()): ConversationThread {
         return ConversationThread(
             threadId = UUID.randomUUID().toString(),
@@ -62,6 +99,8 @@ object ConversationStore {
             updatedAt = now,
         )
     }
+
+    private fun historyKey(threadId: String): String = "$KEY_HISTORY_PREFIX$threadId"
 
     private fun loadThreads(prefs: android.content.SharedPreferences): List<ConversationThread> {
         val raw = prefs.getString(KEY_THREADS, "[]").orEmpty()

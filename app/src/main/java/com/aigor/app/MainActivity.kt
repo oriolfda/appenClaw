@@ -1325,8 +1325,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadHistory() {
-        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-        val raw = prefs.getString("chat_history", "[]").orEmpty()
+        val raw = ConversationStore.loadHistoryJson(this, activeConversation.threadId)
         messages.clear()
         try {
             val arr = JSONArray(raw)
@@ -1368,9 +1367,6 @@ class MainActivity : AppCompatActivity() {
                 put("videoPath", it.videoPath ?: "")
             })
         }
-        getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-            .edit()
-            .putString("chat_history", arr.toString())
-            .apply()
+        ConversationStore.saveHistoryJson(this, activeConversation.threadId, arr.toString())
     }
 }
