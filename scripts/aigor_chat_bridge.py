@@ -1381,6 +1381,23 @@ class Handler(BaseHTTPRequestHandler):
                 envelope["ratchetStep"] = ratchet_step
                 payload["e2eeReply"] = envelope
                 payload["reply"] = ""
+                print("[bridge-debug] reply-envelope " + json.dumps({
+                    "sessionId": session_id,
+                    "replyLen": len(reply or ""),
+                    "hasE2eeReply": True,
+                    "outCounter": out_counter,
+                    "ratchetStep": ratchet_step,
+                    "ad": (reply_ad or session_id),
+                    "mediaUrl": media_url,
+                }, ensure_ascii=False), flush=True)
+            else:
+                print("[bridge-debug] reply-plain " + json.dumps({
+                    "sessionId": session_id,
+                    "replyLen": len(reply or ""),
+                    "encryptedReplyRequested": bool(e2ee_req and encrypted_reply),
+                    "hasReplyKey": reply_key is not None,
+                    "mediaUrl": media_url,
+                }, ensure_ascii=False), flush=True)
 
             self._send(200, payload)
         except subprocess.TimeoutExpired:
