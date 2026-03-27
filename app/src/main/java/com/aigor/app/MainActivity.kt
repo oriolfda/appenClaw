@@ -87,6 +87,7 @@ class MainActivity : AppCompatActivity() {
     private var mediaPlayer: MediaPlayer? = null
     private var currentPlayingTs: Long? = null
     private var appliedUiLocale: String = "auto"
+    private lateinit var activeConversation: ConversationThread
 
     private var mediaRecorder: MediaRecorder? = null
     private var currentRecordingFile: File? = null
@@ -171,6 +172,9 @@ class MainActivity : AppCompatActivity() {
 
         appliedUiLocale = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
         runCatching { E2eeKeyManager(this).ensureLocalBundle() }
+
+        val conversationState = ConversationStore.ensureState(this)
+        activeConversation = conversationState.activeThread ?: error("Active conversation unavailable")
 
         val theme = currentTheme()
         adapter = ChatAdapter(

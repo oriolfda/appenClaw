@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:09 UTC
+Last updated: 2026-03-27 21:06 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -9,9 +9,9 @@ Last updated: 2026-03-27 21:09 UTC
 
 ## Estat global
 - Tasques totals: 10
-- Tasques completades: 4
-- Tasques pendents: 6
-- Percentatge completat: 40%
+- Tasques completades: 5
+- Tasques pendents: 5
+- Percentatge completat: 50%
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -49,8 +49,16 @@ Last updated: 2026-03-27 21:09 UTC
     - Hi ha una via raonable i implementada per copiar codi/fragments multilínia.
     - El flux continua coherent amb la UX de selecció existent.
 
+- ✅ **2.1 Model local mínim de conversa/thread**
+  - Implementació:
+    - Nou model local persistent a `ConversationStore` amb `ConversationThread(threadId, sessionId, createdAt, updatedAt)`.
+    - Persistència via `SharedPreferences` (`chat_threads`, `chat_active_thread_id`) i normalització automàtica d'estat a l'arrencada (`ensureState`).
+    - `MainActivity` inicialitza i fixa conversa activa estable (`activeConversation`) des de l'estat persistent.
+  - Cobertura del criteri “done”:
+    - Existeix model local persistent mínim de conversa/thread.
+    - Hi ha conversa activa i identificació estable (`threadId`/`sessionId`) carregada a l'app.
+
 ## Tasques pendents
-- 2.1 Model local mínim de conversa/thread
 - 2.2 Acció visible de "Nou xat"
 - 2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE
 - 3.1 Persistència local d'historial de converses i missatges
@@ -58,17 +66,9 @@ Last updated: 2026-03-27 21:09 UTC
 - 3.3 Recuperació de context i continuació sobre `sessionId` correcte
 
 ## Evidència resumida
-- Revisats fitxers:
-  - `app/src/main/java/com/aigor/app/ChatAdapter.kt`
-  - `app/src/main/java/com/aigor/app/RichTextRenderer.kt`
-  - `app/src/main/res/layout/item_message_user.xml`
-  - `app/src/main/res/layout/item_message_bot.xml`
-  - `app/src/main/res/layout/item_message_html.xml`
-  - `app/src/main/res/layout/item_message_audio.xml`
-  - `app/src/main/res/layout/item_message_image_user.xml`
 - Canvis de codi aplicats a:
-  - `app/src/main/java/com/aigor/app/ChatAdapter.kt` (long-press amb detecció de codi: copia bloc/fragments de codi quan existeixen, i manté fallback a còpia completa)
-  - `app/src/main/java/com/aigor/app/RichTextRenderer.kt` (nou extractor `extractCopyableCode(raw)` per blocs fenced i patrons de codi multilínia)
+  - `app/src/main/java/com/aigor/app/ConversationStore.kt` (nou store/model local de converses amb conversa activa persistent)
+  - `app/src/main/java/com/aigor/app/MainActivity.kt` (inicialització de conversa activa persistent)
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Observació (no convertida en tasca): la còpia en missatges HTML renderitzats amb `WebView` no comparteix el mateix flux de còpia de `messageText`.
+- Observació (no convertida en tasca): el flux de missatgeria encara usa `sessionId` fix en diversos punts; queda cobert explícitament per la tasca 2.3 del planning.
