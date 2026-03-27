@@ -504,18 +504,26 @@ def _load_or_create_bridge_keys():
     if os.path.exists(path):
         with open(path, "r", encoding="utf-8") as f:
             raw = json.load(f)
-        ecdh_pem = raw.get("x25519PrivatePem") or raw.get("ecdhPrivatePem")
-        ecdh_priv = serialization.load_pem_private_key(ecdh_pem.encode("utf-8"), password=None)
+        identity_pem = raw.get("identityX25519PrivatePem") or raw.get("x25519PrivatePem") or raw.get("ecdhPrivatePem")
+        spk_pem = raw.get("signedPreKeyX25519PrivatePem") or identity_pem
+        identity_priv = serialization.load_pem_private_key(identity_pem.encode("utf-8"), password=None)
+        spk_priv = serialization.load_pem_private_key(spk_pem.encode("utf-8"), password=None)
         sign_priv = serialization.load_pem_private_key(raw["signPrivatePem"].encode("utf-8"), password=None)
         kid = str(raw.get("kid", E2EE_BUNDLE_KID))
-        return ecdh_priv, sign_priv, kid
+        return identity_priv, spk_priv, sign_priv, kid
 
-    ecdh_priv = x25519.X25519PrivateKey.generate()
+    identity_priv = x25519.X25519PrivateKey.generate()
+    spk_priv = x25519.X25519PrivateKey.generate()
     sign_priv = ed25519.Ed25519PrivateKey.generate()
 
     raw = {
         "kid": str(E2EE_BUNDLE_KID),
-        "x25519PrivatePem": ecdh_priv.private_bytes(
+        "identityX25519PrivatePem": identity_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf-8"),
+        "signedPreKeyX25519PrivatePem": spk_priv.private_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PrivateFormat.PKCS8,
             encryption_algorithm=serialization.NoEncryption(),
@@ -529,12 +537,18 @@ def _load_or_create_bridge_keys():
     with open(path, "w", encoding="utf-8") as f:
         json.dump(raw, f, indent=2)
 
-    return ecdh_priv, sign_priv, str(E2EE_BUNDLE_KID)
+    return identity_priv, spk_priv, sign_priv, str(E2EE_BUNDLE_KID)
 
 
-_BRIDGE_PRIVKEY, _BRIDGE_SIGN_PRIVKEY, _BRIDGE_KID = _load_or_create_bridge_keys()
-_BRIDGE_PUB_B64 = base64.b64encode(
-    _BRIDGE_PRIVKEY.public_key().public_bytes(
+_BRIDGE_IDENTITY_PRIVKEY, _BRIDGE_SPK_PRIVKEY, _BRIDGE_SIGN_PRIVKEY, _BRIDGE_KID = _load_or_create_bridge_keys()
+_BRIDGE_IDENTITY_PUB_B64 = base64.b64encode(
+    _BRIDGE_IDENTITY_PRIVKEY.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+).decode("ascii")
+_BRIDGE_SPK_PUB_B64 = base64.b64encode(
+    _BRIDGE_SPK_PRIVKEY.public_key().public_bytes(
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
@@ -626,7 +640,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
     counter = int(env.get("counter", 0))
 
     eph_pub = _decode_pubkey_spki(eph_b64)
-    shared = _BRIDGE_PRIVKEY.exchange(eph_pub)
+    shared = _BRIDGE_SPK_PRIVKEY.exchange(eph_pub)
     otk_priv = _get_otk_private(otk_id)
     if otk_priv is not None:
         shared += otk_priv.exchange(eph_pub)
@@ -637,7 +651,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
     if ratchet_b64:
         try:
             ratchet_pub = _decode_pubkey_spki(ratchet_b64)
-            ratchet_shared = _BRIDGE_PRIVKEY.exchange(ratchet_pub)
+            ratchet_shared = _BRIDGE_SPK_PRIVKEY.exchange(ratchet_pub)
             import hashlib
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
             base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"aigor-ratchet-step-v1")
@@ -662,7 +676,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
 
 
 def e2ee_bundle_payload() -> dict:
-    signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(base64.b64decode(_BRIDGE_PUB_B64))).decode("ascii")
+    signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(base64.b64decode(_BRIDGE_SPK_PUB_B64))).decode("ascii")
     one_time = _peek_otk_list(8)
     return {
         "ok": True,
@@ -672,11 +686,11 @@ def e2ee_bundle_payload() -> dict:
             "protocol": E2EE_PROTOCOL,
             "bundle": {
                 "kid": _BRIDGE_KID,
-                "identityKey": _BRIDGE_PUB_B64,
+                "identityKey": _BRIDGE_IDENTITY_PUB_B64,
                 "identitySignKey": _BRIDGE_SIGN_PUB_B64,
                 "signedPreKey": {
                     "id": f"spk-{_BRIDGE_KID}",
-                    "publicKey": _BRIDGE_PUB_B64,
+                    "publicKey": _BRIDGE_SPK_PUB_B64,
                     "signature": signed_prekey_sig,
                 },
                 "oneTimePreKeys": one_time,
