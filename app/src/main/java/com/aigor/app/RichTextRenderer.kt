@@ -13,6 +13,7 @@ object RichTextRenderer {
     // ```python ... ```
     private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\s*([\\s\\S]*?)```")
     private val indentedCodeRegex = Regex("(?m)^(?:\\t| {4,}).+")
+    private val pythonLikeLineRegex = Regex("(?m)^(def |class |import |from |for |while |if |elif |else:|try:|except |with |print\\()")
 
     fun bind(textView: TextView, raw: String, selectable: Boolean = true) {
         val html = toSafeHtml(raw)
@@ -54,8 +55,20 @@ object RichTextRenderer {
         val normalized = raw.trim()
         if (normalized.isBlank()) return false
         if (codeFenceRegex.containsMatchIn(normalized)) return true
+        val lines = normalized.lines().map { it.trimEnd() }.filter { it.isNotBlank() }
         val hasIndentedCode = indentedCodeRegex.containsMatchIn(normalized)
-        return hasIndentedCode && looksLikeCode(normalized)
+        val hasPythonLikeLines = lines.count { pythonLikeLineRegex.containsMatchIn(it.trimStart()) } >= 2
+        val hasBracesOrTags = normalized.contains("{") || normalized.contains("}") || normalized.contains("</") || normalized.contains("<div")
+        return (hasIndentedCode && looksLikeCode(normalized)) || (lines.size >= 3 && (hasPythonLikeLines || hasBracesOrTags) && looksLikeCodeBoosted(normalized, lines))
+    }
+
+    private fun looksLikeCodeBoosted(raw: String, lines: List<String>): Boolean {
+        if (looksLikeCode(raw)) return true
+        val punctuated = lines.count { line ->
+            val t = line.trim()
+            t.endsWith(":") || t.contains(" = ") || t.contains("(") || t.contains(")")
+        }
+        return punctuated >= 2
     }
 
     fun extractScrollableCodeText(raw: String): String {

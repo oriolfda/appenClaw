@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var rootLayout: View
     private lateinit var topToolbar: MaterialToolbar
+    private lateinit var newChatQuickButton: ImageButton
     private lateinit var composerRow: LinearLayout
     private lateinit var clipButton: ImageButton
     private lateinit var cameraButton: ImageButton
@@ -152,6 +153,7 @@ class MainActivity : AppCompatActivity() {
 
         rootLayout = findViewById(R.id.rootLayout)
         topToolbar = findViewById(R.id.topToolbar)
+        newChatQuickButton = findViewById(R.id.newChatQuickButton)
         composerRow = findViewById(R.id.composerRow)
         clipButton = findViewById(R.id.clipButton)
         cameraButton = findViewById(R.id.cameraButton)
@@ -223,6 +225,10 @@ class MainActivity : AppCompatActivity() {
 
         messageEdit.setOnFocusChangeListener { _, hasFocus ->
             messageInputContainer.isSelected = hasFocus
+        }
+
+        newChatQuickButton.setOnClickListener {
+            startNewChat()
         }
 
         topToolbar.setOnMenuItemClickListener { item ->

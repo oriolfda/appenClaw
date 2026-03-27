@@ -5,32 +5,47 @@
     android:orientation="horizontal"
     android:paddingVertical="4dp">
 
-    <TextView
-        android:id="@+id/codeSpacer"
+    <Space
+        android:id="@+id/codeLeadingSpace"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_weight="0.12"
-        android:visibility="gone" />
+        android:layout_weight="0.12" />
 
-    <HorizontalScrollView
-        android:id="@+id/codeScroll"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="0.76"
-        android:fillViewport="false"
-        android:scrollbars="horizontal">
+        android:background="@drawable/bg_chat_bot"
+        android:orientation="vertical"
+        android:padding="10dp">
 
         <TextView
-            android:id="@+id/messageText"
+            android:id="@+id/codeCopyHint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_chat_bot"
-            android:fontFamily="monospace"
-            android:padding="12dp"
-            android:textColor="#F9FAFB"
-            android:textSize="14sp"
-            android:textIsSelectable="true" />
-    </HorizontalScrollView>
+            android:layout_gravity="end"
+            android:paddingBottom="6dp"
+            android:text="@string/code_copy_hint"
+            android:textColor="#9CA3AF"
+            android:textSize="12sp" />
+
+        <HorizontalScrollView
+            android:id="@+id/codeScroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="false"
+            android:scrollbars="horizontal">
+
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="monospace"
+                android:textColor="#F9FAFB"
+                android:textIsSelectable="true"
+                android:textSize="14sp" />
+        </HorizontalScrollView>
+    </LinearLayout>
 
     <Space
         android:id="@+id/codeTrailingSpace"

@@ -7,16 +7,36 @@
     android:background="#0B1018"
     android:orientation="vertical">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/topToolbar"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:background="#0B1018"
-        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
-        app:menu="@menu/main_overflow_menu"
-        app:navigationIcon="@null"
-        app:title="@string/title_app"
-        app:titleTextColor="#F3F4F6" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingEnd="4dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/topToolbar"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="#0B1018"
+            android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar"
+            app:menu="@menu/main_overflow_menu"
+            app:navigationIcon="@null"
+            app:title="@string/title_app"
+            app:titleTextColor="#F3F4F6" />
+
+        <ImageButton
+            android:id="@+id/newChatQuickButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="4dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/menu_new_chat"
+            android:padding="4dp"
+            android:src="@android:drawable/ic_input_add"
+            android:tint="#F3F4F6" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chatRecycler"
