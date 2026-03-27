@@ -752,7 +752,7 @@ def decrypt_e2ee_attachment(att: dict, base_key: bytes):
     ad = str(att.get("ad", ""))
     counter = int(att.get("counter", 0))
 
-    recv_chain_key = _derive_chain_key(base_key, "recv")
+    recv_chain_key = _derive_chain_key(base_key, "send", 1)
     key = _derive_message_key(recv_chain_key, counter, "att")
     aes = AESGCM(key)
     raw = aes.decrypt(iv, ct, ad.encode("utf-8"))
