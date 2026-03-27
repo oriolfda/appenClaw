@@ -12,6 +12,7 @@ import java.util.Date
 class ConversationListAdapter(
     private var items: List<ConversationThread>,
     private var activeThreadId: String,
+    private var theme: ThemeManager.UiTheme,
     private val titleFor: (ConversationThread) -> String,
     private val onSelect: (ConversationThread) -> Unit,
     private val onDelete: (ConversationThread) -> Unit,
@@ -41,14 +42,19 @@ class ConversationListAdapter(
         } else {
             dateFmt.format(Date(item.updatedAt))
         }
-        holder.itemView.alpha = if (active) 1f else 0.9f
+        holder.title.setTextColor(if (active) theme.titleColor else theme.messageTextColor)
+        holder.meta.setTextColor(if (active) theme.sendTint else theme.statusColor)
+        holder.delete.setColorFilter(theme.sendTint)
+        holder.itemView.alpha = if (active) 1f else 0.92f
+        holder.itemView.setBackgroundColor(if (active) theme.menuTint.takeIf { it != 0 } ?: theme.screenBg else theme.screenBg)
         holder.itemView.setOnClickListener { onSelect(item) }
         holder.delete.setOnClickListener { onDelete(item) }
     }
 
-    fun update(items: List<ConversationThread>, activeThreadId: String) {
+    fun update(items: List<ConversationThread>, activeThreadId: String, theme: ThemeManager.UiTheme = this.theme) {
         this.items = items
         this.activeThreadId = activeThreadId
+        this.theme = theme
         notifyDataSetChanged()
     }
 }

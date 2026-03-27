@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
     private lateinit var chatRecycler: RecyclerView
+    private lateinit var conversationsDrawer: View
     private lateinit var conversationsRecycler: RecyclerView
     private lateinit var sendButton: ImageButton
     private lateinit var pendingAttachmentRow: LinearLayout
@@ -163,6 +164,7 @@ class MainActivity : AppCompatActivity() {
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
         chatRecycler = findViewById(R.id.chatRecycler)
+        conversationsDrawer = findViewById(R.id.conversationsDrawer)
         conversationsRecycler = findViewById(R.id.conversationsRecycler)
         sendButton = findViewById(R.id.sendButton)
         pendingAttachmentRow = findViewById(R.id.pendingAttachmentRow)
@@ -212,6 +214,7 @@ class MainActivity : AppCompatActivity() {
         conversationsAdapter = ConversationListAdapter(
             emptyList(),
             activeConversation.threadId,
+            theme,
             { thread -> conversationTitle(thread) },
             { thread ->
                 switchToConversation(thread.threadId)
@@ -892,6 +895,8 @@ class MainActivity : AppCompatActivity() {
         recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
         recordDotsText.setTextColor(theme.statusColor)
+        conversationsDrawer.setBackgroundColor(if (theme.menuTint != 0) theme.menuTint else theme.screenBg)
+        conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
     }
 
     private fun extractUrls(text: String): List<String> {
@@ -1407,7 +1412,7 @@ class MainActivity : AppCompatActivity() {
     private fun refreshConversationsDrawer() {
         val state = ConversationStore.ensureState(this)
         val threads = state.threads.sortedByDescending { it.updatedAt }
-        conversationsAdapter.update(threads, activeConversation.threadId)
+        conversationsAdapter.update(threads, activeConversation.threadId, currentTheme())
     }
 
     private fun conversationTitle(thread: ConversationThread): String {
