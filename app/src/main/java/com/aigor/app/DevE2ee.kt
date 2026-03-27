@@ -7,7 +7,9 @@ import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.PublicKey
 import java.security.SecureRandom
+import java.security.Security
 import java.security.Signature
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.spec.X509EncodedKeySpec
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
@@ -16,6 +18,11 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 object DevE2ee {
+    init {
+        if (Security.getProvider("BC") == null) {
+            Security.addProvider(BouncyCastleProvider())
+        }
+    }
     data class EncryptResult(
         val envelope: JSONObject,
         val responseKey: ByteArray,
@@ -144,9 +151,9 @@ object DevE2ee {
             val pubBytes = Base64.decode(identitySignPubB64, Base64.DEFAULT)
             val spkBytes = Base64.decode(signedPreKeyPubB64, Base64.DEFAULT)
             val sigBytes = Base64.decode(sigB64, Base64.DEFAULT)
-            val kf = KeyFactory.getInstance("Ed25519")
+            val kf = KeyFactory.getInstance("Ed25519", "BC")
             val pub = kf.generatePublic(X509EncodedKeySpec(pubBytes))
-            val verifier = Signature.getInstance("Ed25519")
+            val verifier = Signature.getInstance("Ed25519", "BC")
             verifier.initVerify(pub)
             verifier.update(spkBytes)
             val ok = verifier.verify(sigBytes)
