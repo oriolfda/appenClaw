@@ -924,7 +924,19 @@ class MainActivity : AppCompatActivity() {
                                     val stored = prefs.getString("e2ee_base_${e2eeSessionId}", "").orEmpty()
                                     if (stored.isBlank()) null else Base64.decode(stored, Base64.DEFAULT)
                                 }
-                                if (baseKey != null) DevE2ee.decryptWithKey(baseKey, env) else parseAssistantText(body, code)
+                                if (baseKey != null) {
+                                    try {
+                                        val txt = DevE2ee.decryptWithKey(baseKey, env)
+                                        android.util.Log.i(
+                                            "AIGOR-E2EE",
+                                            "reply-decrypt ok counter=${env.optInt("counter", 0)} ratchetStep=${env.optInt("ratchetStep", 0)} len=${txt.length}"
+                                        )
+                                        txt
+                                    } catch (e: Exception) {
+                                        android.util.Log.e("AIGOR-E2EE", "reply-decrypt failed", e)
+                                        "[E2EE] Error desencriptant resposta: ${e.javaClass.simpleName}: ${e.message}"
+                                    }
+                                } else parseAssistantText(body, code)
                             }
                         } else {
                             parseAssistantText(body, code)
