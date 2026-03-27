@@ -8,6 +8,11 @@ import tempfile
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
 HOST = os.environ.get("AIGOR_BRIDGE_HOST", "0.0.0.0")
 PORT = int(os.environ.get("AIGOR_BRIDGE_PORT", "8091"))
 TOKEN = os.environ.get("AIGOR_BRIDGE_TOKEN", "")
@@ -15,6 +20,13 @@ DEFAULT_SESSION = os.environ.get("AIGOR_BRIDGE_SESSION", "aigor-app-chat")
 PUBLIC_BASE_URL = os.environ.get("AIGOR_BRIDGE_PUBLIC_BASE_URL", f"http://192.168.0.102:{PORT}")
 MEDIA_DIR = os.environ.get("AIGOR_BRIDGE_MEDIA_DIR", "/mnt/apps/aigor/media")
 EDGE_TTS = os.environ.get("AIGOR_BRIDGE_EDGE_TTS", "/home/oriol/.openclaw/venvs/aigor-tts/bin/edge-tts")
+E2EE_ENABLED = os.environ.get("AIGOR_APP_E2EE_ENABLED", "false").lower() == "true"
+E2EE_REQUIRED = os.environ.get("AIGOR_APP_E2EE_REQUIRED", "false").lower() == "true"
+E2EE_PROTOCOL = os.environ.get("AIGOR_APP_E2EE_PROTOCOL", "signal-x3dh-dr-v1")
+E2EE_BUNDLE_KID = os.environ.get("AIGOR_APP_E2EE_BUNDLE_KID", "1")
+E2EE_IDENTITY_PUB = os.environ.get("AIGOR_APP_E2EE_IDENTITY_PUB", "")
+E2EE_SIGNED_PREKEY_PUB = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_PUB", "")
+E2EE_SIGNED_PREKEY_SIG = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_SIG", "")
 
 
 def extract_json_block(text: str):
@@ -131,7 +143,7 @@ def parse_tts_from_text(text: str):
 
 
 def extract_audio_transcript(extra_prompt: str) -> str:
-    """Extreu transcripció STT del bloc d'ajuda quan existeix."""
+    """Extreu la transcripció STT del bloc d'ajuda quan existeix."""
     if not extra_prompt:
         return ""
     marker = "Transcripció àudio:"
@@ -160,6 +172,507 @@ def synthesize_tts_audio(text: str, lang_hint: str = "ca"):
         return f"{PUBLIC_BASE_URL}/media/{fname}"
     except Exception:
         return None
+
+
+def b64rand(n: int) -> str:
+    return base64.urlsafe_b64encode(os.urandom(n)).decode("ascii").rstrip("=")
+
+
+def _bridge_keystore_path() -> str:
+    return os.environ.get("AIGOR_APP_E2EE_KEYSTORE", "/mnt/apps/aigor/e2ee/bridge_keys.json")
+
+
+def _otk_store_path() -> str:
+    return os.environ.get("AIGOR_APP_E2EE_OTK_STORE", "/mnt/apps/aigor/e2ee/otk_store.json")
+
+
+def _load_otk_store():
+    path = _otk_store_path()
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"next": 1, "keys": []}
+
+
+def _save_otk_store(store: dict):
+    path = _otk_store_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(store, f, indent=2)
+
+
+def _ensure_otk_pool(min_size: int = 20):
+    store = _load_otk_store()
+    keys = store.get("keys", [])
+    next_id = int(store.get("next", 1))
+    while len(keys) < min_size:
+        keys.append({"id": f"otk-{next_id}", "publicKey": _BRIDGE_PUB_B64})
+        next_id += 1
+    store["keys"] = keys
+    store["next"] = next_id
+    _save_otk_store(store)
+
+
+def _consume_otk(otk_id: str) -> bool:
+    if not otk_id:
+        return False
+    store = _load_otk_store()
+    keys = store.get("keys", [])
+    kept = [k for k in keys if k.get("id") != otk_id]
+    consumed = len(kept) != len(keys)
+    if consumed:
+        store["keys"] = kept
+        _save_otk_store(store)
+    return consumed
+
+
+def _peek_otk_list(limit: int = 5):
+    _ensure_otk_pool()
+    store = _load_otk_store()
+    return (store.get("keys", []) or [])[:limit]
+
+
+def _ratchet_store_path() -> str:
+    return os.environ.get("AIGOR_APP_E2EE_RATCHET_STORE", "/mnt/apps/aigor/e2ee/ratchet_store.json")
+
+
+def _ensure_session_chains(st: dict) -> dict:
+    send = st.setdefault("send", {})
+    recv = st.setdefault("recv", {})
+    send.setdefault("lastOut", 0)
+    send.setdefault("chainCounter", 0)
+    recv.setdefault("maxIn", 0)
+    recv.setdefault("seenIn", [])
+    recv.setdefault("skippedIn", [])
+    recv.setdefault("skippedByHeader", {})
+    recv.setdefault("chainCounter", 0)
+    recv.setdefault("ratchetStep", 0)
+    recv.setdefault("lastPeerRatchetPub", "")
+    st.setdefault("rootKeySeed", "")
+    st.setdefault("sendChainSeed", "")
+    st.setdefault("recvChainSeed", "")
+    return st
+
+
+def _load_ratchet_store():
+    path = _ratchet_store_path()
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                store = json.load(f)
+            sessions = store.setdefault("sessions", {})
+            for sid, st in list(sessions.items()):
+                if "send" not in st or "recv" not in st:
+                    # migrate from legacy flat shape
+                    st = {
+                        "send": {"lastOut": int(st.get("lastOut", 0))},
+                        "recv": {
+                            "maxIn": int(st.get("maxIn", 0)),
+                            "seenIn": st.get("seenIn", []),
+                            "skippedIn": st.get("skippedIn", []),
+                            "ratchetStep": int(st.get("ratchetStep", 0)),
+                            "lastPeerRatchetPub": st.get("lastPeerRatchetPub", ""),
+                        },
+                    }
+                sessions[sid] = _ensure_session_chains(st)
+            return store
+        except Exception:
+            pass
+    return {"sessions": {}}
+
+
+def _save_ratchet_store(store: dict):
+    path = _ratchet_store_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(store, f, indent=2)
+
+
+def _ratchet_compact_recv_state(recv: dict, floor: int):
+    seen = set(int(x) for x in recv.get("seenIn", []) if isinstance(x, int) or str(x).isdigit())
+    skipped = set(int(x) for x in recv.get("skippedIn", []) if isinstance(x, int) or str(x).isdigit())
+    recv["seenIn"] = sorted(c for c in seen if c >= floor)
+    recv["skippedIn"] = sorted(c for c in skipped if c >= floor and c not in seen)
+
+    # Keep header-scoped skipped cache bounded to the same replay window and
+    # remove entries already consumed/seen.
+    raw = recv.get("skippedByHeader", {})
+    by_header = raw if isinstance(raw, dict) else {}
+    compact = {}
+    for hid, counters in by_header.items():
+        vals = set(int(x) for x in (counters or []) if isinstance(x, int) or str(x).isdigit())
+        kept = sorted(c for c in vals if c >= floor and c not in seen)
+        if kept:
+            compact[str(hid)] = kept
+    recv["skippedByHeader"] = compact
+
+
+def _ratchet_check_and_advance(session_id: str, inbound_counter: int, header_id: str = "default", window: int = 64) -> bool:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+
+    max_in = int(recv.get("maxIn", 0))
+    seen = set(int(x) for x in recv.get("seenIn", []) if isinstance(x, int) or str(x).isdigit())
+    skipped = set(int(x) for x in recv.get("skippedIn", []) if isinstance(x, int) or str(x).isdigit())
+
+    if inbound_counter <= 0:
+        return False
+    if inbound_counter in seen:
+        return False
+    if inbound_counter < max_in - window:
+        return False
+
+    header_id = str(header_id or recv.get("currentHeaderId", "default"))
+    skipped_by_header = recv.get("skippedByHeader", {}) if isinstance(recv.get("skippedByHeader"), dict) else {}
+    header_skipped = set(int(x) for x in skipped_by_header.get(header_id, []) if isinstance(x, int) or str(x).isdigit())
+
+    # Out-of-order receive path must match previously registered skipped counters.
+    if inbound_counter <= max_in and (inbound_counter not in skipped or inbound_counter not in header_skipped):
+        return False
+
+    if inbound_counter > max_in + 1:
+        # Bound skipped-gap materialization to replay window to avoid huge allocations
+        # on attacker-controlled large counter jumps.
+        gap_start = max(max_in + 1, inbound_counter - window)
+        if gap_start < inbound_counter:
+            missing = set(range(gap_start, inbound_counter))
+            skipped.update(missing)
+            header_skipped.update(missing)
+
+    seen.add(inbound_counter)
+    skipped.discard(inbound_counter)
+    header_skipped.discard(inbound_counter)
+    max_in = max(max_in, inbound_counter)
+    floor = max_in - window
+
+    recv["maxIn"] = max_in
+    recv["seenIn"] = sorted(seen)
+    recv["skippedIn"] = sorted(skipped)
+    compact_header_skipped = sorted(c for c in header_skipped if c >= floor)
+    if compact_header_skipped:
+        skipped_by_header[header_id] = compact_header_skipped
+    elif header_id in skipped_by_header:
+        skipped_by_header.pop(header_id, None)
+    recv["skippedByHeader"] = skipped_by_header
+    _ratchet_compact_recv_state(recv, floor)
+    _save_ratchet_store(store)
+    return True
+
+
+def _ratchet_next_out_counter(session_id: str) -> int:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    send = st["send"]
+    nxt = int(send.get("lastOut", 0)) + 1
+    send["lastOut"] = nxt
+    _save_ratchet_store(store)
+    return nxt
+
+
+def _ratchet_snapshot_recv(session_id: str) -> dict:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+    send = st["send"]
+    return {
+        "maxIn": int(recv.get("maxIn", 0)),
+        "seenIn": list(recv.get("seenIn", []) or []),
+        "skippedIn": list(recv.get("skippedIn", []) or []),
+        "skippedByHeader": json.loads(json.dumps(recv.get("skippedByHeader", {}) or {})),
+        "recvChainCounter": int(recv.get("chainCounter", 0)),
+        "recvRatchetStep": int(recv.get("ratchetStep", 0)),
+        "recvLastPeerRatchetPub": str(recv.get("lastPeerRatchetPub", "") or ""),
+        "recvChainSeed": str(st.get("recvChainSeed", "") or ""),
+        "sendChainSeed": str(st.get("sendChainSeed", "") or ""),
+        "rootKeySeed": str(st.get("rootKeySeed", "") or ""),
+        "sendChainCounter": int(send.get("chainCounter", 0)),
+    }
+
+
+def _ratchet_restore_recv(session_id: str, snapshot: dict):
+    if not isinstance(snapshot, dict):
+        return
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+    send = st["send"]
+    recv["maxIn"] = int(snapshot.get("maxIn", 0))
+    recv["seenIn"] = list(snapshot.get("seenIn", []) or [])
+    recv["skippedIn"] = list(snapshot.get("skippedIn", []) or [])
+    raw = snapshot.get("skippedByHeader", {})
+    recv["skippedByHeader"] = raw if isinstance(raw, dict) else {}
+    recv["chainCounter"] = int(snapshot.get("recvChainCounter", recv.get("chainCounter", 0)))
+    recv["ratchetStep"] = int(snapshot.get("recvRatchetStep", recv.get("ratchetStep", 0)))
+    recv["lastPeerRatchetPub"] = str(snapshot.get("recvLastPeerRatchetPub", recv.get("lastPeerRatchetPub", "")) or "")
+    st["recvChainSeed"] = str(snapshot.get("recvChainSeed", st.get("recvChainSeed", "")) or "")
+    st["sendChainSeed"] = str(snapshot.get("sendChainSeed", st.get("sendChainSeed", "")) or "")
+    st["rootKeySeed"] = str(snapshot.get("rootKeySeed", st.get("rootKeySeed", "")) or "")
+    send["chainCounter"] = int(snapshot.get("sendChainCounter", send.get("chainCounter", 0)))
+    _save_ratchet_store(store)
+
+
+def _ratchet_preview_chain_key(st: dict, base_key: bytes, direction: str, counter: int) -> tuple[bytes, bytes]:
+    import hashlib
+    is_recv = direction == "c2s"
+    seed_name = "recvChainSeed" if is_recv else "sendChainSeed"
+
+    prev_b64 = st.get(seed_name, "")
+    prev = base64.b64decode(prev_b64) if prev_b64 else base_key
+
+    root_prev_b64 = st.get("rootKeySeed", "")
+    root_prev = base64.b64decode(root_prev_b64) if root_prev_b64 else hashlib.sha256(base_key + b"root-init").digest()
+
+    mixed = hashlib.sha256(
+        prev + base_key + root_prev + direction.encode("utf-8") + str(counter).encode("utf-8")
+    ).digest()
+
+    root_next = hashlib.sha256(
+        root_prev + mixed + direction.encode("utf-8") + str(counter).encode("utf-8") + b"root-step"
+    ).digest()
+    return mixed, root_next
+
+
+def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, counter: int) -> bytes:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+
+    mixed, root_next = _ratchet_preview_chain_key(st, base_key, direction, counter)
+
+    is_recv = direction == "c2s"
+    chain_box = st["recv"] if is_recv else st["send"]
+    seed_name = "recvChainSeed" if is_recv else "sendChainSeed"
+
+    st[seed_name] = base64.b64encode(mixed).decode("ascii")
+    st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
+    chain_box["chainCounter"] = int(chain_box.get("chainCounter", 0)) + 1
+
+    _save_ratchet_store(store)
+    return mixed
+
+
+def _load_or_create_bridge_keys():
+    path = _bridge_keystore_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        ecdh_priv = serialization.load_pem_private_key(raw["ecdhPrivatePem"].encode("utf-8"), password=None)
+        sign_priv = serialization.load_pem_private_key(raw["signPrivatePem"].encode("utf-8"), password=None)
+        kid = str(raw.get("kid", E2EE_BUNDLE_KID))
+        return ecdh_priv, sign_priv, kid
+
+    ecdh_priv = ec.generate_private_key(ec.SECP256R1())
+    from cryptography.hazmat.primitives.asymmetric import ed25519
+    sign_priv = ed25519.Ed25519PrivateKey.generate()
+
+    raw = {
+        "kid": str(E2EE_BUNDLE_KID),
+        "ecdhPrivatePem": ecdh_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf-8"),
+        "signPrivatePem": sign_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf-8"),
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(raw, f, indent=2)
+
+    return ecdh_priv, sign_priv, str(E2EE_BUNDLE_KID)
+
+
+_BRIDGE_PRIVKEY, _BRIDGE_SIGN_PRIVKEY, _BRIDGE_KID = _load_or_create_bridge_keys()
+_BRIDGE_PUB_B64 = base64.b64encode(
+    _BRIDGE_PRIVKEY.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+).decode("ascii")
+_BRIDGE_SIGN_PUB_B64 = base64.b64encode(
+    _BRIDGE_SIGN_PRIVKEY.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+).decode("ascii")
+
+_ensure_otk_pool()
+
+
+def _decode_pubkey_spki(b64: str):
+    raw = base64.b64decode(b64)
+    return serialization.load_der_public_key(raw)
+
+
+def _hkdf_key(shared: bytes, salt: bytes) -> bytes:
+    hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=b"aigor-e2ee-v1")
+    return hkdf.derive(shared)
+
+
+def _derive_chain_key(base_key: bytes, direction: str) -> bytes:
+    import hmac, hashlib
+    return hmac.new(base_key, f"chain:{direction}".encode("utf-8"), hashlib.sha256).digest()[:32]
+
+
+def _derive_message_key(chain_key: bytes, counter: int, label: str) -> bytes:
+    import hmac, hashlib
+    return hmac.new(chain_key, f"{label}:{counter}".encode("utf-8"), hashlib.sha256).digest()[:32]
+
+
+def encrypt_real_envelope(plaintext: str, key: bytes, ad: str = "") -> dict:
+    iv = os.urandom(12)
+    aes = AESGCM(key)
+    ct = aes.encrypt(iv, plaintext.encode("utf-8"), ad.encode("utf-8"))
+    return {
+        "v": 1,
+        "alg": "ecdh-p256-aesgcm-v1",
+        "iv": base64.b64encode(iv).decode("ascii"),
+        "ciphertext": base64.b64encode(ct).decode("ascii"),
+        "ad": ad,
+    }
+
+
+def _ratchet_apply_peer_pub(session_id: str, peer_pub_b64: str, mix_material: bytes = b"") -> int:
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv = st["recv"]
+    last_pub = recv.get("lastPeerRatchetPub", "")
+    step = int(recv.get("ratchetStep", 0))
+    if peer_pub_b64 and peer_pub_b64 != last_pub:
+        step += 1
+        recv["lastPeerRatchetPub"] = peer_pub_b64
+        recv["ratchetStep"] = step
+
+        # Controlled re-seed on DH ratchet change:
+        # - drop recv chain seed/counter so next inbound derives from new ratchet material only
+        # - drop send chain seed/counter to avoid stale outbound chain reuse across DH steps
+        st["recvChainSeed"] = ""
+        recv["chainCounter"] = 0
+        st["sendChainSeed"] = ""
+        st["send"]["chainCounter"] = 0
+
+        if mix_material:
+            import hashlib
+            root_prev = base64.b64decode(st.get("rootKeySeed", "")) if st.get("rootKeySeed", "") else b""
+            st["rootKeySeed"] = base64.b64encode(hashlib.sha256(root_prev + mix_material + step.to_bytes(4, "big")).digest()).decode("ascii")
+        _save_ratchet_store(store)
+    return step
+
+
+def decrypt_real_envelope(env: dict, session_id: str):
+    eph_b64 = env.get("ephemeralPub", "")
+    header_id = str(env.get("headerId", "default"))
+    ratchet_b64 = env.get("ratchetPub", "")
+    salt = base64.b64decode(env.get("salt", ""))
+    iv = base64.b64decode(env.get("iv", ""))
+    ct = base64.b64decode(env.get("ciphertext", ""))
+    ad = str(env.get("ad", ""))
+    counter = int(env.get("counter", 0))
+
+    eph_pub = _decode_pubkey_spki(eph_b64)
+    shared = _BRIDGE_PRIVKEY.exchange(ec.ECDH(), eph_pub)
+    base_key = _hkdf_key(shared, salt)
+
+    ratchet_shared = b""
+    if ratchet_b64:
+        try:
+            ratchet_pub = _decode_pubkey_spki(ratchet_b64)
+            ratchet_shared = _BRIDGE_PRIVKEY.exchange(ec.ECDH(), ratchet_pub)
+            import hashlib
+            mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
+            base_key = _hkdf_key(base_key + ratchet_shared, mix_salt)
+        except Exception:
+            pass
+
+    _ratchet_apply_peer_pub(session_id, ratchet_b64, mix_material=base_key + ratchet_shared)
+    store = _load_ratchet_store()
+    sessions = store.setdefault("sessions", {})
+    st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+    recv_seed_b64 = st.get("recvChainSeed", "")
+    if recv_seed_b64:
+        import hashlib
+        recv_seed = base64.b64decode(recv_seed_b64)
+        base_key = hashlib.sha256(recv_seed + base_key + b"recv-priority").digest()
+
+    mixed_key, root_next = _ratchet_preview_chain_key(st, base_key, "c2s", counter)
+
+    recv_chain_key = _derive_chain_key(mixed_key, "recv")
+    key = _derive_message_key(recv_chain_key, counter, "c2s")
+    aes = AESGCM(key)
+    pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
+
+    st["recvChainSeed"] = base64.b64encode(mixed_key).decode("ascii")
+    st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
+    st["recv"]["chainCounter"] = int(st["recv"].get("chainCounter", 0)) + 1
+    _save_ratchet_store(store)
+
+    return pt, mixed_key, ad, counter
+
+
+def e2ee_bundle_payload() -> dict:
+    signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(base64.b64decode(_BRIDGE_PUB_B64))).decode("ascii")
+    one_time = _peek_otk_list(8)
+    return {
+        "ok": True,
+        "e2ee": {
+            "enabled": E2EE_ENABLED,
+            "required": E2EE_REQUIRED,
+            "protocol": E2EE_PROTOCOL,
+            "bundle": {
+                "kid": _BRIDGE_KID,
+                "identityKey": _BRIDGE_PUB_B64,
+                "identitySignKey": _BRIDGE_SIGN_PUB_B64,
+                "signedPreKey": {
+                    "id": f"spk-{_BRIDGE_KID}",
+                    "publicKey": _BRIDGE_PUB_B64,
+                    "signature": signed_prekey_sig,
+                },
+                "oneTimePreKeys": one_time,
+            },
+            "warning": "Phase 1 done: persistent bridge keys + signed prekey bundle."
+        }
+    }
+
+
+def decrypt_e2ee_attachment(att: dict, base_key: bytes):
+    name = safe_name((att.get("name") or "attachment"))
+    mime = (att.get("mime") or "application/octet-stream").lower()
+    iv = base64.b64decode(att.get("iv", ""))
+    ct = base64.b64decode(att.get("ciphertext", ""))
+    ad = str(att.get("ad", ""))
+    counter = int(att.get("counter", 0))
+
+    recv_chain_key = _derive_chain_key(base_key, "recv")
+    key = _derive_message_key(recv_chain_key, counter, "att")
+    aes = AESGCM(key)
+    raw = aes.decrypt(iv, ct, ad.encode("utf-8"))
+
+    ext = name.split(".")[-1] if "." in name else "bin"
+    base = os.path.join(tempfile.gettempdir(), f"aigor-{uuid.uuid4().hex}")
+    path = f"{base}.{ext}"
+    with open(path, "wb") as f:
+        f.write(raw)
+
+    decoded = {
+        "name": name,
+        "mime": mime,
+        "dataBase64": base64.b64encode(raw).decode("ascii"),
+        "_localPath": path,
+    }
+    return decoded
 
 
 def process_attachment(att: dict):
@@ -217,10 +730,18 @@ def process_attachment(att: dict):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _send_cors(self):
+        origin = self.headers.get("Origin") or "*"
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Headers", "Authorization, Content-Type")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+
     def _send(self, code: int, payload: dict):
         body = json.dumps(payload).encode("utf-8")
         try:
             self.send_response(code)
+            self._send_cors()
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
@@ -229,6 +750,12 @@ class Handler(BaseHTTPRequestHandler):
             # Client disconnected before response was written.
             return
 
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _auth_ok(self):
         if not TOKEN:
             return True
@@ -236,6 +763,28 @@ class Handler(BaseHTTPRequestHandler):
         return auth == f"Bearer {TOKEN}"
 
     def do_GET(self):
+        if self.path == "/e2ee/status":
+            if not self._auth_ok():
+                self._send(401, {"ok": False, "error": "Unauthorized"})
+                return
+            self._send(200, {
+                "ok": True,
+                "e2ee": {
+                    "enabled": E2EE_ENABLED,
+                    "required": E2EE_REQUIRED,
+                    "protocol": E2EE_PROTOCOL,
+                    "stage": "B-prekey-bundle-bootstrap"
+                }
+            })
+            return
+
+        if self.path == "/e2ee/prekey-bundle":
+            if not self._auth_ok():
+                self._send(401, {"ok": False, "error": "Unauthorized"})
+                return
+            self._send(200, e2ee_bundle_payload())
+            return
+
         if self.path.startswith("/media/"):
             name = safe_name(self.path.split("/media/", 1)[1])
             path = os.path.join(MEDIA_DIR, name)
@@ -246,6 +795,7 @@ class Handler(BaseHTTPRequestHandler):
                 with open(path, "rb") as f:
                     body = f.read()
                 self.send_response(200)
+                self._send_cors()
                 self.send_header("Content-Type", "audio/mpeg")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
@@ -322,8 +872,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send(500, {"ok": False, "error": str(e)})
 
     def do_POST(self):
-        if self.path not in ("/", "/chat"):
-       # if self.path != "/chat":
+        if self.path != "/chat":
             self._send(404, {"ok": False, "error": "Not found"})
             return
 
@@ -339,9 +888,252 @@ class Handler(BaseHTTPRequestHandler):
             self._send(400, {"ok": False, "error": "Bad JSON"})
             return
 
-        message = (data.get("message") or "").strip()
+        if E2EE_REQUIRED and not isinstance(data.get("e2ee"), dict):
+            self._send(400, {
+                "ok": False,
+                "error": "e2ee_required",
+                "message": "Server requires encrypted envelope (phase 2)."
+            })
+            return
+
+        e2ee_req = data.get("e2ee") if isinstance(data.get("e2ee"), dict) else None
+        encrypted_reply = bool(e2ee_req.get("expectEncryptedReply", False)) if e2ee_req else False
+        reply_key = None
+        reply_ad = ""
+        inbound_counter = 0
         session_id = (data.get("sessionId") or DEFAULT_SESSION).strip() or DEFAULT_SESSION
+
+        if E2EE_REQUIRED:
+            raw_ciphertext = e2ee_req.get("ciphertext") if e2ee_req else None
+            has_ciphertext = isinstance(raw_ciphertext, str) and bool(raw_ciphertext.strip())
+            if not has_ciphertext:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_required",
+                    "message": "Server requires non-empty string ciphertext (no plaintext fallback)."
+                })
+                return
+            if isinstance(data.get("attachment"), dict) and not isinstance(data.get("e2eeAttachment"), dict):
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_attachment_required",
+                    "message": "Server requires encrypted attachment envelope in strict mode."
+                })
+                return
+
+        message = (data.get("message") or "").strip()
+        if e2ee_req and e2ee_req.get("ciphertext"):
+            raw_header_id = e2ee_req.get("headerId", "")
+            if not isinstance(raw_header_id, str) or not raw_header_id.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_header_required",
+                    "message": "Encrypted envelope requires non-empty string headerId."
+                })
+                return
+            if len(raw_header_id.strip()) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_header_too_long",
+                    "message": "Encrypted envelope headerId exceeds 128-char limit."
+                })
+                return
+
+
+        if e2ee_req and e2ee_req.get("ciphertext"):
+            raw_counter = e2ee_req.get("counter", 0)
+            # Strict hardening: require JSON integer type (no strings/floats/bools)
+            # and a bounded positive range to avoid abuse/overflow edge cases.
+            if isinstance(raw_counter, bool) or not isinstance(raw_counter, int) or raw_counter <= 0:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_counter_required",
+                    "message": "Encrypted envelope requires a positive integer counter."
+                })
+                return
+            if raw_counter > 2_147_483_647:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_counter_out_of_range",
+                    "message": "Encrypted envelope counter exceeds max allowed value (2^31-1)."
+                })
+                return
+
+            raw_iv = e2ee_req.get("iv")
+            if not isinstance(raw_iv, str) or not raw_iv.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_required",
+                    "message": "Encrypted envelope requires non-empty string iv."
+                })
+                return
+
+            raw_salt = e2ee_req.get("salt")
+            if not isinstance(raw_salt, str) or not raw_salt.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_required",
+                    "message": "Encrypted envelope requires non-empty string salt."
+                })
+                return
+
+            raw_ephemeral_pub = e2ee_req.get("ephemeralPub")
+            if not isinstance(raw_ephemeral_pub, str) or not raw_ephemeral_pub.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_required",
+                    "message": "Encrypted envelope requires non-empty string ephemeralPub."
+                })
+                return
+
+            # Pre-decode size guard to avoid decoding very large attacker-controlled base64 strings.
+            if len(str(raw_ciphertext)) > 1_500_000:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_too_large",
+                    "message": "Encrypted envelope ciphertext exceeds 1 MiB limit."
+                })
+                return
+
+            try:
+                decoded_ciphertext = base64.b64decode(str(raw_ciphertext), validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_invalid",
+                    "message": "Encrypted envelope requires valid base64 ciphertext."
+                })
+                return
+
+            # AES-GCM ciphertext must at least include 16-byte auth tag.
+            if len(decoded_ciphertext) < 16:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_invalid",
+                    "message": "Encrypted envelope requires ciphertext with at least 16 bytes (GCM tag)."
+                })
+                return
+
+            # Basic abuse guard: reject oversized envelopes before expensive crypto.
+            if len(decoded_ciphertext) > 1024 * 1024:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_too_large",
+                    "message": "Encrypted envelope ciphertext exceeds 1 MiB limit."
+                })
+                return
+
+            if len(raw_iv) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope iv is too large."
+                })
+                return
+
+            try:
+                decoded_iv = base64.b64decode(raw_iv, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope requires valid base64 iv."
+                })
+                return
+
+            if len(decoded_iv) != 12:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_iv_invalid",
+                    "message": "Encrypted envelope requires 12-byte iv."
+                })
+                return
+
+            if len(raw_salt) > 128:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope salt is too large."
+                })
+                return
+
+            try:
+                decoded_salt = base64.b64decode(raw_salt, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope requires valid base64 salt."
+                })
+                return
+
+            if len(decoded_salt) != 16:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_salt_invalid",
+                    "message": "Encrypted envelope requires 16-byte salt."
+                })
+                return
+
+            if len(raw_ephemeral_pub) > 256:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope ephemeralPub is too large."
+                })
+                return
+
+            try:
+                decoded_ephemeral_pub = base64.b64decode(raw_ephemeral_pub, validate=True)
+            except Exception:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope requires valid base64 ephemeralPub."
+                })
+                return
+
+            if len(decoded_ephemeral_pub) != 32:
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ephemeral_invalid",
+                    "message": "Encrypted envelope requires 32-byte ephemeralPub key material."
+                })
+                return
+
+        if e2ee_req and (not message) and e2ee_req.get("ciphertext"):
+            try:
+                inbound_counter = int(e2ee_req.get("counter", 0))
+            except Exception:
+                inbound_counter = 0
+
+            inbound_header_id = str(e2ee_req.get("headerId", "default")).strip() or "default"
+            recv_snapshot = _ratchet_snapshot_recv(session_id)
+            if not _ratchet_check_and_advance(session_id, inbound_counter, inbound_header_id):
+                self._send(409, {"ok": False, "error": "e2ee_replay_or_reorder", "details": "Inbound counter not monotonic"})
+                return
+
+            try:
+                message, reply_key, reply_ad, inbound_counter = decrypt_real_envelope(e2ee_req, session_id)
+                message = message.strip()
+                otk_id = str(e2ee_req.get("otkId", "")).strip()
+                if otk_id:
+                    _consume_otk(otk_id)
+            except Exception as e:
+                # Failed decrypt must not consume replay window slots/counters.
+                _ratchet_restore_recv(session_id, recv_snapshot)
+                self._send(400, {"ok": False, "error": "e2ee_decrypt_failed", "details": str(e)})
+                return
+
         attachment = data.get("attachment") if isinstance(data.get("attachment"), dict) else None
+        e2ee_attachment = data.get("e2eeAttachment") if isinstance(data.get("e2eeAttachment"), dict) else None
+        if e2ee_attachment and reply_key is not None:
+            try:
+                attachment = decrypt_e2ee_attachment(e2ee_attachment, reply_key)
+            except Exception as e:
+                self._send(400, {"ok": False, "error": "e2ee_attachment_decrypt_failed", "details": str(e)})
+                return
+
         prefs = data.get("prefs") if isinstance(data.get("prefs"), dict) else {}
         preferred_lang = (prefs.get("language") or "auto").strip().lower()
         show_transcription = bool(prefs.get("showTranscription", True))
@@ -360,7 +1152,7 @@ class Handler(BaseHTTPRequestHandler):
                 final_message = f"{final_message}\n\n{extra_prompt}"
 
             # Per àudio, prioritza la transcripció com a intenció principal i
-            # evita que el model es desviï amb metadades d'adjunt.
+            # evita desviacions per metadades d'adjunt.
             if attachment and str((attachment.get("mime") or "")).lower().startswith("audio/"):
                 stt_text = extract_audio_transcript(extra_prompt)
                 if stt_text:
@@ -446,6 +1238,31 @@ class Handler(BaseHTTPRequestHandler):
             payload = {"ok": True, "reply": reply, "sessionId": session_id}
             if media_url:
                 payload["mediaUrl"] = media_url
+
+            if e2ee_req and encrypted_reply and reply_key is not None:
+                out_counter = _ratchet_next_out_counter(session_id)
+
+                # Prioritize persistent send chain seed when present.
+                store = _load_ratchet_store()
+                sessions = store.setdefault("sessions", {})
+                st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+                send_seed_b64 = st.get("sendChainSeed", "")
+                if send_seed_b64:
+                    import hashlib
+                    send_seed = base64.b64decode(send_seed_b64)
+                    reply_key = hashlib.sha256(send_seed + reply_key + b"send-priority").digest()
+                else:
+                    st["sendChainSeed"] = base64.b64encode(reply_key).decode("ascii")
+                _save_ratchet_store(store)
+
+                reply_key = _ratchet_mix_chain_key(session_id, reply_key, "s2c", out_counter)
+                send_chain_key = _derive_chain_key(reply_key, "send")
+                msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")
+                envelope = encrypt_real_envelope(reply, key=msg_key, ad=(reply_ad or session_id))
+                envelope["counter"] = out_counter
+                payload["e2eeReply"] = envelope
+                payload["reply"] = ""
+
             self._send(200, payload)
         except subprocess.TimeoutExpired:
             self._send(504, {"ok": False, "error": "timeout"})
