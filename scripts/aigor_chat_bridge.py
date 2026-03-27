@@ -662,7 +662,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
             print(f"[bridge-debug] ratchet-mix-failed {e}", flush=True)
             raise
 
-    recv_chain_key = _derive_chain_key(base_key, "recv", ratchet_step)
+    recv_chain_key = _derive_chain_key(base_key, "send", ratchet_step)
     key = _derive_message_key(recv_chain_key, counter, "c2s")
 
     print(
