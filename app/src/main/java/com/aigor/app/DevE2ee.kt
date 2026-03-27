@@ -119,7 +119,7 @@ object DevE2ee {
             ratchetStep = ratchetStep,
             lastPeerRatchetPubB64 = env.optString("ratchetPub", "").ifBlank { null },
         )
-        val key = state.messageKey(counter, "s2c", Direction.RECV)
+        val key = state.messageKey(counter, "s2c", Direction.SEND)
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
