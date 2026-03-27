@@ -854,7 +854,8 @@ class MainActivity : AppCompatActivity() {
                 val payloadText = if (urls.isEmpty()) message else "$message\n\nURLs detectades: ${urls.joinToString(", ")}"
                 val bridgeTarget = fetchE2eeBridgeTarget(endpoint, token)
                 val bridgePub = bridgeTarget?.first
-                val bridgeOtkId = bridgeTarget?.second
+                val bridgeOtkPub = bridgeTarget?.second
+                val bridgeOtkId = bridgeTarget?.third
                 var encResult: DevE2ee.EncryptResult? = null
                 var messageCounter = 0
 
@@ -869,7 +870,7 @@ class MainActivity : AppCompatActivity() {
                         val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
                         prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
                         messageCounter = nextCounter
-                        encResult = DevE2ee.encryptForBridge(payloadText, bridgePub, e2eeSessionId, bridgeOtkId, nextCounter)
+                        encResult = DevE2ee.encryptForBridge(payloadText, bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
                         prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult!!.responseKey, Base64.NO_WRAP)).apply()
                         put("message", "")
                         put("e2ee", encResult!!.envelope)
@@ -1021,7 +1022,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun fetchE2eeBridgeTarget(endpoint: String, token: String): Pair<String, String?>? {
+    private fun fetchE2eeBridgeTarget(endpoint: String, token: String): Triple<String, String?, String?>? {
         return try {
             val bundleUrl = endpoint.replace("/chat", "/e2ee/prekey-bundle")
             val conn = (URL(bundleUrl).openConnection() as HttpURLConnection).apply {
@@ -1056,9 +1057,9 @@ class MainActivity : AppCompatActivity() {
             val spkPub = spk.optString("publicKey", "")
             val spkSig = spk.optString("signature", "")
             val otkArr = bundle.optJSONArray("oneTimePreKeys")
-            val otkId = if (otkArr != null && otkArr.length() > 0) {
-                otkArr.optJSONObject(0)?.optString("id", "")?.ifBlank { null }
-            } else null
+            val otkObj = if (otkArr != null && otkArr.length() > 0) otkArr.optJSONObject(0) else null
+            val otkId = otkObj?.optString("id", "")?.ifBlank { null }
+            val otkPub = otkObj?.optString("publicKey", "")?.ifBlank { null }
 
             if (spkPub.isBlank() || signPub.isBlank() || spkSig.isBlank()) {
                 android.util.Log.e(
@@ -1073,7 +1074,7 @@ class MainActivity : AppCompatActivity() {
                 "prekey-bundle verify=$verified otkId=$otkId spkPrefix=${spkPub.take(16)} signPrefix=${signPub.take(16)}"
             )
             if (!verified) return null
-            Pair(spkPub, otkId)
+            Triple(spkPub, otkPub, otkId)
         } catch (e: Exception) {
             android.util.Log.e("AIGOR-E2EE", "prekey-bundle exception", e)
             null

@@ -210,11 +210,33 @@ def _ensure_otk_pool(min_size: int = 20):
     keys = store.get("keys", [])
     next_id = int(store.get("next", 1))
     while len(keys) < min_size:
-        keys.append({"id": f"otk-{next_id}", "publicKey": _BRIDGE_PUB_B64})
+        otk_priv = x25519.X25519PrivateKey.generate()
+        otk_pub_b64 = base64.b64encode(
+            otk_priv.public_key().public_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+        ).decode("ascii")
+        otk_priv_pem = otk_priv.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode("utf-8")
+        keys.append({"id": f"otk-{next_id}", "publicKey": otk_pub_b64, "privatePem": otk_priv_pem})
         next_id += 1
     store["keys"] = keys
     store["next"] = next_id
     _save_otk_store(store)
+
+
+def _get_otk_private(otk_id: str):
+    if not otk_id:
+        return None
+    store = _load_otk_store()
+    for k in (store.get("keys", []) or []):
+        if k.get("id") == otk_id and k.get("privatePem"):
+            return serialization.load_pem_private_key(k["privatePem"].encode("utf-8"), password=None)
+    return None
 
 
 def _consume_otk(otk_id: str) -> bool:
@@ -596,6 +618,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
     eph_b64 = env.get("ephemeralPub", "")
     header_id = str(env.get("headerId", "default"))
     ratchet_b64 = env.get("ratchetPub", "")
+    otk_id = str(env.get("otkId", "")).strip()
     salt = base64.b64decode(env.get("salt", ""))
     iv = base64.b64decode(env.get("iv", ""))
     ct = base64.b64decode(env.get("ciphertext", ""))
@@ -604,6 +627,9 @@ def decrypt_real_envelope(env: dict, session_id: str):
 
     eph_pub = _decode_pubkey_spki(eph_b64)
     shared = _BRIDGE_PRIVKEY.exchange(eph_pub)
+    otk_priv = _get_otk_private(otk_id)
+    if otk_priv is not None:
+        shared += otk_priv.exchange(eph_pub)
     base_key = _hkdf_key(shared, salt)
 
     ratchet_shared = b""

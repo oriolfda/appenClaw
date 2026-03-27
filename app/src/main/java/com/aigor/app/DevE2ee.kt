@@ -36,7 +36,7 @@ object DevE2ee {
 
     enum class Direction { SEND, RECV }
 
-    fun encryptForBridge(plaintext: String, bridgePublicKeyB64: String, ad: String, otkId: String? = null, counter: Int = 0): EncryptResult {
+    fun encryptForBridge(plaintext: String, bridgePublicKeyB64: String, ad: String, otkPublicKeyB64: String? = null, otkId: String? = null, counter: Int = 0): EncryptResult {
         val kpg = KeyPairGenerator.getInstance("X25519")
         val eph = kpg.generateKeyPair()
 
@@ -44,7 +44,15 @@ object DevE2ee {
         val ka = KeyAgreement.getInstance("X25519")
         ka.init(eph.private)
         ka.doPhase(bridgePub, true)
-        val shared = ka.generateSecret()
+        var shared = ka.generateSecret()
+
+        if (!otkPublicKeyB64.isNullOrBlank()) {
+            val otkPub = decodePublicKey(otkPublicKeyB64)
+            val kaOtk = KeyAgreement.getInstance("X25519")
+            kaOtk.init(eph.private)
+            kaOtk.doPhase(otkPub, true)
+            shared += kaOtk.generateSecret()
+        }
 
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
         var baseKey = hkdfSha256(shared, salt, "aigor-e2ee-v1", 32)
