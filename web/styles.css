@@ -15,7 +15,7 @@ body {
   background: var(--bg);
   color: var(--text);
 }
-.app { max-width: 900px; margin: 0 auto; min-height: 100dvh; display: grid; grid-template-rows: auto auto 1fr auto; }
+.app { width: 100%; max-width: none; min-height: 100dvh; display: grid; grid-template-rows: auto auto 1fr auto; }
 .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--panel-border); }
 .topbar h1 { margin: 0; font-size: 1.1rem; }
 .topbar p { margin: 4px 0 0; color: var(--muted); font-size: .85rem; }
@@ -33,10 +33,21 @@ textarea:focus, input:focus, select:focus { border-color: var(--accent); }
 .msg.bot { align-self: flex-start; background: var(--bot); }
 .msg small { display: block; color: var(--muted); margin-top: 6px; font-size: .74rem; }
 .composer { padding: 10px 12px 14px; border-top: 1px solid var(--panel-border); background: #0d1420; }
-.composer-row { display: flex; gap: 10px; margin-top: 8px; }
-button, .file-btn { border: 0; background: var(--accent); color: white; border-radius: 14px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
+.composer-row { display: flex; gap: 10px; align-items: flex-end; }
+.composer-row textarea { flex: 1; min-height: 44px; resize: vertical; }
+button { border: 0; background: var(--accent); color: white; border-radius: 14px; padding: 10px 14px; cursor: pointer; font-weight: 600; }
 button.ghost { background: transparent; border: 1px solid var(--panel-border); color: var(--text); }
-.file-btn input { display: none; }
+.clip-btn {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 8px 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.clip-btn input { display: none; }
 .hint { color: var(--muted); font-size: .8rem; margin: 8px 0 0; }
 .hidden { display: none !important; }
 @media (max-width: 700px) {

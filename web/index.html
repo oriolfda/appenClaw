@@ -44,9 +44,11 @@
     <section id="messages" class="messages" aria-live="polite"></section>
 
     <section id="composer" class="composer">
-      <textarea id="messageInput" rows="2" placeholder="Escriu un missatge..."></textarea>
       <div class="composer-row">
-        <label class="file-btn">📎 <input id="fileInput" type="file" /></label>
+        <label class="clip-btn" title="Adjunta fitxer" aria-label="Adjunta fitxer">📎
+          <input id="fileInput" type="file" />
+        </label>
+        <textarea id="messageInput" rows="2" placeholder="Escriu un missatge..."></textarea>
         <button id="sendBtn">Envia</button>
       </div>
       <p id="attachmentHint" class="hint"></p>
