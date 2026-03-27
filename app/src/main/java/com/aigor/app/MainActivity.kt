@@ -544,7 +544,19 @@ class MainActivity : AppCompatActivity() {
                 else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
                 conn.disconnect()
 
-                val transcript = parseAssistantText(body, code)
+                val transcript = try {
+                    val obj = JSONObject(body)
+                    if (obj.has("e2eeReply")) {
+                        val env = obj.getJSONObject("e2eeReply")
+                        val baseKey = prefs.getString("e2ee_base_${e2eeSessionId}", null)
+                            ?.let { Base64.decode(it, Base64.DEFAULT) }
+                        if (baseKey != null) DevE2ee.decryptWithKey(baseKey, env) else parseAssistantText(body, code)
+                    } else {
+                        parseAssistantText(body, code)
+                    }
+                } catch (_: Exception) {
+                    parseAssistantText(body, code)
+                }
                 runOnUiThread {
                     adapter.setTranscript(msg.ts, transcript, true)
                     statusText.text = getString(R.string.transcription_ready)
