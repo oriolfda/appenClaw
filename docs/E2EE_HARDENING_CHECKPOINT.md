@@ -74,3 +74,6 @@ Si cal auditoria de tancament, llegir exactament en aquest ordre:
 2. `docs/E2EE_HARDENING_CHECKPOINT.md`
 3. `docs/e2ee_security_acceptance.md`
 4. evidència de gate (`scripts/e2ee_release_gate_smoke.py`)
+
+## WATCHDOG_FUTURE_BACKLOG
+- Reintroduir `ratchet_mix_chain` de forma simètrica a bridge + client per al camí `s2c`, només amb especificació i proves dedicades. No forma part del desbloqueig actual.

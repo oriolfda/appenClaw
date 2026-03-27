@@ -1372,7 +1372,8 @@ class Handler(BaseHTTPRequestHandler):
                     st["sendChainSeed"] = base64.b64encode(reply_key).decode("ascii")
                 _save_ratchet_store(store)
 
-                reply_key = _ratchet_mix_chain_key(session_id, reply_key, "s2c", out_counter)
+                # Simplified symmetric s2c path for interoperability with the current client.
+                # TODO(watchdog): reintroduce ratchet_mix_chain symmetrically on bridge + client.
                 ratchet_step = int(st.get("recv", {}).get("ratchetStep", 0))
                 send_chain_key = _derive_chain_key(reply_key, "send", ratchet_step)
                 msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")

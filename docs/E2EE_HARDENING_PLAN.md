@@ -109,6 +109,11 @@ Done quan:
 - no hi ha blockers crítics oberts
 - es pot afirmar honestament Signal-grade
 
+### Tasca pendent futura (watchdog backlog, fora del tancament actual)
+Descripció: Reintroduir `ratchet_mix_chain` de forma simètrica i explícita a bridge + client per al camí `s2c`, només quan estigui especificat i implementat als dos costats amb proves dedicades.
+Estat: PENDING_FUTURE
+Regla: no executar dins del tancament actual tret que es reobri el pla explícitament.
+
 ## Criteri global de DONE
 Només es pot declarar quan:
 - BLOC_1 = DONE
