@@ -500,19 +500,34 @@ class MainActivity : AppCompatActivity() {
                     return@thread
                 }
 
-                val attachment = JSONObject().apply {
-                    put("name", "transcription-audio.m4a")
-                    put("mime", "audio/mp4")
-                    put("dataBase64", Base64.encodeToString(bytes, Base64.NO_WRAP))
-                }
-
+                val e2eeSessionId = "aigor-app-chat"
+                val audioBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                val bridgeTarget = fetchE2eeBridgeTarget(endpoint, token)
+                val bridgePub = bridgeTarget?.first
+                val bridgeOtkPub = bridgeTarget?.second
+                val bridgeOtkId = bridgeTarget?.third
                 val payload = JSONObject().apply {
-                    put("message", getString(R.string.transcribe_only_prompt))
-                    put("sessionId", "aigor-app-chat")
+                    put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
                         put("showTranscription", true)
                     })
-                    put("attachment", attachment)
+
+                    if (!bridgePub.isNullOrBlank()) {
+                        val nextCounter = prefs.getInt("e2ee_send_counter", 0) + 1
+                        prefs.edit().putInt("e2ee_send_counter", nextCounter).apply()
+                        val encResult = DevE2ee.encryptForBridge(getString(R.string.transcribe_only_prompt), bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
+                        prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult.responseKey, Base64.NO_WRAP)).apply()
+                        put("message", "")
+                        put("e2ee", encResult.envelope)
+                        put("e2eeAttachment", DevE2ee.encryptAttachment(audioBase64, encResult.responseKey, "transcription-audio.m4a", "audio/mp4", e2eeSessionId, nextCounter))
+                    } else {
+                        put("message", getString(R.string.transcribe_only_prompt))
+                        put("attachment", JSONObject().apply {
+                            put("name", "transcription-audio.m4a")
+                            put("mime", "audio/mp4")
+                            put("dataBase64", audioBase64)
+                        })
+                    }
                 }
 
                 val conn = (URL(endpoint).openConnection() as HttpURLConnection).apply {
