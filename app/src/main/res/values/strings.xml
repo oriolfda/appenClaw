@@ -37,7 +37,6 @@
     <string name="cd_delete_recording">Esborrar gravació</string>
     <string name="cd_pause_recording">Pausar gravació</string>
     <string name="cd_send_recording">Enviar gravació</string>
-    <string name="cd_scroll_to_bottom">Anar al final del xat</string>
 
     <string name="photo_ready">Foto preparada</string>
     <string name="mic_permission_required">Cal permís de micròfon</string>
