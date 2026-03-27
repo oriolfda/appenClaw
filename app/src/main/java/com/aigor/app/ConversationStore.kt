@@ -65,6 +65,20 @@ object ConversationStore {
         return target
     }
 
+
+    fun deleteThread(context: Context, threadId: String): State {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val current = loadThreads(prefs)
+        val filtered = current.filterNot { it.threadId == threadId }
+        prefs.edit().remove(historyKey(threadId)).apply()
+        val normalized = if (filtered.isEmpty()) listOf(newThread()) else filtered
+        val currentActive = prefs.getString(KEY_ACTIVE_THREAD_ID, "").orEmpty()
+        val nextActive = if (normalized.any { it.threadId == currentActive }) currentActive else normalized.first().threadId
+        saveThreads(prefs, normalized)
+        prefs.edit().putString(KEY_ACTIVE_THREAD_ID, nextActive).apply()
+        return State(normalized, nextActive)
+    }
+
     fun loadHistoryJson(context: Context, threadId: String): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val key = historyKey(threadId)

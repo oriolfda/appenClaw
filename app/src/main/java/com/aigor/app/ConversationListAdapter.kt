@@ -3,6 +3,7 @@ package com.aigor.app
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import java.text.DateFormat
@@ -13,6 +14,7 @@ class ConversationListAdapter(
     private var activeThreadId: String,
     private val titleFor: (ConversationThread) -> String,
     private val onSelect: (ConversationThread) -> Unit,
+    private val onDelete: (ConversationThread) -> Unit,
 ) : RecyclerView.Adapter<ConversationListAdapter.VH>() {
 
     private val dateFmt = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
@@ -20,6 +22,7 @@ class ConversationListAdapter(
     class VH(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.conversationTitle)
         val meta: TextView = view.findViewById(R.id.conversationMeta)
+        val delete: ImageButton = view.findViewById(R.id.deleteConversationButton)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -40,6 +43,7 @@ class ConversationListAdapter(
         }
         holder.itemView.alpha = if (active) 1f else 0.9f
         holder.itemView.setOnClickListener { onSelect(item) }
+        holder.delete.setOnClickListener { onDelete(item) }
     }
 
     fun update(items: List<ConversationThread>, activeThreadId: String) {

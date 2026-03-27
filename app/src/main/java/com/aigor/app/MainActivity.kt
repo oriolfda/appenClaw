@@ -209,10 +209,16 @@ class MainActivity : AppCompatActivity() {
         )
         chatRecycler.layoutManager = LinearLayoutManager(this)
         chatRecycler.adapter = adapter
-        conversationsAdapter = ConversationListAdapter(emptyList(), activeConversation.threadId, { thread -> conversationTitle(thread) }) { thread ->
-            switchToConversation(thread.threadId)
-            rootLayout.closeDrawer(GravityCompat.END)
-        }
+        conversationsAdapter = ConversationListAdapter(
+            emptyList(),
+            activeConversation.threadId,
+            { thread -> conversationTitle(thread) },
+            { thread ->
+                switchToConversation(thread.threadId)
+                rootLayout.closeDrawer(GravityCompat.END)
+            },
+            { thread -> confirmDeleteConversation(thread) }
+        )
         conversationsRecycler.layoutManager = LinearLayoutManager(this)
         conversationsRecycler.adapter = conversationsAdapter
         applyTheme(theme)
@@ -1408,6 +1414,28 @@ class MainActivity : AppCompatActivity() {
         return thread.title
             ?: ConversationStore.suggestTitleFromHistoryJson(ConversationStore.loadHistoryJson(this, thread.threadId))
             ?: getString(R.string.menu_new_chat)
+    }
+
+    private fun confirmDeleteConversation(thread: ConversationThread) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.delete_conversation))
+            .setMessage(conversationTitle(thread))
+            .setNegativeButton(getString(R.string.close), null)
+            .setPositiveButton(getString(R.string.remove)) { _, _ ->
+                deleteConversation(thread.threadId)
+            }
+            .show()
+    }
+
+    private fun deleteConversation(threadId: String) {
+        val state = ConversationStore.deleteThread(this, threadId)
+        activeConversation = state.activeThread ?: error("Active conversation unavailable")
+        loadHistory()
+        pendingAttachment = null
+        updatePendingAttachmentUi()
+        messageEdit.setText("")
+        refreshConversationsDrawer()
+        statusText.text = getString(R.string.status_conversation_deleted)
     }
 
     private fun switchToConversation(threadId: String) {
