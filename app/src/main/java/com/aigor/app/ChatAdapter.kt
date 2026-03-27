@@ -89,9 +89,9 @@ class ChatAdapter(
             item.role == "typing" -> VIEW_TYPING
             item.role == "user" && (!item.imagePath.isNullOrBlank() || !item.videoPath.isNullOrBlank()) -> VIEW_IMAGE_USER
             hasAudio -> VIEW_AUDIO
+            item.role != "user" && hasHtml -> VIEW_HTML
             hasCodeBlock -> VIEW_CODE
             item.role == "user" -> VIEW_USER
-            hasHtml -> VIEW_HTML
             else -> VIEW_BOT
         }
     }
