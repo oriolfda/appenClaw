@@ -953,14 +953,8 @@ class MainActivity : AppCompatActivity() {
                                 }
                                 if (baseKey != null) {
                                     try {
-                                        val txt = DevE2ee.decryptWithKey(baseKey, env)
-                                        android.util.Log.i(
-                                            "AIGOR-E2EE",
-                                            "reply-decrypt ok counter=${env.optInt("counter", 0)} ratchetStep=${env.optInt("ratchetStep", 0)} len=${txt.length}"
-                                        )
-                                        txt
+                                        DevE2ee.decryptWithKey(baseKey, env)
                                     } catch (e: Exception) {
-                                        android.util.Log.e("AIGOR-E2EE", "reply-decrypt failed", e)
                                         "[E2EE] Error desencriptant resposta: ${e.javaClass.simpleName}: ${e.message}"
                                     }
                                 } else parseAssistantText(body, code)
@@ -1075,22 +1069,18 @@ class MainActivity : AppCompatActivity() {
             else conn.errorStream?.bufferedReader()?.use(BufferedReader::readText).orEmpty()
             conn.disconnect()
             if (code !in 200..299) {
-                android.util.Log.e("AIGOR-E2EE", "prekey-bundle http=$code body=$body")
                 return null
             }
 
             val obj = JSONObject(body)
             val e2ee = obj.optJSONObject("e2ee") ?: run {
-                android.util.Log.e("AIGOR-E2EE", "prekey-bundle missing e2ee object")
                 return null
             }
             val bundle = e2ee.optJSONObject("bundle") ?: run {
-                android.util.Log.e("AIGOR-E2EE", "prekey-bundle missing bundle")
                 return null
             }
             val signPub = bundle.optString("identitySignKey", "")
             val spk = bundle.optJSONObject("signedPreKey") ?: run {
-                android.util.Log.e("AIGOR-E2EE", "prekey-bundle missing signedPreKey")
                 return null
             }
             val spkPub = spk.optString("publicKey", "")
@@ -1101,21 +1091,12 @@ class MainActivity : AppCompatActivity() {
             val otkPub = otkObj?.optString("publicKey", "")?.ifBlank { null }
 
             if (spkPub.isBlank() || signPub.isBlank() || spkSig.isBlank()) {
-                android.util.Log.e(
-                    "AIGOR-E2EE",
-                    "prekey-bundle incomplete signPub=${signPub.isNotBlank()} spkPub=${spkPub.isNotBlank()} spkSig=${spkSig.isNotBlank()} otkId=$otkId"
-                )
                 return null
             }
             val verified = DevE2ee.verifySignedPreKey(signPub, spkPub, spkSig)
-            android.util.Log.i(
-                "AIGOR-E2EE",
-                "prekey-bundle verify=$verified otkId=$otkId spkPrefix=${spkPub.take(16)} signPrefix=${signPub.take(16)}"
-            )
             if (!verified) return null
             Triple(spkPub, otkPub, otkId)
-        } catch (e: Exception) {
-            android.util.Log.e("AIGOR-E2EE", "prekey-bundle exception", e)
+        } catch (_: Exception) {
             null
         }
     }

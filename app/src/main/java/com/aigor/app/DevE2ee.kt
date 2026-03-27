@@ -105,10 +105,6 @@ object DevE2ee {
             put("expectEncryptedReply", true)
         }
 
-        android.util.Log.i(
-            "AIGOR-E2EE",
-            "encryptForBridge responseKeySha=${sha256Hex(baseKey)} ratchetStep=${state.ratchetStep} counter=$counter"
-        )
         return EncryptResult(env, baseKey)
     }
 
@@ -122,10 +118,6 @@ object DevE2ee {
             rootKey = baseKey,
             ratchetStep = ratchetStep,
             lastPeerRatchetPubB64 = env.optString("ratchetPub", "").ifBlank { null },
-        )
-        android.util.Log.i(
-            "AIGOR-E2EE",
-            "decryptWithKey baseKeySha=${sha256Hex(baseKey)} ratchetStep=$ratchetStep counter=$counter"
         )
         val key = state.messageKey(counter, "s2c", Direction.SEND)
 
@@ -168,15 +160,8 @@ object DevE2ee {
             val verifier = Ed25519Signer()
             verifier.init(false, pub)
             verifier.update(spkBytes, 0, spkBytes.size)
-            val ok = verifier.verifySignature(sigBytes)
-            android.util.Log.i(
-                "AIGOR-E2EE",
-                "verifySignedPreKey ok=$ok pubLen=${pubBytes.size} spkLen=${spkBytes.size} sigLen=${sigBytes.size} " +
-                    "pubSha=${sha256Hex(pubBytes)} spkSha=${sha256Hex(spkBytes)} sigSha=${sha256Hex(sigBytes)}"
-            )
-            ok
-        } catch (e: Exception) {
-            android.util.Log.e("AIGOR-E2EE", "verifySignedPreKey exception", e)
+            verifier.verifySignature(sigBytes)
+        } catch (_: Exception) {
             false
         }
     }

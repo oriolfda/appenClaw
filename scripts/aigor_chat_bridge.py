@@ -658,39 +658,16 @@ def decrypt_real_envelope(env: dict, session_id: str):
             ratchet_shared = _BRIDGE_SPK_PRIVKEY.exchange(ratchet_pub)
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
             base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"aigor-ratchet-step-v1")
-        except Exception as e:
-            print(f"[bridge-debug] ratchet-mix-failed {e}", flush=True)
+        except Exception:
             raise
 
     recv_chain_key = _derive_chain_key(base_key, "send", ratchet_step)
     key = _derive_message_key(recv_chain_key, counter, "c2s")
 
-    print(
-        "[bridge-debug] decrypt-input " + json.dumps({
-            "sessionId": session_id,
-            "headerId": header_id,
-            "counter": counter,
-            "ratchetStep": ratchet_step,
-            "otkId": otk_id,
-            "otkUsed": otk_used,
-            "saltSha256": hashlib.sha256(salt).hexdigest(),
-            "ivSha256": hashlib.sha256(iv).hexdigest(),
-            "ctSha256": hashlib.sha256(ct).hexdigest(),
-            "ephSha256": hashlib.sha256(base64.b64decode(eph_b64)).hexdigest(),
-            "ratchetSha256": hashlib.sha256(base64.b64decode(ratchet_b64)).hexdigest() if ratchet_b64 else None,
-            "sharedSha256": hashlib.sha256(shared).hexdigest(),
-            "baseKeySha256": hashlib.sha256(base_key).hexdigest(),
-            "recvChainKeySha256": hashlib.sha256(recv_chain_key).hexdigest(),
-            "messageKeySha256": hashlib.sha256(key).hexdigest(),
-        }, ensure_ascii=False),
-        flush=True,
-    )
-
     aes = AESGCM(key)
     try:
         pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
-    except Exception as e:
-        print(f"[bridge-debug] decrypt-failed {type(e).__name__}: {e}", flush=True)
+    except Exception:
         raise
 
     _ratchet_apply_peer_pub(session_id, ratchet_b64, mix_material=base_key + ratchet_shared)
@@ -708,19 +685,6 @@ def decrypt_real_envelope(env: dict, session_id: str):
 def e2ee_bundle_payload() -> dict:
     signed_prekey_raw = base64.b64decode(_BRIDGE_SPK_PUB_B64)
     signed_prekey_sig = base64.b64encode(_BRIDGE_SIGN_PRIVKEY.sign(signed_prekey_raw)).decode("ascii")
-    try:
-        import hashlib
-        print(
-            "[bridge-debug] spk-sign",
-            json.dumps({
-                "spkSha256": hashlib.sha256(signed_prekey_raw).hexdigest(),
-                "sigSha256": hashlib.sha256(base64.b64decode(signed_prekey_sig)).hexdigest(),
-                "signPubSha256": hashlib.sha256(base64.b64decode(_BRIDGE_SIGN_PUB_B64)).hexdigest(),
-            }, ensure_ascii=False),
-            flush=True,
-        )
-    except Exception:
-        pass
     one_time = _peek_otk_list(8)
     return {
         "ok": True,
@@ -1375,13 +1339,6 @@ class Handler(BaseHTTPRequestHandler):
                 # Simplified symmetric s2c path for interoperability with the current client.
                 # TODO(watchdog): reintroduce ratchet_mix_chain symmetrically on bridge + client.
                 ratchet_step = 1
-                import hashlib
-                print("[bridge-debug] reply-key " + json.dumps({
-                    "sessionId": session_id,
-                    "replyKeySha256": hashlib.sha256(reply_key).hexdigest(),
-                    "outCounter": out_counter,
-                    "ratchetStep": ratchet_step,
-                }, ensure_ascii=False), flush=True)
                 send_chain_key = _derive_chain_key(reply_key, "send", ratchet_step)
                 msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")
                 envelope = encrypt_real_envelope(reply, key=msg_key, ad=(reply_ad or session_id))
@@ -1389,23 +1346,7 @@ class Handler(BaseHTTPRequestHandler):
                 envelope["ratchetStep"] = ratchet_step
                 payload["e2eeReply"] = envelope
                 payload["reply"] = ""
-                print("[bridge-debug] reply-envelope " + json.dumps({
-                    "sessionId": session_id,
-                    "replyLen": len(reply or ""),
-                    "hasE2eeReply": True,
-                    "outCounter": out_counter,
-                    "ratchetStep": ratchet_step,
-                    "ad": (reply_ad or session_id),
-                    "mediaUrl": media_url,
-                }, ensure_ascii=False), flush=True)
             else:
-                print("[bridge-debug] reply-plain " + json.dumps({
-                    "sessionId": session_id,
-                    "replyLen": len(reply or ""),
-                    "encryptedReplyRequested": bool(e2ee_req and encrypted_reply),
-                    "hasReplyKey": reply_key is not None,
-                    "mediaUrl": media_url,
-                }, ensure_ascii=False), flush=True)
 
             self._send(200, payload)
         except subprocess.TimeoutExpired:
