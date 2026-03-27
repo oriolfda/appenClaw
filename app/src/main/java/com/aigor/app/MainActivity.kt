@@ -1145,41 +1145,10 @@ class MainActivity : AppCompatActivity() {
                 obj.has("ok") -> getString(R.string.message_sent_ok)
                 else -> body
             }
-            extractTranscriptText(core)
+            core
         } catch (_: Exception) {
-            extractTranscriptText(body)
+            body
         }
-    }
-
-    private fun extractTranscriptText(text: String): String {
-        if (text.isBlank()) return text
-        val marker = "Transcripció àudio:"
-        val idx = text.indexOf(marker)
-        if (idx < 0) return text.trim()
-
-        val after = text.substring(idx + marker.length).trim()
-        if (after.isBlank()) return text.trim()
-
-        val lines = after.lines().map { it.trimEnd() }
-        val transcript = buildList {
-            for (line in lines) {
-                val trimmed = line.trim()
-                if (trimmed.isBlank()) {
-                    if (isNotEmpty()) break
-                    continue
-                }
-                if (trimmed.startsWith("Inclou primer la transcripció", ignoreCase = true) ||
-                    trimmed.startsWith("Incluye primero la transcripción", ignoreCase = true) ||
-                    trimmed.startsWith("Include first the audio transcription", ignoreCase = true) ||
-                    trimmed.startsWith("No mostris la transcripció", ignoreCase = true) ||
-                    trimmed.startsWith("No muestres la transcripción", ignoreCase = true) ||
-                    trimmed.startsWith("Do not show transcription", ignoreCase = true)
-                ) break
-                add(line)
-            }
-        }.joinToString("\n").trim()
-
-        return if (transcript.isNotBlank()) transcript else after
     }
 
     private fun extractTtsBlock(text: String): Pair<String, String?> {
