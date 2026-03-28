@@ -107,4 +107,11 @@
     <string name="status_conversation_not_found">Estado: conversación no encontrada</string>
     <string name="status_conversation_already_active">Estado: esta conversación ya está activa</string>
     <string name="cd_scroll_to_bottom">Ir al final del chat</string>
+    <string name="theme_light_clean">Claro Azul</string>
+    <string name="theme_clar_verd">Claro Verde</string>
+    <string name="theme_clar_vermell">Claro Rojo</string>
+    <string name="theme_dark_blue">Oscuro Azul</string>
+    <string name="theme_dark_green">Oscuro Verde</string>
+    <string name="theme_dark_red">Oscuro Rojo</string>
+    <string name="theme_darkred2">Oscuro Rojo 2</string>
 </resources>

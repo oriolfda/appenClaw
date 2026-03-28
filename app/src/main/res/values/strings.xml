@@ -113,4 +113,11 @@
     <string name="status_conversation_not_found">Estat: conversa no trobada</string>
     <string name="status_conversation_already_active">Estat: aquesta conversa ja està activa</string>
     <string name="cd_scroll_to_bottom">Vés al final del xat</string>
+    <string name="theme_light_clean">Dark Blue</string>
+    <string name="theme_clar_verd">Dark Green</string>
+    <string name="theme_clar_vermell">Dark Red</string>
+    <string name="theme_dark_blue">Dark Blue</string>
+    <string name="theme_dark_green">Dark Green</string>
+    <string name="theme_dark_red">Dark Red</string>
+    <string name="theme_darkred2">Dark Red 2</string>
 </resources>

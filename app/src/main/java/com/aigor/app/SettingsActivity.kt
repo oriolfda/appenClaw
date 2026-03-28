@@ -79,7 +79,7 @@ class SettingsActivity : AppCompatActivity() {
         tokenEdit.setText(prefs.getString("openclaw_hook_token", ""))
 
         val themes = ThemeManager.themes
-        val themeLabels = themes.map { it.label }
+        val themeLabels = themes.map { localizedThemeLabel(it) }
         val themeAdapter = themedAdapter(themeLabels, isLight)
         themeSpinner.adapter = themeAdapter
 
@@ -221,6 +221,11 @@ class SettingsActivity : AppCompatActivity() {
             dialog.listView?.dividerHeight = 1
         }
         dialog.show()
+    }
+
+    private fun localizedThemeLabel(theme: ThemeManager.UiTheme): String {
+        val resId = resources.getIdentifier(theme.labelKey, "string", packageName)
+        return if (resId != 0) getString(resId) else theme.label
     }
 
     private fun styleAllTextViews(root: View, color: Int) {
