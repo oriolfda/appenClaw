@@ -267,14 +267,35 @@ class MainActivity : AppCompatActivity() {
 
         topToolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.menu_status -> {
+                    fetchContextStatus()
+                    true
+                }
+                R.id.menu_settings -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                    true
+                }
+                R.id.menu_about -> {
+                    showAboutDialog()
+                    true
+                }
                 R.id.menu_new_chat -> {
                     startNewChat()
                     true
                 }
-                else -> {
-                    showToolbarMenuDialog()
+                R.id.menu_conversations -> {
+                    toggleConversationsDrawer()
                     true
                 }
+                R.id.menu_clear_chat -> {
+                    messages.clear()
+                    adapter.notifyDataSetChanged()
+                    saveHistory()
+                    updateScrollToBottomButtonVisibility()
+                    statusText.text = getString(R.string.status_chat_cleared)
+                    true
+                }
+                else -> false
             }
         }
 
@@ -1378,52 +1399,6 @@ class MainActivity : AppCompatActivity() {
             .setView(webView)
             .setPositiveButton(getString(R.string.close), null)
             .show()
-    }
-
-    private fun showToolbarMenuDialog() {
-        val theme = currentTheme()
-        val labels = listOf(
-            getString(R.string.menu_status),
-            getString(R.string.menu_settings),
-            getString(R.string.menu_about),
-            getString(R.string.menu_conversations),
-            getString(R.string.menu_clear_chat),
-        )
-        val menuAdapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, labels) {
-            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                val view = super.getView(position, convertView, parent)
-                val text = view.findViewById<TextView>(android.R.id.text1)
-                text.setTextColor(theme.messageTextColor)
-                view.setBackgroundColor(theme.dialogBg)
-                view.setPadding(32, 24, 32, 24)
-                return view
-            }
-        }
-        val dialog = AlertDialog.Builder(this)
-            .setAdapter(menuAdapter) { d, which ->
-                when (which) {
-                    0 -> fetchContextStatus()
-                    1 -> startActivity(Intent(this, SettingsActivity::class.java))
-                    2 -> showAboutDialog()
-                    3 -> toggleConversationsDrawer()
-                    4 -> {
-                        messages.clear()
-                        this@MainActivity.adapter.notifyDataSetChanged()
-                        saveHistory()
-                        updateScrollToBottomButtonVisibility()
-                        statusText.text = getString(R.string.status_chat_cleared)
-                    }
-                }
-                d.dismiss()
-            }
-            .create()
-        dialog.setOnShowListener {
-            dialog.window?.decorView?.setBackgroundColor(theme.dialogBg)
-            dialog.listView?.setBackgroundColor(theme.dialogBg)
-            dialog.listView?.divider = android.graphics.drawable.ColorDrawable(theme.menuTint)
-            dialog.listView?.dividerHeight = 1
-        }
-        dialog.show()
     }
 
     private fun themedDialog(context: Context, theme: ThemeManager.UiTheme, title: String, message: CharSequence? = null, customView: View? = null): AlertDialog {
