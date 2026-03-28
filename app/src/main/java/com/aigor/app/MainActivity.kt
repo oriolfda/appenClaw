@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var scrollToBottomButton: ImageButton
     private lateinit var conversationsDrawer: View
     private lateinit var conversationsRecycler: RecyclerView
+    private lateinit var conversationsDrawerTitle: TextView
     private lateinit var sendButton: ImageButton
     private lateinit var pendingAttachmentRow: LinearLayout
     private lateinit var pendingAttachmentPreview: ImageView
@@ -168,6 +169,7 @@ class MainActivity : AppCompatActivity() {
         scrollToBottomButton = findViewById(R.id.scrollToBottomButton)
         conversationsDrawer = findViewById(R.id.conversationsDrawer)
         conversationsRecycler = findViewById(R.id.conversationsRecycler)
+        conversationsDrawerTitle = findViewById(R.id.conversationsDrawerTitle)
         sendButton = findViewById(R.id.sendButton)
         pendingAttachmentRow = findViewById(R.id.pendingAttachmentRow)
         pendingAttachmentPreview = findViewById(R.id.pendingAttachmentPreview)
@@ -891,6 +893,8 @@ class MainActivity : AppCompatActivity() {
         topToolbar.setBackgroundColor(theme.screenBg)
         topToolbar.setTitleTextColor(theme.titleColor)
         topToolbar.overflowIcon?.setTint(theme.menuDotsColor)
+        topToolbar.navigationIcon?.setTint(theme.menuDotsColor)
+        topToolbar.menu.findItem(R.id.menu_new_chat)?.icon?.setTint(theme.sendTint)
         statusText.setTextColor(theme.statusColor)
         messageEdit.setTextColor(theme.messageTextColor)
         messageEdit.setHintTextColor(theme.messageHintColor)
@@ -910,7 +914,9 @@ class MainActivity : AppCompatActivity() {
         recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
         recordDotsText.setTextColor(theme.statusColor)
-        conversationsDrawer.setBackgroundColor(if (theme.menuTint != 0) theme.menuTint else theme.screenBg)
+        val drawerBg = if (theme.menuTint != 0) theme.menuTint else theme.screenBg
+        conversationsDrawer.setBackgroundColor(drawerBg)
+        conversationsDrawerTitle.setTextColor(theme.titleColor)
         conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
     }
 

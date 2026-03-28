@@ -86,10 +86,10 @@ object ThemeManager {
         ),
         UiTheme(
             id = "light_clean",
-            label = "Clar net",
-            screenBg = 0xFFF8FAFC.toInt(),
+            label = "Clar-Blau",
+            screenBg = 0xFFF1F5F9.toInt(),
             titleColor = 0xFF0F172A.toInt(),
-            statusColor = 0xFF64748B.toInt(),
+            statusColor = 0xFF475569.toInt(),
             messageTextColor = 0xFF0F172A.toInt(),
             messageHintColor = 0xFF64748B.toInt(),
             menuDotsColor = 0xFF334155.toInt(),

@@ -5,7 +5,6 @@
         android:id="@+id/menu_new_chat"
         android:icon="@android:drawable/ic_input_add"
         android:title="@string/menu_new_chat"
-        app:iconTint="#F3F4F6"
         app:showAsAction="always" />
 
     <item

@@ -14,7 +14,7 @@
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp"
         android:text="@string/menu_conversations"
-        android:textColor="#F9FAFB"
+        android:textColor="#0F172A"
         android:textSize="18sp"
         android:textStyle="bold" />
 
