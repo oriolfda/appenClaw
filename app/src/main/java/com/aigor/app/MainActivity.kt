@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.AlertDialog
 import android.content.Context
 import android.content.res.ColorStateList
+import android.widget.PopupMenu
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -265,32 +266,12 @@ class MainActivity : AppCompatActivity() {
 
         topToolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.menu_status -> {
-                    fetchContextStatus()
-                    true
-                }
-                R.id.menu_settings -> {
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                    true
-                }
-                R.id.menu_about -> {
-                    showAboutDialog()
-                    true
-                }
                 R.id.menu_new_chat -> {
                     startNewChat()
                     true
                 }
-                R.id.menu_conversations -> {
-                    toggleConversationsDrawer()
-                    true
-                }
-                R.id.menu_clear_chat -> {
-                    messages.clear()
-                    adapter.notifyDataSetChanged()
-                    saveHistory()
-                    updateScrollToBottomButtonVisibility()
-                    statusText.text = getString(R.string.status_chat_cleared)
+                R.id.menu_more -> {
+                    showOverflowMenu()
                     true
                 }
                 else -> false
@@ -904,6 +885,7 @@ class MainActivity : AppCompatActivity() {
         topToolbar.overflowIcon?.setTint(theme.menuDotsColor)
         topToolbar.navigationIcon?.setTint(theme.menuDotsColor)
         topToolbar.menu.findItem(R.id.menu_new_chat)?.icon?.setTint(theme.menuDotsColor)
+        topToolbar.menu.findItem(R.id.menu_more)?.icon?.setTint(theme.menuDotsColor)
         statusText.setTextColor(theme.statusColor)
         messageEdit.setTextColor(theme.messageTextColor)
         messageEdit.setHintTextColor(theme.messageHintColor)
@@ -928,6 +910,34 @@ class MainActivity : AppCompatActivity() {
         conversationsDrawerTitle.setTextColor(theme.titleColor)
         statusText.backgroundTintList = ColorStateList.valueOf(theme.screenBg)
         conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
+    }
+
+    private fun showOverflowMenu() {
+        val anchor = topToolbar.findViewById<View>(R.id.menu_more) ?: topToolbar
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, R.id.menu_status, 0, getString(R.string.menu_status))
+        popup.menu.add(0, R.id.menu_settings, 1, getString(R.string.menu_settings))
+        popup.menu.add(0, R.id.menu_about, 2, getString(R.string.menu_about))
+        popup.menu.add(0, R.id.menu_conversations, 3, getString(R.string.menu_conversations))
+        popup.menu.add(0, R.id.menu_clear_chat, 4, getString(R.string.menu_clear_chat))
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.menu_status -> { fetchContextStatus(); true }
+                R.id.menu_settings -> { startActivity(Intent(this, SettingsActivity::class.java)); true }
+                R.id.menu_about -> { showAboutDialog(); true }
+                R.id.menu_conversations -> { toggleConversationsDrawer(); true }
+                R.id.menu_clear_chat -> {
+                    messages.clear()
+                    adapter.notifyDataSetChanged()
+                    saveHistory()
+                    updateScrollToBottomButtonVisibility()
+                    statusText.text = getString(R.string.status_chat_cleared)
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
     }
 
     private fun extractUrls(text: String): List<String> {
