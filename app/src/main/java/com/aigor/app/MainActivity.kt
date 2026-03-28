@@ -2,6 +2,8 @@ package com.aigor.app
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.Context
+import android.content.res.ColorStateList
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -921,6 +923,7 @@ class MainActivity : AppCompatActivity() {
         val drawerBg = if (theme.menuTint != 0) theme.menuTint else theme.screenBg
         conversationsDrawer.setBackgroundColor(drawerBg)
         conversationsDrawerTitle.setTextColor(theme.titleColor)
+        statusText.backgroundTintList = ColorStateList.valueOf(theme.screenBg)
         conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
     }
 
@@ -1393,6 +1396,26 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun themedDialog(context: Context, theme: ThemeManager.UiTheme, title: String, message: CharSequence? = null, customView: View? = null): AlertDialog {
+        val builder = AlertDialog.Builder(context)
+            .setTitle(title)
+            .setPositiveButton(getString(R.string.close), null)
+
+        if (message != null) builder.setMessage(message)
+        if (customView != null) builder.setView(customView)
+
+        val dialog = builder.create()
+        dialog.setOnShowListener {
+            dialog.window?.decorView?.setBackgroundColor(theme.dialogBg)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(theme.sendTint)
+            val titleViewId = resources.getIdentifier("alertTitle", "id", "android")
+            dialog.findViewById<TextView?>(titleViewId)?.setTextColor(theme.titleColor)
+            val messageViewId = android.R.id.message
+            dialog.findViewById<TextView?>(messageViewId)?.setTextColor(theme.messageTextColor)
+        }
+        return dialog
+    }
+
     private fun showAboutDialog() {
         val pkg = packageManager.getPackageInfo(packageName, 0)
         val versionName = pkg.versionName ?: "?"
@@ -1406,11 +1429,7 @@ class MainActivity : AppCompatActivity() {
             appendLine("")
             appendLine(getString(R.string.about_repo))
         }
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.menu_about))
-            .setMessage(info)
-            .setPositiveButton(getString(R.string.close), null)
-            .show()
+        themedDialog(this, currentTheme(), getString(R.string.menu_about), message = info).show()
     }
 
     private fun startNewChat() {
@@ -1448,14 +1467,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteConversation(thread: ConversationThread) {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.delete_conversation))
             .setMessage(conversationTitle(thread))
             .setNegativeButton(getString(R.string.close), null)
             .setPositiveButton(getString(R.string.remove)) { _, _ ->
                 deleteConversation(thread.threadId)
             }
-            .show()
+            .create()
+        val theme = currentTheme()
+        dialog.setOnShowListener {
+            dialog.window?.decorView?.setBackgroundColor(theme.dialogBg)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(theme.sendTint)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(theme.menuDotsColor)
+            val titleViewId = resources.getIdentifier("alertTitle", "id", "android")
+            dialog.findViewById<TextView?>(titleViewId)?.setTextColor(theme.titleColor)
+            dialog.findViewById<TextView?>(android.R.id.message)?.setTextColor(theme.messageTextColor)
+        }
+        dialog.show()
     }
 
     private fun deleteConversation(threadId: String) {
