@@ -1,8 +1,11 @@
 package com.aigor.app
 
+import android.graphics.Color
 import android.graphics.Typeface
+import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import android.text.style.ForegroundColorSpan
 import android.widget.TextView
 import androidx.core.text.HtmlCompat
 
@@ -97,14 +100,14 @@ object RichTextRenderer {
     }
 
     fun displayLanguageLabel(rawLanguage: String?): String {
-        val normalized = rawLanguage?.trim()?.lowercase()?.ifBlank { null } ?: return "TEXT"
+        val normalized = normalizeLanguage(rawLanguage) ?: return "TEXT"
         return when (normalized) {
-            "js", "javascript" -> "JavaScript"
-            "ts", "typescript" -> "TypeScript"
-            "kt", "kts", "kotlin" -> "Kotlin"
-            "py", "python" -> "Python"
-            "sh", "bash", "zsh", "shell" -> "Bash"
-            "yml", "yaml" -> "YAML"
+            "javascript" -> "JavaScript"
+            "typescript" -> "TypeScript"
+            "kotlin" -> "Kotlin"
+            "python" -> "Python"
+            "bash" -> "Bash"
+            "yaml" -> "YAML"
             "json" -> "JSON"
             "html" -> "HTML"
             "css" -> "CSS"
@@ -112,16 +115,57 @@ object RichTextRenderer {
             "sql" -> "SQL"
             "java" -> "Java"
             "c" -> "C"
-            "cpp", "c++" -> "C++"
-            "cs", "csharp" -> "C#"
+            "cpp" -> "C++"
+            "csharp" -> "C#"
             "php" -> "PHP"
-            "rb", "ruby" -> "Ruby"
+            "ruby" -> "Ruby"
             "go" -> "Go"
-            "rs", "rust" -> "Rust"
+            "rust" -> "Rust"
             "swift" -> "Swift"
-            "md", "markdown" -> "Markdown"
+            "markdown" -> "Markdown"
             else -> normalized.uppercase()
         }
+    }
+
+    fun buildHighlightedCode(rawLanguage: String?, code: String): SpannableStringBuilder {
+        val language = normalizeLanguage(rawLanguage) ?: inferLanguage(code)
+        val out = SpannableStringBuilder(code)
+        if (code.isBlank()) return out
+
+        val keywordColor = Color.parseColor("#C084FC")
+        val variableColor = Color.parseColor("#93C5FD")
+        val symbolColor = Color.parseColor("#FCA5A5")
+        val stringColor = Color.parseColor("#86EFAC")
+        val numberColor = Color.parseColor("#FCD34D")
+
+        applyRegexColor(out, Regex("\"([^\"\\\\]|\\\\.)*\"|'([^'\\\\]|\\\\.)*'"), stringColor)
+        applyRegexColor(out, Regex("(?<![A-Za-z0-9_])(\\d+(?:\\.\\d+)?)(?![A-Za-z0-9_])"), numberColor)
+        applyRegexColor(out, Regex("[(){}\\[\\]=><!:+\\-/*%.,;|&]+"), symbolColor)
+
+        val keywordRegex = when (language) {
+            "python" -> Regex("\\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|lambda|pass|raise|yield|in|is|not|and|or|None|True|False)\\b")
+            "javascript", "typescript" -> Regex("\\b(function|const|let|var|return|if|else|for|while|switch|case|break|continue|import|from|export|default|async|await|new|class|extends|try|catch|finally|throw|true|false|null|undefined|interface|type|implements)\\b")
+            "kotlin" -> Regex("\\b(fun|val|var|class|data|object|interface|return|if|else|when|for|while|try|catch|finally|null|true|false|package|import|override|private|public|internal)\\b")
+            "json" -> Regex("\"[^\"]+\"(?=\\s*:)\\b")
+            "yaml" -> Regex("(?m)^\\s*([A-Za-z0-9_.-]+):")
+            "html" -> Regex("</?[A-Za-z][A-Za-z0-9:-]*|/?>")
+            "css" -> Regex("(?m)^\\s*([.#]?[A-Za-z_-][A-Za-z0-9_-]*)|\\b(color|background|display|padding|margin|border|font-size|position)\\b")
+            "bash" -> Regex("\\b(if|then|else|fi|for|do|done|case|esac|function|echo|export|local|return)\\b")
+            "sql" -> Regex("\\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|DELETE|JOIN|LEFT|RIGHT|INNER|OUTER|ORDER|GROUP|BY|LIMIT|AS|AND|OR|NOT|NULL|CREATE|TABLE)\\b", RegexOption.IGNORE_CASE)
+            else -> Regex("\\b(class|return|if|else|for|while|import|from|const|let|var|fun|def)\\b")
+        }
+        applyRegexColor(out, keywordRegex, keywordColor)
+
+        val variableRegex = when (language) {
+            "python" -> Regex("(?m)(?<=def\\s)([A-Za-z_][A-Za-z0-9_]*)|(?m)(?<=class\\s)([A-Za-z_][A-Za-z0-9_]*)|(?m)\\bself\\b|(?m)(?<!\\.)([A-Za-z_][A-Za-z0-9_]*)(?=\\s*=)")
+            "javascript", "typescript" -> Regex("(?m)(?<=const\\s)([A-Za-z_$][A-Za-z0-9_$]*)|(?m)(?<=let\\s)([A-Za-z_$][A-Za-z0-9_$]*)|(?m)(?<=var\\s)([A-Za-z_$][A-Za-z0-9_$]*)|(?m)(?<=function\\s)([A-Za-z_$][A-Za-z0-9_$]*)|(?m)([A-Za-z_$][A-Za-z0-9_$]*)(?=\\s*=>)")
+            "kotlin" -> Regex("(?m)(?<=fun\\s)([A-Za-z_][A-Za-z0-9_]*)|(?m)(?<=val\\s)([A-Za-z_][A-Za-z0-9_]*)|(?m)(?<=var\\s)([A-Za-z_][A-Za-z0-9_]*)|(?m)(?<=class\\s)([A-Za-z_][A-Za-z0-9_]*)")
+            "json", "yaml" -> Regex("(?m)\"([^\"]+)\"(?=\\s*:)|(?m)^\\s*([A-Za-z0-9_.-]+)(?=:)" )
+            else -> Regex("(?m)([A-Za-z_][A-Za-z0-9_]*)(?=\\s*=)")
+        }
+        applyRegexColor(out, variableRegex, variableColor)
+
+        return out
     }
 
     private fun toSafeHtml(raw: String): String {
@@ -176,6 +220,34 @@ object RichTextRenderer {
         txt = txt.replace("\n", "<br>")
 
         return txt
+    }
+
+    private fun applyRegexColor(text: SpannableStringBuilder, regex: Regex, color: Int) {
+        regex.findAll(text).forEach { match ->
+            val start = match.range.first
+            val end = match.range.last + 1
+            if (start in 0 until end && end <= text.length) {
+                text.setSpan(ForegroundColorSpan(color), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+    }
+
+    private fun normalizeLanguage(rawLanguage: String?): String? {
+        val normalized = rawLanguage?.trim()?.lowercase()?.ifBlank { null } ?: return null
+        return when (normalized) {
+            "js" -> "javascript"
+            "ts" -> "typescript"
+            "kt", "kts" -> "kotlin"
+            "py" -> "python"
+            "sh", "zsh", "shell" -> "bash"
+            "yml" -> "yaml"
+            "c++" -> "cpp"
+            "cs" -> "csharp"
+            "rb" -> "ruby"
+            "rs" -> "rust"
+            "md" -> "markdown"
+            else -> normalized
+        }
     }
 
     private fun inferLanguage(code: String): String? {

@@ -141,7 +141,7 @@ class ChatAdapter(
                     holder.codeLanguage?.text = if (languageLabel.isBlank()) holder.itemView.context.getString(R.string.code_language_fallback) else languageLabel
                     holder.text.typeface = Typeface.MONOSPACE
                     holder.text.textSize = 14f
-                    holder.text.text = codeText
+                    holder.text.text = RichTextRenderer.buildHighlightedCode(codeBlock?.language, codeText)
                     holder.text.setOnClickListener(null)
                     holder.codeCopyIcon?.setOnClickListener {
                         copyMessageToClipboard(holder.itemView.context, codeText, label = "aigor-code")
