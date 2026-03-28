@@ -49,6 +49,7 @@ class ChatAdapter(
     class MessageVH(view: View) : RecyclerView.ViewHolder(view) {
         val text: TextView = view.findViewById(R.id.messageText)
         val codeLanguage: TextView? = view.findViewById(R.id.codeLanguage)
+        val codeCopyIcon: ImageView? = view.findViewById(R.id.codeCopyIcon)
     }
 
     class TypingVH(view: View) : RecyclerView.ViewHolder(view) {
@@ -135,15 +136,19 @@ class ChatAdapter(
                     }
                 } else if (hasCodeBlock) {
                     val codeBlock = RichTextRenderer.extractFirstCodeBlock(item.text)
+                    val codeText = codeBlock?.code?.trimEnd() ?: RichTextRenderer.extractScrollableCodeText(item.text)
                     val languageLabel = RichTextRenderer.displayLanguageLabel(codeBlock?.language)
-                    holder.codeLanguage?.text = if (languageLabel.isBlank()) holder.itemView.context.getString(R.string.code_language_fallback) else languageLabel.lowercase(Locale.getDefault())
+                    holder.codeLanguage?.text = if (languageLabel.isBlank()) holder.itemView.context.getString(R.string.code_language_fallback) else languageLabel
                     holder.text.typeface = Typeface.MONOSPACE
-                    holder.text.textSize = 13f
-                    holder.text.text = codeBlock?.code?.trimEnd() ?: RichTextRenderer.extractScrollableCodeText(item.text)
+                    holder.text.textSize = 14f
+                    holder.text.text = codeText
                     holder.text.setOnClickListener(null)
+                    holder.codeCopyIcon?.setOnClickListener {
+                        copyMessageToClipboard(holder.itemView.context, codeText, label = "aigor-code")
+                    }
                     holder.text.setOnLongClickListener {
-                        copyMessageToClipboard(holder.text.context, codeBlock?.code?.trimEnd() ?: RichTextRenderer.extractScrollableCodeText(item.text), label = "aigor-code")
-                        false
+                        copyMessageToClipboard(holder.text.context, codeText, label = "aigor-code")
+                        true
                     }
                 } else {
                     RichTextRenderer.bind(holder.text, item.text, selectable = true)

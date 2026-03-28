@@ -14,22 +14,22 @@
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_weight="0.76"
+        android:layout_weight="0.84"
         android:background="@drawable/bg_code_block"
-        android:orientation="vertical"
         android:clipToOutline="true"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp">
+        android:orientation="vertical"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:minHeight="34dp"
+            android:minHeight="36dp"
             android:orientation="horizontal"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
-            android:paddingBottom="8dp">
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="10dp">
 
             <TextView
                 android:id="@+id/codeLanguage"
@@ -38,26 +38,17 @@
                 android:layout_weight="1"
                 android:fontFamily="sans-serif-medium"
                 android:text="TEXT"
-                android:textColor="#A1A1AA"
-                android:textSize="12sp" />
+                android:textColor="#F5F5F5"
+                android:textSize="11sp" />
 
-            <TextView
-                android:id="@+id/codeCopyHint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="#00000000"
-                android:fontFamily="sans-serif-medium"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="2dp"
-                android:text="@string/code_copy_hint"
-                android:textColor="#D4D4D8"
-                android:textSize="12sp" />
+            <ImageView
+                android:id="@+id/codeCopyIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="@string/code_copy_hint"
+                android:src="@drawable/ic_content_copy"
+                android:tint="#D4D4D8" />
         </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="#2A2A2A" />
 
         <HorizontalScrollView
             android:id="@+id/codeScroll"
@@ -66,10 +57,10 @@
             android:background="#171717"
             android:fadeScrollbars="false"
             android:fillViewport="false"
-            android:paddingStart="14dp"
-            android:paddingTop="12dp"
-            android:paddingEnd="14dp"
-            android:paddingBottom="12dp"
+            android:paddingStart="18dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="14dp"
             android:scrollbars="horizontal">
 
             <TextView
@@ -77,10 +68,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="monospace"
-                android:lineSpacingExtra="3dp"
+                android:lineSpacingExtra="4dp"
                 android:textColor="#F5F5F5"
                 android:textIsSelectable="true"
-                android:textSize="13sp" />
+                android:textSize="14sp" />
         </HorizontalScrollView>
     </LinearLayout>
 
@@ -88,6 +79,7 @@
         android:id="@+id/codeTrailingSpace"
         android:layout_width="0dp"
         android:layout_height="1dp"
-        android:layout_weight="0.12" />
+        android:layout_weight="0.04" />
+
 
 </LinearLayout>
