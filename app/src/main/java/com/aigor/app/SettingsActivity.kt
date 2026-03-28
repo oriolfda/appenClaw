@@ -34,7 +34,9 @@ class SettingsActivity : AppCompatActivity() {
         val endpointEdit: EditText = findViewById(R.id.settingsEndpointEdit)
         val tokenEdit: EditText = findViewById(R.id.settingsTokenEdit)
         val themeSpinner: Spinner = findViewById(R.id.themeSpinner)
+        val themeSpinnerFake: TextView = findViewById(R.id.themeSpinnerFake)
         val languageSpinner: Spinner = findViewById(R.id.languageSpinner)
+        val languageSpinnerFake: TextView = findViewById(R.id.languageSpinnerFake)
         val showTranscriptionsCheck: CheckBox = findViewById(R.id.showTranscriptionsCheck)
         val saveButton: MaterialButton = findViewById(R.id.saveSettingsButton)
         val statusText: TextView = findViewById(R.id.settingsStatusText)
@@ -58,6 +60,10 @@ class SettingsActivity : AppCompatActivity() {
         tokenEdit.setBackgroundResource(uiTheme.inputBg)
         tintSpinner(themeSpinner, panelBg, uiTheme.messageTextColor)
         tintSpinner(languageSpinner, panelBg, uiTheme.messageTextColor)
+        themeSpinnerFake.setTextColor(uiTheme.messageTextColor)
+        themeSpinnerFake.setBackgroundColor(panelBg)
+        languageSpinnerFake.setTextColor(uiTheme.messageTextColor)
+        languageSpinnerFake.setBackgroundColor(panelBg)
         themeSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
         languageSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
         statusText.setTextColor(uiTheme.statusColor)
@@ -79,6 +85,8 @@ class SettingsActivity : AppCompatActivity() {
         val currentThemeId = prefs.getString(ThemeManager.PREF_KEY, "html_match")
         val selectedIndex = themes.indexOfFirst { it.id == currentThemeId }.coerceAtLeast(0)
         themeSpinner.setSelection(selectedIndex)
+        themeSpinnerFake.text = themeLabels[selectedIndex]
+        themeSpinnerFake.setOnClickListener { themeSpinner.performClick() }
 
         val languageOptions = listOf(
             "auto" to getString(R.string.lang_auto),
@@ -95,6 +103,8 @@ class SettingsActivity : AppCompatActivity() {
         val currentLang = prefs.getString("ui_locale", "auto") ?: "auto"
         val langIndex = languageOptions.indexOfFirst { it.first == currentLang }.coerceAtLeast(0)
         languageSpinner.setSelection(langIndex)
+        languageSpinnerFake.text = languageOptions[langIndex].second
+        languageSpinnerFake.setOnClickListener { languageSpinner.performClick() }
 
         showTranscriptionsCheck.isChecked = prefs.getBoolean("show_transcriptions", true)
 

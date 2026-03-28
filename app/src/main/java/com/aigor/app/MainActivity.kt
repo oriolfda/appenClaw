@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var rootLayout: DrawerLayout
     private lateinit var topToolbar: MaterialToolbar
+    private lateinit var mainContent: LinearLayout
     private lateinit var composerRow: LinearLayout
     private lateinit var clipButton: ImageButton
     private lateinit var cameraButton: ImageButton
@@ -160,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         rootLayout = findViewById(R.id.rootLayout)
+        mainContent = findViewById(R.id.mainContent)
         topToolbar = findViewById(R.id.topToolbar)
         composerRow = findViewById(R.id.composerRow)
         clipButton = findViewById(R.id.clipButton)
@@ -892,6 +894,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyTheme(theme: ThemeManager.UiTheme) {
         rootLayout.setBackgroundColor(theme.screenBg)
+        mainContent.setBackgroundColor(theme.screenBg)
         window.decorView.setBackgroundColor(theme.screenBg)
         window.statusBarColor = theme.screenBg
         window.navigationBarColor = theme.screenBg
