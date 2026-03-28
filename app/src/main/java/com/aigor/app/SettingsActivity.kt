@@ -188,20 +188,22 @@ class SettingsActivity : AppCompatActivity() {
         uiTheme: ThemeManager.UiTheme,
         onSelected: (Int) -> Unit,
     ) {
-        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, items) {
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
-                val checked = view.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
-                checked.setTextColor(uiTheme.messageTextColor)
-                checked.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
-                view.setBackgroundColor(uiTheme.dialogBg)
+                val text = view.findViewById<TextView>(android.R.id.text1)
+                val isSelected = position == selectedIndex
+                text.setTextColor(if (isSelected) uiTheme.sendTint else uiTheme.messageTextColor)
+                text.setTypeface(text.typeface, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                view.setBackgroundColor(if (isSelected) uiTheme.menuTint else uiTheme.dialogBg)
+                view.setPadding(32, 24, 32, 24)
                 return view
             }
         }
 
         val dialog = AlertDialog.Builder(this)
             .setTitle(title)
-            .setSingleChoiceItems(adapter, selectedIndex) { d, which ->
+            .setAdapter(adapter) { d, which ->
                 onSelected(which)
                 d.dismiss()
             }
@@ -215,7 +217,8 @@ class SettingsActivity : AppCompatActivity() {
             dialog.findViewById<TextView?>(titleViewId)?.setTextColor(uiTheme.titleColor)
             dialog.findViewById<TextView?>(android.R.id.message)?.setTextColor(uiTheme.messageTextColor)
             dialog.listView?.setBackgroundColor(uiTheme.dialogBg)
-            dialog.listView?.dividerHeight = 0
+            dialog.listView?.divider = GradientDrawable().apply { setColor(uiTheme.menuTint) ; setSize(1, 1) }
+            dialog.listView?.dividerHeight = 1
         }
         dialog.show()
     }
