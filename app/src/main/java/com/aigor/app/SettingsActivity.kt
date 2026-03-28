@@ -2,6 +2,8 @@ package com.aigor.app
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -37,17 +39,23 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
         val uiTheme = ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
-        val isLight = uiTheme.screenBg == 0xFFF8FAFC.toInt()
+        val isLight = uiTheme.screenBg > 0xFF7FFFFFFF.toInt()
+        val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
 
+        window.decorView.setBackgroundColor(uiTheme.screenBg)
         root.setBackgroundColor(uiTheme.screenBg)
+        styleAllTextViews(root, uiTheme.messageTextColor)
         endpointEdit.setTextColor(uiTheme.messageTextColor)
         endpointEdit.setHintTextColor(uiTheme.messageHintColor)
         endpointEdit.setBackgroundResource(uiTheme.inputBg)
         tokenEdit.setTextColor(uiTheme.messageTextColor)
         tokenEdit.setHintTextColor(uiTheme.messageHintColor)
         tokenEdit.setBackgroundResource(uiTheme.inputBg)
+        tintSpinner(themeSpinner, panelBg, uiTheme.messageTextColor)
+        tintSpinner(languageSpinner, panelBg, uiTheme.messageTextColor)
         statusText.setTextColor(uiTheme.statusColor)
         showTranscriptionsCheck.setTextColor(uiTheme.messageTextColor)
+        showTranscriptionsCheck.buttonTintList = ColorStateList.valueOf(uiTheme.sendTint)
 
         saveButton.backgroundTintList = ColorStateList.valueOf(uiTheme.sendTint)
         saveButton.setTextColor(uiTheme.sendText)
@@ -110,22 +118,45 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun themedAdapter(items: List<String>, isLight: Boolean): ArrayAdapter<String> {
         val textColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F3F4F6")
-        val bgColor = if (isLight) Color.parseColor("#FFFFFF") else Color.parseColor("#111827")
+        val bgColor = if (isLight) Color.parseColor("#F8FAFC") else Color.parseColor("#111827")
 
         return object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent)
-                (v as? TextView)?.setTextColor(textColor)
-                v.setBackgroundColor(bgColor)
+                (v as? TextView)?.apply {
+                    setTextColor(textColor)
+                    setBackgroundColor(bgColor)
+                }
                 return v
             }
 
             override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getDropDownView(position, convertView, parent)
-                (v as? TextView)?.setTextColor(textColor)
-                v.setBackgroundColor(bgColor)
+                (v as? TextView)?.apply {
+                    setTextColor(textColor)
+                    setBackgroundColor(bgColor)
+                }
                 return v
             }
         }.also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+    }
+
+    private fun styleAllTextViews(root: View, color: Int) {
+        if (root is TextView) root.setTextColor(color)
+        if (root is ViewGroup) {
+            for (i in 0 until root.childCount) {
+                styleAllTextViews(root.getChildAt(i), color)
+            }
+        }
+    }
+
+    private fun tintSpinner(spinner: Spinner, backgroundColor: Int, textColor: Int) {
+        spinner.background = GradientDrawable().apply {
+            cornerRadius = 18f
+            setColor(backgroundColor)
+        }
+        spinner.background?.mutate()?.setColorFilter(backgroundColor, PorterDuff.Mode.SRC_ATOP)
+        spinner.backgroundTintList = ColorStateList.valueOf(backgroundColor)
+        spinner.foregroundTintList = ColorStateList.valueOf(textColor)
     }
 }

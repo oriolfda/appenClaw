@@ -890,11 +890,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyTheme(theme: ThemeManager.UiTheme) {
         rootLayout.setBackgroundColor(theme.screenBg)
+        findViewById<View>(android.R.id.content)?.setBackgroundColor(theme.screenBg)
         topToolbar.setBackgroundColor(theme.screenBg)
         topToolbar.setTitleTextColor(theme.titleColor)
         topToolbar.overflowIcon?.setTint(theme.menuDotsColor)
         topToolbar.navigationIcon?.setTint(theme.menuDotsColor)
-        topToolbar.menu.findItem(R.id.menu_new_chat)?.icon?.setTint(theme.sendTint)
+        topToolbar.menu.findItem(R.id.menu_new_chat)?.icon?.setTint(theme.menuDotsColor)
         statusText.setTextColor(theme.statusColor)
         messageEdit.setTextColor(theme.messageTextColor)
         messageEdit.setHintTextColor(theme.messageHintColor)
