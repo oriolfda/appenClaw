@@ -19,21 +19,40 @@
         android:orientation="vertical"
         android:padding="10dp">
 
-        <TextView
-            android:id="@+id/codeCopyHint"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:paddingBottom="6dp"
-            android:text="@string/code_copy_hint"
-            android:textColor="#9CA3AF"
-            android:textSize="12sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/codeLanguage"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:text="TEXT"
+                android:textAllCaps="true"
+                android:textColor="#D1D5DB"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/codeCopyHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/code_copy_hint"
+                android:textColor="#9CA3AF"
+                android:textSize="12sp" />
+        </LinearLayout>
 
         <HorizontalScrollView
             android:id="@+id/codeScroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#111827"
             android:fillViewport="false"
+            android:padding="10dp"
             android:scrollbars="horizontal">
 
             <TextView
@@ -41,6 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="monospace"
+                android:lineSpacingExtra="2dp"
                 android:textColor="#F9FAFB"
                 android:textIsSelectable="true"
                 android:textSize="14sp" />

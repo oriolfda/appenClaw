@@ -8,10 +8,15 @@ import androidx.core.text.HtmlCompat
 
 object RichTextRenderer {
 
+    data class CodeBlock(
+        val language: String?,
+        val code: String,
+    )
+
     // Supports both:
     // ```python\n...\n```
     // ```python ... ```
-    private val codeFenceRegex = Regex("```([a-zA-Z0-9_+-]*)\\s*([\\s\\S]*?)```")
+    private val codeFenceRegex = Regex("```([a-zA-Z0-9_+#.+-]*)\\s*([\\s\\S]*?)```")
     private val indentedCodeRegex = Regex("(?m)^(?:\\t| {4,}).+")
     private val pythonLikeLineRegex = Regex("(?m)^(def |class |import |from |for |while |if |elif |else:|try:|except |with |print\\()")
 
@@ -71,8 +76,52 @@ object RichTextRenderer {
         return punctuated >= 2
     }
 
+    fun extractFirstCodeBlock(raw: String): CodeBlock? {
+        val normalized = raw.trim()
+        if (normalized.isBlank()) return null
+
+        val match = codeFenceRegex.find(normalized)
+        if (match != null) {
+            val language = match.groupValues.getOrNull(1)?.trim()?.ifBlank { null }
+            val code = match.groupValues.getOrNull(2)?.trim('\n', '\r') ?: ""
+            return CodeBlock(language = language, code = code)
+        }
+
+        val copyable = extractCopyableCode(normalized) ?: return null
+        val inferredLanguage = inferLanguage(copyable)
+        return CodeBlock(language = inferredLanguage, code = copyable.trimEnd())
+    }
+
     fun extractScrollableCodeText(raw: String): String {
-        return extractCopyableCode(raw)?.trimEnd() ?: raw.trimEnd()
+        return extractFirstCodeBlock(raw)?.code?.trimEnd() ?: raw.trimEnd()
+    }
+
+    fun displayLanguageLabel(rawLanguage: String?): String {
+        val normalized = rawLanguage?.trim()?.lowercase()?.ifBlank { null } ?: return "TEXT"
+        return when (normalized) {
+            "js", "javascript" -> "JavaScript"
+            "ts", "typescript" -> "TypeScript"
+            "kt", "kts", "kotlin" -> "Kotlin"
+            "py", "python" -> "Python"
+            "sh", "bash", "zsh", "shell" -> "Bash"
+            "yml", "yaml" -> "YAML"
+            "json" -> "JSON"
+            "html" -> "HTML"
+            "css" -> "CSS"
+            "xml" -> "XML"
+            "sql" -> "SQL"
+            "java" -> "Java"
+            "c" -> "C"
+            "cpp", "c++" -> "C++"
+            "cs", "csharp" -> "C#"
+            "php" -> "PHP"
+            "rb", "ruby" -> "Ruby"
+            "go" -> "Go"
+            "rs", "rust" -> "Rust"
+            "swift" -> "Swift"
+            "md", "markdown" -> "Markdown"
+            else -> normalized.uppercase()
+        }
     }
 
     private fun toSafeHtml(raw: String): String {
@@ -129,9 +178,29 @@ object RichTextRenderer {
         return txt
     }
 
+    private fun inferLanguage(code: String): String? {
+        val t = code.trim()
+        if (t.isBlank()) return null
+        val lower = t.lowercase()
+        return when {
+            Regex("(?m)^\\s*(fun|val|var|data class|class)\\b").containsMatchIn(t) -> "kotlin"
+            Regex("(?m)^\\s*(def|class|import|from)\\b").containsMatchIn(t) && t.contains(":") -> "python"
+            Regex("(?m)^\\s*(const|let|function|import|export)\\b").containsMatchIn(t) || t.contains("=>") -> "javascript"
+            Regex("(?m)^\\s*(interface|type|enum)\\b").containsMatchIn(t) || t.contains(": string") || t.contains(": number") -> "typescript"
+            lower.contains("<html") || lower.contains("<div") || lower.contains("</") -> "html"
+            Regex("(?m)^\\s*[.#a-zA-Z0-9_-]+\\s*\\{").containsMatchIn(t) -> "css"
+            lower.startsWith("{") || lower.startsWith("[") -> "json"
+            Regex("(?m)^\\s*[a-zA-Z0-9_-]+:\\s*").containsMatchIn(t) && !t.contains("{") -> "yaml"
+            lower.contains("select ") || lower.contains("insert ") || lower.contains("update ") -> "sql"
+            Regex("(?m)^\\s*(#!/bin/(ba)?sh|echo |export |if \\[|fi$)").containsMatchIn(t) -> "bash"
+            else -> null
+        }
+    }
+
     private fun looksLikeCode(s: String): Boolean {
         val t = s.trim()
         if (t.contains("```") || t.contains("<pre") || t.contains("<code")) return true
+        if (inferLanguage(t) != null) return true
         val lines = t.lines()
         if (lines.size < 3) return false
         var score = 0

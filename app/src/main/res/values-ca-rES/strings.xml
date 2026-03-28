@@ -22,6 +22,7 @@
     <string name="recording_discarded">Gravació descartada</string>
     <string name="status_new_chat_started">Estat: nou xat iniciat</string>
     <string name="status_chat_cleared">Estat: xat netejat</string>
+    <string name="code_language_fallback">TEXT</string>
     <string name="fill_endpoint_token">Omple endpoint i token</string>
     <string name="title_app">AIGOR</string>
     <string name="cd_menu">Menú</string>
