@@ -6,49 +6,47 @@
   <title>AIGOR Theme Designer</title>
   <style>
     :root{
-      --screen-bg:#0B1018;
-      --toolbar-bg:#0B1018;
-      --title:#F3F4F6;
-      --status:#7C879A;
-      --menu-dots:#E5E7EB;
-      --menu-panel-bg:#111827;
-      --menu-panel-text:#F9FAFB;
-      --menu-panel-active:#121926;
-      --bot-bubble:#242833;
-      --user-bubble:#34242B;
-      --user-text:#F9FAFB;
-      --bot-text:#F9FAFB;
-      --input-bg:#101623;
-      --input-stroke:#20283A;
-      --input-hint:#7C879A;
-      --send-bg:#FF5C5C;
-      --send-text:#FFFFFF;
+      --screen-bg:#ffffff;
+      --toolbar-bg:#f6f5f4;
+      --title:#0f172a;
+      --status:#475569;
+      --menu-dots:#334155;
+      --menu-panel-bg:#e2e8f0;
+      --menu-panel-text:#0f172a;
+      --menu-panel-active:#cbd5e1;
+      --bot-bubble:#e2e8f0;
+      --user-bubble:#bfdbfe;
+      --user-text:#0f172a;
+      --bot-text:#0f172a;
+      --input-bg:#ffffff;
+      --input-stroke:#cbd5e1;
+      --input-hint:#64748b;
+      --send-bg:#2563eb;
+      --send-text:#ffffff;
       --code-bg:#171717;
       --code-header:#171717;
-      --code-lang:#F5F5F5;
-      --code-copy:#D4D4D8;
-      --code-text:#F5F5F5;
-      --code-keyword:#C084FC;
-      --code-variable:#93C5FD;
-      --code-symbol:#FCA5A5;
-      --code-string:#86EFAC;
-      --code-number:#FCD34D;
+      --code-lang:#f5f5f5;
+      --code-copy:#d4d4d8;
+      --code-text:#f5f5f5;
+      --code-keyword:#c084fc;
+      --code-variable:#93c5fd;
+      --code-symbol:#fca5a5;
+      --code-string:#86efac;
+      --code-number:#fcd34d;
     }
-
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0b1120;color:#e5e7eb}
     .topbar{position:sticky;top:0;z-index:20;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.08);padding:10px 12px;display:flex;gap:8px;align-items:center}
     .topbar h1{font-size:16px;margin:0;flex:1}
-    .topbar button{border:none;border-radius:10px;padding:8px 12px;background:#22c1ff;color:#042133;font-weight:700;cursor:pointer}
+    .topbar button,.topbar input{border:none;border-radius:10px;padding:8px 12px;background:#22c1ff;color:#042133;font-weight:700}
+    .topbar input{background:#111827;color:#e5e7eb;font-weight:500;min-width:180px}
     .wrap{display:grid;grid-template-columns:minmax(420px,1fr) 420px;min-height:calc(100vh - 56px)}
     .left{padding:16px}
     .right{padding:16px;background:#0f172a;border-left:1px solid rgba(255,255,255,.08);overflow:auto}
-
     .phone{width:430px;max-width:100%;height:860px;margin:0 auto;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:0 24px 70px rgba(0,0,0,.4);background:var(--screen-bg);display:flex;flex-direction:column}
     .toolbar{height:56px;background:var(--toolbar-bg);display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:var(--title)}
     .toolbar .plus,.toolbar .dots{font-size:24px;color:var(--menu-dots);line-height:1}
     .toolbar .title{font-size:22px;font-weight:300}
-
     .chatArea{flex:1;display:flex;min-height:0;background:var(--screen-bg)}
     .chatMain{flex:1;display:flex;flex-direction:column;min-width:0}
     .chat{flex:1;overflow:auto;padding:8px 10px 6px}
@@ -56,220 +54,112 @@
     .bubble{border-radius:18px;padding:10px 12px;max-width:82%;box-shadow:0 1px 0 rgba(0,0,0,.08)}
     .bubble.bot{background:var(--bot-bubble);color:var(--bot-text)}
     .bubble.user{background:var(--user-bubble);color:var(--user-text)}
-    .txt{font-size:16px;line-height:1.38}
-    .status{padding:0 12px 6px;color:var(--status);font-size:12px}
+    .txt{font-size:16px;line-height:1.38}.status{padding:0 12px 6px;color:var(--status);font-size:12px}
     .composerWrap{padding:8px;background:var(--screen-bg)}
     .composer{display:flex;gap:8px;align-items:center}
     .input{flex:1;min-height:52px;border-radius:18px;border:1px solid var(--input-stroke);background:var(--input-bg);display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 14px}
-    .hint{font-size:17px;color:var(--input-hint)}
-    .inputIcons{display:flex;gap:10px;color:var(--send-bg);font-size:20px}
+    .hint{font-size:17px;color:var(--input-hint)} .inputIcons{display:flex;gap:10px;color:var(--send-bg);font-size:20px}
     .round{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--send-bg);color:var(--send-text);font-size:21px}
-
     .drawer{width:0;overflow:hidden;background:var(--menu-panel-bg);color:var(--menu-panel-text);transition:width .2s ease;border-left:1px solid rgba(0,0,0,.08)}
-    .drawer.open{width:320px}
-    .drawerTitle{padding:16px;font-size:18px;font-weight:700;color:var(--menu-panel-text)}
-    .conv{padding:12px 16px;border-top:1px solid rgba(255,255,255,.05)}
-    .conv.active{background:var(--menu-panel-active)}
-    .conv .name{font-size:14px;font-weight:600;margin-bottom:4px}
-    .conv .meta{font-size:12px;opacity:.8}
-
+    .drawer.open{width:320px}.drawerTitle{padding:16px;font-size:18px;font-weight:700;color:var(--menu-panel-text)}
+    .conv{padding:12px 16px;border-top:1px solid rgba(255,255,255,.05)}.conv.active{background:var(--menu-panel-active)}
+    .conv .name{font-size:14px;font-weight:600;margin-bottom:4px}.conv .meta{font-size:12px;opacity:.8}
     .codeCard{max-width:84%;background:var(--code-bg);border-radius:18px;overflow:hidden}
     .codeHead{display:flex;align-items:center;justify-content:space-between;padding:12px 18px 10px;background:var(--code-header)}
-    .codeLang{font-size:11px;font-weight:600;color:var(--code-lang);letter-spacing:.02em}
-    .codeCopy{font-size:16px;color:var(--code-copy)}
+    .codeLang{font-size:11px;font-weight:600;color:var(--code-lang);letter-spacing:.02em}.codeCopy{font-size:16px;color:var(--code-copy)}
     .codeBody{padding:8px 18px 14px;background:var(--code-bg);overflow:auto}
     pre{margin:0;white-space:pre;tab-size:2;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--code-text)}
     .kw{color:var(--code-keyword)} .vr{color:var(--code-variable)} .sy{color:var(--code-symbol)} .st{color:var(--code-string)} .nu{color:var(--code-number)}
-
     .card{background:#111827;border:1px solid #243041;border-radius:14px;padding:12px;margin-bottom:12px}
     .card h3{margin:0 0 8px;font-size:14px;color:#cbd5e1}
     label{display:block;font-size:12px;color:#94a3b8;margin:8px 0 4px}
     select,input,textarea,button{width:100%;padding:8px;border-radius:10px;border:1px solid #334155;background:#0b1220;color:#e5e7eb}
-    textarea{height:180px;font-family:ui-monospace,monospace}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    textarea{height:180px;font-family:ui-monospace,monospace}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
     .approve{cursor:pointer;background:#22c1ff;color:#042133;font-weight:700;border:none}
-
-    @media (max-width:1100px){
-      .wrap{grid-template-columns:1fr}
-      .right{border-left:none;border-top:1px solid rgba(255,255,255,.08)}
-      .phone{height:min(72vh,860px)}
-    }
+    @media (max-width:1100px){.wrap{grid-template-columns:1fr}.right{border-left:none;border-top:1px solid rgba(255,255,255,.08)}.phone{height:min(72vh,860px)}}
   </style>
 </head>
 <body>
   <div class="topbar">
     <h1>AIGOR Theme Designer</h1>
     <button id="toggleDrawer">🗂️ Menú</button>
+    <input id="themeName" placeholder="Nom del tema nou o còpia" />
+    <button id="duplicateTheme">Duplica tema</button>
+    <button id="newTheme">Nou tema</button>
   </div>
-
   <div class="wrap">
     <div class="left">
       <div class="phone">
-        <div class="toolbar">
-          <div class="plus">＋</div>
-          <div class="title">AIGOR</div>
-          <div class="dots">⋮</div>
-        </div>
-
+        <div class="toolbar"><div class="plus">＋</div><div class="title">AIGOR</div><div class="dots">⋮</div></div>
         <div class="chatArea" id="chatPreview">
           <div class="chatMain">
             <div class="chat">
               <div class="row"><div class="bubble bot"><div class="txt">Hola Oriol. Aquesta és una preview fidel del xat amb el tema actual.</div></div></div>
               <div class="row user"><div class="bubble user"><div class="txt">Vull veure bé el contrast de les bombolles i del fons.</div></div></div>
-              <div class="row"><div class="codeCard">
-                <div class="codeHead"><div class="codeLang">Kotlin</div><div class="codeCopy">⧉</div></div>
-                <div class="codeBody"><pre><span class="kw">fun</span> <span class="vr">applyTheme</span><span class="sy">(</span><span class="vr">theme</span><span class="sy">:</span> <span class="vr">UiTheme</span><span class="sy">)</span> <span class="sy">{</span>
+              <div class="row"><div class="codeCard"><div class="codeHead"><div class="codeLang">Kotlin</div><div class="codeCopy">⧉</div></div><div class="codeBody"><pre><span class="kw">fun</span> <span class="vr">applyTheme</span><span class="sy">(</span><span class="vr">theme</span><span class="sy">:</span> <span class="vr">UiTheme</span><span class="sy">)</span> <span class="sy">{</span>
   <span class="vr">rootLayout</span><span class="sy">.</span><span class="vr">setBackgroundColor</span><span class="sy">(</span><span class="vr">theme</span><span class="sy">.</span><span class="vr">screenBg</span><span class="sy">)</span>
   <span class="vr">statusText</span><span class="sy">.</span><span class="vr">setTextColor</span><span class="sy">(</span><span class="vr">theme</span><span class="sy">.</span><span class="vr">statusColor</span><span class="sy">)</span>
-  <span class="kw">val</span> <span class="vr">ok</span> <span class="sy">=</span> <span class="nu">true</span>
-  <span class="kw">if</span> <span class="sy">(</span><span class="vr">ok</span><span class="sy">)</span> <span class="vr">println</span><span class="sy">(</span><span class="st">"Tema aplicat"</span><span class="sy">)</span>
-<span class="sy">}</span></pre></div>
-              </div></div>
-              <div class="row"><div class="bubble bot"><div class="txt">També veus el panell de converses, el menú superior, l’estat i el composer.</div></div></div>
+<span class="sy">}</span></pre></div></div></div>
             </div>
             <div class="status">Estat: enviat OK (200)</div>
-            <div class="composerWrap">
-              <div class="composer">
-                <div class="input"><span class="hint">Escriu un missatge...</span><span class="inputIcons"><span>📎</span><span>📷</span></span></div>
-                <div class="round">🎤</div>
-              </div>
-            </div>
+            <div class="composerWrap"><div class="composer"><div class="input"><span class="hint">Escriu un missatge...</span><span class="inputIcons"><span>📎</span><span>📷</span></span></div><div class="round">🎤</div></div></div>
           </div>
-
-          <div class="drawer" id="drawer">
-            <div class="drawerTitle">Converses</div>
-            <div class="conv active"><div class="name">Conversa 1 · avui</div><div class="meta">Tema actual actiu</div></div>
-            <div class="conv"><div class="name">Conversa 2 · ahir</div><div class="meta">Preview del panell</div></div>
-            <div class="conv"><div class="name">Conversa 3 · dilluns</div><div class="meta">Contrast i colors</div></div>
-          </div>
+          <div class="drawer" id="drawer"><div class="drawerTitle">Converses</div><div class="conv active"><div class="name">Conversa 1 · avui</div><div class="meta">Tema actual actiu</div></div><div class="conv"><div class="name">Conversa 2 · ahir</div><div class="meta">Preview del panell</div></div></div>
         </div>
-
         <div id="settingsPreview" style="display:none;flex:1;background:var(--screen-bg);padding:22px;overflow:auto;">
           <div style="font-size:22px;font-weight:700;color:var(--title);margin-bottom:22px;">Configuració AIGOR</div>
-          <div style="color:var(--title);font-size:14px;font-weight:600;margin-bottom:8px;">Endpoint</div>
-          <div style="background:var(--input-bg);border:1px solid var(--input-stroke);color:var(--title);border-radius:22px;padding:12px 16px;margin-bottom:16px;">https://aigor-app.example/chat</div>
-          <div style="color:var(--title);font-size:14px;font-weight:600;margin-bottom:8px;">Token</div>
-          <div style="background:var(--input-bg);border:1px solid var(--input-stroke);color:var(--title);border-radius:22px;padding:12px 16px;margin-bottom:16px;">• • • • • • • • • • • • • •</div>
           <div style="color:var(--title);font-size:14px;font-weight:600;margin-bottom:8px;">Tema</div>
-          <div style="background:var(--menu-panel-bg);color:var(--menu-panel-text);border-radius:0;padding:8px 12px;margin-bottom:16px;">Clar-Blau</div>
+          <div style="background:var(--menu-panel-bg);color:var(--menu-panel-text);padding:10px 12px;margin-bottom:16px;">Clar-Blau</div>
           <div style="color:var(--title);font-size:14px;font-weight:600;margin-bottom:8px;">Idioma d'interfície</div>
-          <div style="background:var(--menu-panel-bg);color:var(--menu-panel-text);border-radius:0;padding:8px 12px;margin-bottom:18px;">Català</div>
-          <div style="display:flex;align-items:center;gap:10px;color:var(--title);margin-bottom:22px;">
-            <div style="width:18px;height:18px;border:2px solid var(--send-bg);border-radius:2px;"></div>
-            <span>Mostrar transcripcions d'àudio</span>
-          </div>
-          <div style="background:var(--send-bg);color:var(--send-text);border-radius:18px;padding:14px 16px;text-align:center;font-weight:700;letter-spacing:.08em;">GUARDAR</div>
+          <div style="background:var(--menu-panel-bg);color:var(--menu-panel-text);padding:10px 12px;margin-bottom:18px;">Català</div>
         </div>
       </div>
     </div>
-
     <div class="right">
-      <div class="card">
-        <h3>Temes actuals de l'app</h3>
-        <select id="preset"></select>
-      </div>
-      <div class="card">
-        <h3>Mode preview</h3>
-        <select id="previewMode">
-          <option value="chat">Xat</option>
-          <option value="settings">Settings</option>
-        </select>
-      </div>
-      <div class="card">
-        <h3>Colors reals a revisar</h3>
-        <div class="grid" id="pickers"></div>
-      </div>
-      <div class="card">
-        <h3>CSS vars</h3>
-        <textarea id="cssVars"></textarea>
-        <button class="approve" id="applyCss">Aplicar CSS</button>
-      </div>
-      <div class="card">
-        <h3>Export JSON</h3>
-        <textarea id="json"></textarea>
-      </div>
+      <div class="card"><h3>Temes actuals</h3><select id="preset"></select></div>
+      <div class="card"><h3>Mode preview</h3><select id="previewMode"><option value="chat">Xat</option><option value="settings">Settings</option></select></div>
+      <div class="card"><h3>Accions</h3><div class="actions"><button class="approve" id="renameTheme">Reanomena</button><button class="approve" id="deleteTheme">Esborra</button></div></div>
+      <div class="card"><h3>Colors</h3><div class="grid" id="pickers"></div></div>
+      <div class="card"><h3>CSS vars</h3><textarea id="cssVars"></textarea><button class="approve" id="applyCss">Aplicar CSS</button></div>
+      <div class="card"><h3>Export JSON</h3><textarea id="json"></textarea></div>
     </div>
   </div>
-
 <script>
 const themePresets = {
-  
-  
-  
   light_clean:{label:'Clar-Blau',colors:{'screen-bg':'#FFFFFF','toolbar-bg':'#F6F5F4','title':'#0F172A','status':'#475569','menu-dots':'#334155','menu-panel-bg':'#E2E8F0','menu-panel-text':'#0F172A','menu-panel-active':'#CBD5E1','bot-bubble':'#E2E8F0','user-bubble':'#BFDBFE','user-text':'#0F172A','bot-text':'#0F172A','input-bg':'#FFFFFF','input-stroke':'#CBD5E1','input-hint':'#64748B','send-bg':'#2563EB','send-text':'#FFFFFF','code-bg':'#171717','code-header':'#171717','code-lang':'#F5F5F5','code-copy':'#D4D4D8','code-text':'#F5F5F5','code-keyword':'#C084FC','code-variable':'#93C5FD','code-symbol':'#FCA5A5','code-string':'#86EFAC','code-number':'#FCD34D'}},
-  dark_all_green:{label:'Dark tots verds',colors:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#7C879A','menu-dots':'#E5E7EB','menu-panel-bg':'#0B1018','menu-panel-text':'#F3F4F6','menu-panel-active':'#0B1018','bot-bubble':'#163625','user-bubble':'#34242B','user-text':'#F9FAFB','bot-text':'#F9FAFB','input-bg':'#102417','input-stroke':'#1f3b2a','input-hint':'#7C879A','send-bg':'#22C55E','send-text':'#04130A','code-bg':'#171717','code-header':'#171717','code-lang':'#F5F5F5','code-copy':'#D4D4D8','code-text':'#F5F5F5','code-keyword':'#C084FC','code-variable':'#93C5FD','code-symbol':'#FCA5A5','code-string':'#86EFAC','code-number':'#FCD34D'}},
+  dark_all_green:{label:'Dark tots verds',colors:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#7C879A','menu-dots':'#E5E7EB','menu-panel-bg':'#0B1018','menu-panel-text':'#F3F4F6','menu-panel-active':'#0B1018','bot-bubble':'#163625','user-bubble':'#34242B','user-text':'#F9FAFB','bot-text':'#F9FAFB','input-bg':'#102417','input-stroke':'#1F3B2A','input-hint':'#7C879A','send-bg':'#22C55E','send-text':'#04130A','code-bg':'#171717','code-header':'#171717','code-lang':'#F5F5F5','code-copy':'#D4D4D8','code-text':'#F5F5F5','code-keyword':'#C084FC','code-variable':'#93C5FD','code-symbol':'#FCA5A5','code-string':'#86EFAC','code-number':'#FCD34D'}},
   dark_all_blue:{label:'Dark tots blaus',colors:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#7C879A','menu-dots':'#E5E7EB','menu-panel-bg':'#0B1018','menu-panel-text':'#F3F4F6','menu-panel-active':'#0B1018','bot-bubble':'#1E3A8A','user-bubble':'#1E293B','user-text':'#F9FAFB','bot-text':'#F9FAFB','input-bg':'#0D1B33','input-stroke':'#1E3A5F','input-hint':'#7C879A','send-bg':'#3B82F6','send-text':'#FFFFFF','code-bg':'#171717','code-header':'#171717','code-lang':'#F5F5F5','code-copy':'#D4D4D8','code-text':'#F5F5F5','code-keyword':'#C084FC','code-variable':'#93C5FD','code-symbol':'#FCA5A5','code-string':'#86EFAC','code-number':'#FCD34D'}},
-  
   darkred2:{label:'Dark Red 2',colors:{'screen-bg':'#0B1018','toolbar-bg':'#0B1018','title':'#F3F4F6','status':'#7C879A','menu-dots':'#F3F4F6','menu-panel-bg':'#0B1018','menu-panel-text':'#F3F4F6','menu-panel-active':'#0B1018','bot-bubble':'#000000','user-bubble':'#34242B','user-text':'#F9FAFB','bot-text':'#F9FAFB','input-bg':'#101623','input-stroke':'#20283A','input-hint':'#7C879A','send-bg':'#FF5C5C','send-text':'#FFFFFF','code-bg':'#171717','code-header':'#171717','code-lang':'#F5F5F5','code-copy':'#D4D4D8','code-text':'#F5F5F5','code-keyword':'#C084FC','code-variable':'#93C5FD','code-symbol':'#FCA5A5','code-string':'#86EFAC','code-number':'#FCD34D'}}
 };
-
-const colorKeys = Object.keys(themePresets.html_match.colors);
-const presetEl = document.getElementById('preset');
-const previewModeEl = document.getElementById('previewMode');
-const pickers = document.getElementById('pickers');
-const cssVars = document.getElementById('cssVars');
-const jsonEl = document.getElementById('json');
-const drawer = document.getElementById('drawer');
-const chatPreview = document.getElementById('chatPreview');
-const settingsPreview = document.getElementById('settingsPreview');
-
-Object.entries(themePresets).forEach(([id, data]) => {
-  const opt = document.createElement('option');
-  opt.value = id;
-  opt.textContent = data.label;
-  presetEl.appendChild(opt);
-});
-
-colorKeys.forEach(key => {
-  const wrap = document.createElement('div');
-  wrap.innerHTML = `<label>${key}</label><input type="color" id="${key}">`;
-  pickers.appendChild(wrap);
-});
-
-function setVar(key, value){ document.documentElement.style.setProperty(`--${key}`, value); }
-function hex(v){ return /^#[0-9a-f]{6}$/i.test(v); }
-function refreshExport(){
-  const colors = {};
-  colorKeys.forEach(k => colors[k] = document.getElementById(k).value);
-  cssVars.value = ':root {\n' + colorKeys.map(k => `  --${k}: ${colors[k]};`).join('\n') + '\n}';
-  jsonEl.value = JSON.stringify({themeId:presetEl.value,label:themePresets[presetEl.value].label,colors}, null, 2);
-}
-function applyTheme(id){
-  const colors = themePresets[id].colors;
-  colorKeys.forEach(k => {
-    const value = colors[k];
-    if (hex(value)) document.getElementById(k).value = value;
-    setVar(k, value);
-  });
-  refreshExport();
-}
-function applyFromInputs(){
-  colorKeys.forEach(k => setVar(k, document.getElementById(k).value));
-  refreshExport();
-}
-
-pickers.addEventListener('input', applyFromInputs);
-presetEl.addEventListener('change', () => applyTheme(presetEl.value));
-document.getElementById('applyCss').addEventListener('click', () => {
-  const txt = cssVars.value || '';
-  const re = /--([a-zA-Z0-9-_]+)\s*:\s*([^;\n}]+)/g;
-  let m;
-  while ((m = re.exec(txt)) !== null) {
-    const key = m[1], value = m[2].trim();
-    if (!colorKeys.includes(key)) continue;
-    setVar(key, value);
-    if (hex(value)) document.getElementById(key).value = value;
-  }
-  refreshExport();
-});
-document.getElementById('toggleDrawer').addEventListener('click', () => drawer.classList.toggle('open'));
-previewModeEl.addEventListener('change', () => {
-  const isSettings = previewModeEl.value === 'settings';
-  chatPreview.style.display = isSettings ? 'none' : 'flex';
-  settingsPreview.style.display = isSettings ? 'block' : 'none';
-});
-
-applyTheme('light_clean');
+const themeNameEl=document.getElementById('themeName');
+const presetEl=document.getElementById('preset');
+const previewModeEl=document.getElementById('previewMode');
+const pickers=document.getElementById('pickers');
+const cssVars=document.getElementById('cssVars');
+const jsonEl=document.getElementById('json');
+const drawer=document.getElementById('drawer');
+const chatPreview=document.getElementById('chatPreview');
+const settingsPreview=document.getElementById('settingsPreview');
+const colorKeys=Object.keys(Object.values(themePresets)[0].colors);
+function refreshPresetOptions(selected){presetEl.innerHTML='';Object.entries(themePresets).forEach(([id,data])=>{const opt=document.createElement('option');opt.value=id;opt.textContent=data.label;presetEl.appendChild(opt)});presetEl.value=selected||Object.keys(themePresets)[0];}
+colorKeys.forEach(key=>{const wrap=document.createElement('div');wrap.innerHTML=`<label>${key}</label><input type="color" id="${key}">`;pickers.appendChild(wrap);});
+function setVar(key,value){document.documentElement.style.setProperty(`--${key}`,value)}
+function hex(v){return /^#[0-9a-f]{6}$/i.test(v)}
+function slugify(s){return s.toLowerCase().trim().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'theme_nou'}
+function refreshExport(){const colors={};colorKeys.forEach(k=>colors[k]=document.getElementById(k).value);cssVars.value=':root {\n'+colorKeys.map(k=>`  --${k}: ${colors[k]};`).join('\n')+'\n}';jsonEl.value=JSON.stringify({themeId:presetEl.value,label:themePresets[presetEl.value].label,colors},null,2);themeNameEl.value=themePresets[presetEl.value].label;}
+function applyTheme(id){const colors=themePresets[id].colors;colorKeys.forEach(k=>{const value=colors[k];if(hex(value))document.getElementById(k).value=value;setVar(k,value)});refreshExport()}
+function applyFromInputs(){colorKeys.forEach(k=>setVar(k,document.getElementById(k).value));themePresets[presetEl.value].colors={...themePresets[presetEl.value].colors,...Object.fromEntries(colorKeys.map(k=>[k,document.getElementById(k).value]))};refreshExport()}
+pickers.addEventListener('input',applyFromInputs);
+presetEl.addEventListener('change',()=>applyTheme(presetEl.value));
+document.getElementById('applyCss').addEventListener('click',()=>{const txt=cssVars.value||'';const re=/--([a-zA-Z0-9-_]+)\s*:\s*([^;\n}]+)/g;let m;while((m=re.exec(txt))!==null){const key=m[1],value=m[2].trim();if(!colorKeys.includes(key))continue;setVar(key,value);if(hex(value))document.getElementById(key).value=value;themePresets[presetEl.value].colors[key]=value;}refreshExport();});
+document.getElementById('toggleDrawer').addEventListener('click',()=>drawer.classList.toggle('open'));
+previewModeEl.addEventListener('change',()=>{const isSettings=previewModeEl.value==='settings';chatPreview.style.display=isSettings?'none':'flex';settingsPreview.style.display=isSettings?'block':'none';});
+document.getElementById('duplicateTheme').addEventListener('click',()=>{const base=themePresets[presetEl.value];const label=themeNameEl.value.trim()||`${base.label} copia`;const id=slugify(label);themePresets[id]={label,colors:JSON.parse(JSON.stringify(base.colors))};refreshPresetOptions(id);applyTheme(id);});
+document.getElementById('newTheme').addEventListener('click',()=>{const label=themeNameEl.value.trim()||'Tema nou';const id=slugify(label);const base=themePresets[presetEl.value];themePresets[id]={label,colors:JSON.parse(JSON.stringify(base.colors))};refreshPresetOptions(id);applyTheme(id);});
+document.getElementById('renameTheme').addEventListener('click',()=>{const oldId=presetEl.value;const label=themeNameEl.value.trim();if(!label)return;const id=slugify(label);const theme=themePresets[oldId];delete themePresets[oldId];theme.label=label;themePresets[id]=theme;refreshPresetOptions(id);applyTheme(id);});
+document.getElementById('deleteTheme').addEventListener('click',()=>{const ids=Object.keys(themePresets);if(ids.length<=1)return;const current=presetEl.value;delete themePresets[current];const next=Object.keys(themePresets)[0];refreshPresetOptions(next);applyTheme(next);});
+refreshPresetOptions('light_clean');applyTheme('light_clean');
 </script>
 </body>
 </html>
