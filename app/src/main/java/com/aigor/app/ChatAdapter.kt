@@ -136,9 +136,9 @@ class ChatAdapter(
                 } else if (hasCodeBlock) {
                     val codeBlock = RichTextRenderer.extractFirstCodeBlock(item.text)
                     val languageLabel = RichTextRenderer.displayLanguageLabel(codeBlock?.language)
-                    holder.codeLanguage?.text = if (languageLabel.isBlank()) holder.itemView.context.getString(R.string.code_language_fallback) else languageLabel
+                    holder.codeLanguage?.text = if (languageLabel.isBlank()) holder.itemView.context.getString(R.string.code_language_fallback) else languageLabel.lowercase(Locale.getDefault())
                     holder.text.typeface = Typeface.MONOSPACE
-                    holder.text.textSize = 14f
+                    holder.text.textSize = 13f
                     holder.text.text = codeBlock?.code?.trimEnd() ?: RichTextRenderer.extractScrollableCodeText(item.text)
                     holder.text.setOnClickListener(null)
                     holder.text.setOnLongClickListener {
