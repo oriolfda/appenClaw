@@ -98,4 +98,5 @@
     <string name="status_conversation_switched">Estat: conversa canviada</string>
     <string name="status_conversation_not_found">Estat: conversa no trobada</string>
     <string name="status_conversation_already_active">Estat: aquesta conversa ja està activa</string>
+    <string name="cd_scroll_to_bottom">Vés al final del xat</string>
 </resources>

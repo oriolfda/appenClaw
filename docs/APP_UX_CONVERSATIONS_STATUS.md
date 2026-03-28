@@ -1,6 +1,6 @@
 # APP UX & Conversations Status
 
-Last updated: 2026-03-27 21:30 UTC
+Last updated: 2026-03-28 07:12 UTC
 
 ## Governança
 - Font autoritativa de tasques: `docs/APP_UX_CONVERSATIONS_PLAN.md`
@@ -8,14 +8,14 @@ Last updated: 2026-03-27 21:30 UTC
 - Si no hi ha cap tasca activa, ha d'executar la següent tasca pendent del planning.
 
 ## Estat global
-- Tasques totals: 10
-- Tasques completades: 10
+- Tasques totals: 11
+- Tasques completades: 11
 - Tasques pendents: 0
 - Percentatge completat: 100%
 
 ## Execució actual (watchdog)
-- No s'ha executat cap tasca nova perquè el planning ja està completat (10/10).
-- Ordre de prioritat respectat: no hi ha tasques pendents a continuar.
+- Executada la tasca pendent següent en ordre del planning: **B1**.
+- Ordre de prioritat respectat: no hi ha tasques pendents després d'aquesta execució.
 
 ## Tasques executades
 - ✅ **1.1 Revisió de l'estat actual de còpia/selecció/codi**
@@ -111,6 +111,17 @@ Last updated: 2026-03-27 21:30 UTC
     - Reobrir una conversa restaura el seu historial amb les respostes associades al thread correcte.
     - Els nous enviaments continuen sobre el `sessionId` correcte de la conversa seleccionada.
 
+- ✅ **B1 Botó flotant per anar al final del xat (reintroduït amb seguretat)**
+  - Implementació:
+    - Afegit `scrollToBottomButton` a `activity_main.xml` dins d'un `FrameLayout` sobre el `RecyclerView`, amb visibilitat inicial `gone`.
+    - `MainActivity` incorpora `updateScrollToBottomButtonVisibility()` per mostrar el botó només quan l'usuari no és al final de la conversa.
+    - Listener de scroll a `chatRecycler` i acció de click del botó cap a `scrollBottom()`.
+    - Integració de tint/tema a `applyTheme(...)` per mantenir coherència visual.
+  - Cobertura del criteri “done”:
+    - No provoca crash en obrir l'app (compilació release correcta).
+    - Només apareix quan té sentit (fora del final del xat).
+    - Fa scroll al final correctament.
+
 ## Tasques pendents
 - Cap (planning completat)
 
@@ -123,11 +134,14 @@ Last updated: 2026-03-27 21:30 UTC
     - Nou helper `persistAssistantReplyForThread(...)` per persistir respostes/errors al thread correcte quan l'usuari canvia de conversa durant una resposta en vol.
     - Nou flux `showConversationsSelector()` + `switchToConversation(threadId)` per llistar i obrir converses existents.
     - Integració del nou selector dins del menú overflow.
+    - B1: gestió de visibilitat i acció del botó flotant de scroll al final (`updateScrollToBottomButtonVisibility`, listener de scroll i click).
+  - `app/src/main/res/layout/activity_main.xml`
+    - B1: contenidor `FrameLayout` del xat i nou `ImageButton@scrollToBottomButton`.
   - `app/src/main/res/menu/main_overflow_menu.xml`
     - Nou item visible `menu_conversations`.
   - `app/src/main/res/values*/strings.xml`
-    - Noves cadenes UI/estat per al selector i canvi de conversa.
+    - Noves cadenes UI/estat del selector de converses i B1 (`cd_scroll_to_bottom`).
 - Verificació:
   - `./gradlew assembleRelease` ✅ (BUILD SUCCESSFUL)
-- Backlog pendent B1: reintroduir amb seguretat un botó flotant per anar al final del xat; l'intent actual s'ha revertit perquè provocava crash en obrir l'app.
-- Estat global revisat després de crear el backlog B1: 11 tasques totals, 10 completades, 1 pendent, 90.9% completat.
+- B1 completada: botó flotant de retorn al final del xat reintroduït i validat amb build release.
+- Estat global final del planning: 11 tasques totals, 11 completades, 0 pendents, 100% completat.

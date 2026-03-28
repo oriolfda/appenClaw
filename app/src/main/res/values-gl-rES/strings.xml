@@ -102,4 +102,5 @@
     <string name="status_conversation_switched">Estado: conversa cambiada</string>
     <string name="status_conversation_not_found">Estado: conversa non atopada</string>
     <string name="status_conversation_already_active">Estado: esta conversa xa está activa</string>
+    <string name="cd_scroll_to_bottom">Ir ao final do chat</string>
 </resources>

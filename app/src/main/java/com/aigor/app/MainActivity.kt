@@ -72,6 +72,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var messageEdit: EditText
     private lateinit var statusText: TextView
     private lateinit var chatRecycler: RecyclerView
+    private lateinit var scrollToBottomButton: ImageButton
     private lateinit var conversationsDrawer: View
     private lateinit var conversationsRecycler: RecyclerView
     private lateinit var sendButton: ImageButton
@@ -164,6 +165,7 @@ class MainActivity : AppCompatActivity() {
         messageEdit = findViewById(R.id.messageEdit)
         statusText = findViewById(R.id.statusText)
         chatRecycler = findViewById(R.id.chatRecycler)
+        scrollToBottomButton = findViewById(R.id.scrollToBottomButton)
         conversationsDrawer = findViewById(R.id.conversationsDrawer)
         conversationsRecycler = findViewById(R.id.conversationsRecycler)
         sendButton = findViewById(R.id.sendButton)
@@ -211,6 +213,14 @@ class MainActivity : AppCompatActivity() {
         )
         chatRecycler.layoutManager = LinearLayoutManager(this)
         chatRecycler.adapter = adapter
+        chatRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                updateScrollToBottomButtonVisibility()
+            }
+        })
+        scrollToBottomButton.setOnClickListener {
+            scrollBottom()
+        }
         conversationsAdapter = ConversationListAdapter(
             emptyList(),
             activeConversation.threadId,
@@ -233,6 +243,7 @@ class MainActivity : AppCompatActivity() {
         consumeSharedText(intent)
         updatePendingAttachmentUi()
         updateComposerActionButton()
+        updateScrollToBottomButtonVisibility()
 
         messageEdit.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -272,6 +283,7 @@ class MainActivity : AppCompatActivity() {
                     messages.clear()
                     adapter.notifyDataSetChanged()
                     saveHistory()
+                    updateScrollToBottomButtonVisibility()
                     statusText.text = getString(R.string.status_chat_cleared)
                     true
                 }
@@ -889,6 +901,8 @@ class MainActivity : AppCompatActivity() {
         micButton.setColorFilter(theme.sendText)
         sendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         sendButton.setColorFilter(theme.sendText)
+        scrollToBottomButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
+        scrollToBottomButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
         recordPauseButton.setColorFilter(theme.statusColor)
         recordSendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
@@ -1398,6 +1412,7 @@ class MainActivity : AppCompatActivity() {
         messageEdit.setText("")
         statusText.text = getString(R.string.status_new_chat_started)
         refreshConversationsDrawer()
+        updateScrollToBottomButtonVisibility()
     }
 
     private fun toggleConversationsDrawer() {
@@ -1470,8 +1485,22 @@ class MainActivity : AppCompatActivity() {
         scrollBottom()
     }
 
+    private fun updateScrollToBottomButtonVisibility() {
+        val lm = chatRecycler.layoutManager as? LinearLayoutManager ?: return
+        if (messages.isEmpty()) {
+            scrollToBottomButton.visibility = View.GONE
+            return
+        }
+        val lastVisible = lm.findLastVisibleItemPosition()
+        val shouldShow = messages.size > 3 && lastVisible < (messages.lastIndex - 1)
+        scrollToBottomButton.visibility = if (shouldShow) View.VISIBLE else View.GONE
+    }
+
     private fun scrollBottom() {
-        if (messages.isNotEmpty()) chatRecycler.scrollToPosition(messages.lastIndex)
+        if (messages.isNotEmpty()) {
+            chatRecycler.scrollToPosition(messages.lastIndex)
+        }
+        updateScrollToBottomButtonVisibility()
     }
 
     private fun loadHistory() {

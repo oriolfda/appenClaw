@@ -106,4 +106,5 @@
     <string name="status_conversation_switched">Status: conversation switched</string>
     <string name="status_conversation_not_found">Status: conversation not found</string>
     <string name="status_conversation_already_active">Status: this conversation is already active</string>
+    <string name="cd_scroll_to_bottom">Go to chat bottom</string>
 </resources>
