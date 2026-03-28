@@ -901,7 +901,6 @@ class MainActivity : AppCompatActivity() {
         micButton.setColorFilter(theme.sendText)
         sendButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         sendButton.setColorFilter(theme.sendText)
-        scrollToBottomButton.backgroundTintList = android.content.res.ColorStateList.valueOf(theme.sendTint)
         scrollToBottomButton.setColorFilter(theme.sendText)
         recordDeleteButton.setColorFilter(theme.statusColor)
         recordPauseButton.setColorFilter(theme.statusColor)
@@ -1486,13 +1485,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateScrollToBottomButtonVisibility() {
-        val lm = chatRecycler.layoutManager as? LinearLayoutManager ?: return
-        if (messages.isEmpty()) {
+        if (messages.isEmpty() || !chatRecycler.canScrollVertically(1)) {
             scrollToBottomButton.visibility = View.GONE
             return
         }
-        val lastVisible = lm.findLastVisibleItemPosition()
-        val shouldShow = messages.size > 3 && lastVisible < (messages.lastIndex - 1)
+
+        val range = chatRecycler.computeVerticalScrollRange()
+        val extent = chatRecycler.computeVerticalScrollExtent()
+        val offset = chatRecycler.computeVerticalScrollOffset()
+        val remaining = (range - extent - offset).coerceAtLeast(0)
+        val shouldShow = remaining >= extent
+
         scrollToBottomButton.visibility = if (shouldShow) View.VISIBLE else View.GONE
     }
 
