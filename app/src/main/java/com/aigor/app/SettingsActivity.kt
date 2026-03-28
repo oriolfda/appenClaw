@@ -1,5 +1,6 @@
 package com.aigor.app
 
+import android.app.AlertDialog
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
@@ -86,7 +87,17 @@ class SettingsActivity : AppCompatActivity() {
         val selectedIndex = themes.indexOfFirst { it.id == currentThemeId }.coerceAtLeast(0)
         themeSpinner.setSelection(selectedIndex)
         themeSpinnerFake.text = themeLabels[selectedIndex]
-        themeSpinnerFake.setOnClickListener { themeSpinner.performClick() }
+        themeSpinnerFake.setOnClickListener {
+            showThemedChoiceDialog(
+                title = getString(R.string.settings_theme),
+                items = themeLabels,
+                selectedIndex = themeSpinner.selectedItemPosition,
+                uiTheme = uiTheme,
+            ) { index ->
+                themeSpinner.setSelection(index)
+                themeSpinnerFake.text = themeLabels[index]
+            }
+        }
 
         val languageOptions = listOf(
             "auto" to getString(R.string.lang_auto),
@@ -104,7 +115,18 @@ class SettingsActivity : AppCompatActivity() {
         val langIndex = languageOptions.indexOfFirst { it.first == currentLang }.coerceAtLeast(0)
         languageSpinner.setSelection(langIndex)
         languageSpinnerFake.text = languageOptions[langIndex].second
-        languageSpinnerFake.setOnClickListener { languageSpinner.performClick() }
+        languageSpinnerFake.setOnClickListener {
+            val labels = languageOptions.map { it.second }
+            showThemedChoiceDialog(
+                title = getString(R.string.settings_ui_language),
+                items = labels,
+                selectedIndex = languageSpinner.selectedItemPosition,
+                uiTheme = uiTheme,
+            ) { index ->
+                languageSpinner.setSelection(index)
+                languageSpinnerFake.text = labels[index]
+            }
+        }
 
         showTranscriptionsCheck.isChecked = prefs.getBoolean("show_transcriptions", true)
 
@@ -157,6 +179,36 @@ class SettingsActivity : AppCompatActivity() {
                 return v
             }
         }.also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+    }
+
+    private fun showThemedChoiceDialog(
+        title: String,
+        items: List<String>,
+        selectedIndex: Int,
+        uiTheme: ThemeManager.UiTheme,
+        onSelected: (Int) -> Unit,
+    ) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setSingleChoiceItems(items.toTypedArray(), selectedIndex) { d, which ->
+                onSelected(which)
+                d.dismiss()
+            }
+            .setNegativeButton(getString(R.string.close), null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.window?.decorView?.setBackgroundColor(uiTheme.dialogBg)
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(uiTheme.menuDotsColor)
+            val titleViewId = resources.getIdentifier("alertTitle", "id", "android")
+            dialog.findViewById<TextView?>(titleViewId)?.setTextColor(uiTheme.titleColor)
+            dialog.findViewById<TextView?>(android.R.id.message)?.setTextColor(uiTheme.messageTextColor)
+            val listView = dialog.listView
+            listView?.setBackgroundColor(uiTheme.dialogBg)
+            listView?.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
+            listView?.dividerHeight = 0
+        }
+        dialog.show()
     }
 
     private fun styleAllTextViews(root: View, color: Int) {
