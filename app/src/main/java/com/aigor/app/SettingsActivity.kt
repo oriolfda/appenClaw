@@ -188,9 +188,20 @@ class SettingsActivity : AppCompatActivity() {
         uiTheme: ThemeManager.UiTheme,
         onSelected: (Int) -> Unit,
     ) {
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_single_choice, items) {
+            override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getView(position, convertView, parent)
+                val checked = view.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
+                checked.setTextColor(uiTheme.messageTextColor)
+                checked.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
+                view.setBackgroundColor(uiTheme.dialogBg)
+                return view
+            }
+        }
+
         val dialog = AlertDialog.Builder(this)
             .setTitle(title)
-            .setSingleChoiceItems(items.toTypedArray(), selectedIndex) { d, which ->
+            .setSingleChoiceItems(adapter, selectedIndex) { d, which ->
                 onSelected(which)
                 d.dismiss()
             }
@@ -203,24 +214,8 @@ class SettingsActivity : AppCompatActivity() {
             val titleViewId = resources.getIdentifier("alertTitle", "id", "android")
             dialog.findViewById<TextView?>(titleViewId)?.setTextColor(uiTheme.titleColor)
             dialog.findViewById<TextView?>(android.R.id.message)?.setTextColor(uiTheme.messageTextColor)
-            val listView = dialog.listView
-            listView?.setBackgroundColor(uiTheme.dialogBg)
-            listView?.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
-            listView?.dividerHeight = 0
-            for (i in 0 until (listView?.childCount ?: 0)) {
-                val child = listView?.getChildAt(i)
-                val checked = child?.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
-                checked?.setTextColor(uiTheme.messageTextColor)
-                checked?.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
-            }
-            listView?.post {
-                for (i in 0 until listView.childCount) {
-                    val child = listView.getChildAt(i)
-                    val checked = child?.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
-                    checked?.setTextColor(uiTheme.messageTextColor)
-                    checked?.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
-                }
-            }
+            dialog.listView?.setBackgroundColor(uiTheme.dialogBg)
+            dialog.listView?.dividerHeight = 0
         }
         dialog.show()
     }
