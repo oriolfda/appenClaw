@@ -207,6 +207,20 @@ class SettingsActivity : AppCompatActivity() {
             listView?.setBackgroundColor(uiTheme.dialogBg)
             listView?.choiceMode = android.widget.ListView.CHOICE_MODE_SINGLE
             listView?.dividerHeight = 0
+            for (i in 0 until (listView?.childCount ?: 0)) {
+                val child = listView?.getChildAt(i)
+                val checked = child?.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
+                checked?.setTextColor(uiTheme.messageTextColor)
+                checked?.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
+            }
+            listView?.post {
+                for (i in 0 until listView.childCount) {
+                    val child = listView.getChildAt(i)
+                    val checked = child?.findViewById<android.widget.CheckedTextView>(android.R.id.text1)
+                    checked?.setTextColor(uiTheme.messageTextColor)
+                    checked?.checkMarkTintList = ColorStateList.valueOf(uiTheme.sendTint)
+                }
+            }
         }
         dialog.show()
     }
