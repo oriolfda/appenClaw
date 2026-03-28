@@ -4,6 +4,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.drawable.GradientDrawable
+import android.widget.LinearLayout
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -29,6 +30,7 @@ class SettingsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_settings)
 
         val root: ScrollView = findViewById(R.id.settingsRoot)
+        val content: LinearLayout = root.getChildAt(0) as LinearLayout
         val endpointEdit: EditText = findViewById(R.id.settingsEndpointEdit)
         val tokenEdit: EditText = findViewById(R.id.settingsTokenEdit)
         val themeSpinner: Spinner = findViewById(R.id.themeSpinner)
@@ -43,8 +45,11 @@ class SettingsActivity : AppCompatActivity() {
         val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
 
         window.decorView.setBackgroundColor(uiTheme.screenBg)
+        window.statusBarColor = uiTheme.screenBg
+        window.navigationBarColor = uiTheme.screenBg
         root.setBackgroundColor(uiTheme.screenBg)
-        styleAllTextViews(root, uiTheme.messageTextColor)
+        content.setBackgroundColor(uiTheme.screenBg)
+        styleAllTextViews(content, uiTheme.messageTextColor)
         endpointEdit.setTextColor(uiTheme.messageTextColor)
         endpointEdit.setHintTextColor(uiTheme.messageHintColor)
         endpointEdit.setBackgroundResource(uiTheme.inputBg)
@@ -53,12 +58,15 @@ class SettingsActivity : AppCompatActivity() {
         tokenEdit.setBackgroundResource(uiTheme.inputBg)
         tintSpinner(themeSpinner, panelBg, uiTheme.messageTextColor)
         tintSpinner(languageSpinner, panelBg, uiTheme.messageTextColor)
+        themeSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
+        languageSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
         statusText.setTextColor(uiTheme.statusColor)
         showTranscriptionsCheck.setTextColor(uiTheme.messageTextColor)
         showTranscriptionsCheck.buttonTintList = ColorStateList.valueOf(uiTheme.sendTint)
 
         saveButton.backgroundTintList = ColorStateList.valueOf(uiTheme.sendTint)
         saveButton.setTextColor(uiTheme.sendText)
+        saveButton.strokeColor = ColorStateList.valueOf(uiTheme.sendTint)
 
         endpointEdit.setText(prefs.getString("openclaw_endpoint", "http://192.168.0.102:8092/chat"))
         tokenEdit.setText(prefs.getString("openclaw_hook_token", ""))

@@ -890,6 +890,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyTheme(theme: ThemeManager.UiTheme) {
         rootLayout.setBackgroundColor(theme.screenBg)
+        window.decorView.setBackgroundColor(theme.screenBg)
+        window.statusBarColor = theme.screenBg
+        window.navigationBarColor = theme.screenBg
         findViewById<View>(android.R.id.content)?.setBackgroundColor(theme.screenBg)
         topToolbar.setBackgroundColor(theme.screenBg)
         topToolbar.setTitleTextColor(theme.titleColor)
