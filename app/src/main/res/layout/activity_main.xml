@@ -41,7 +41,7 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:layout_gravity="center_horizontal|bottom"
-                android:layout_marginBottom="86dp"
+                android:layout_marginBottom="18dp"
                 android:background="@drawable/bg_scroll_to_bottom"
                 android:contentDescription="@string/cd_scroll_to_bottom"
                 android:elevation="8dp"
