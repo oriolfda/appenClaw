@@ -104,8 +104,8 @@
     <string name="theme_light_clean">Clar Blau</string>
     <string name="theme_clar_verd">Clar Verd</string>
     <string name="theme_clar_vermell">Clar Vermell</string>
-    <string name="theme_dark_blue">Dark Blau</string>
-    <string name="theme_dark_green">Dark Verd</string>
-    <string name="theme_dark_red">Dark Red</string>
-    <string name="theme_darkred2">Dark Red 2</string>
+    <string name="theme_dark_blue">Fosc Blau</string>
+    <string name="theme_dark_green">Fosc Verd</string>
+    <string name="theme_dark_red">Fosc Vermell</string>
+    <string name="theme_darkred2">Fosc Vermell 2</string>
 </resources>
