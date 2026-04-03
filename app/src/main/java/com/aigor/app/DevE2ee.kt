@@ -2,7 +2,6 @@ package com.aigor.app
 
 import android.content.Context
 import android.util.Base64
-import android.util.Log
 import org.json.JSONObject
 import java.security.KeyFactory
 import java.security.KeyPairGenerator
@@ -57,7 +56,6 @@ object DevE2ee {
     )
 
     private val ratchetStore = ConcurrentHashMap<String, SessionChainState>()
-    private const val DIAG_TAG = "E2EE_DIAG"
     private const val RATCHET_PREFS = "aigor_app_e2ee"
     private const val RATCHET_KEY_PREFIX = "ratchet_state::"
     @Volatile private var appContext: Context? = null
@@ -147,7 +145,6 @@ object DevE2ee {
         }
 
         val hasPersistentState = hasPersistentRatchetState(sessionId)
-        Log.d(DIAG_TAG, "decryptWithKey:start dir=s2c counter=$counter ratchetStep=$ratchetStep sessionId=$sessionId sessionIdField=$sessionIdField ad=$ad adLen=${ad.length} headerId=$headerId ivLen=${iv.size} ctLen=${ct.size} baseKeyFp=${fp(baseKey)} hasPersistentState=$hasPersistentState")
         val key = ratchetMixChainKey(sessionId, baseKey, "s2c", counter)
         val currentState = ratchetStore[sessionId]
         val hasRecvSeed = currentState?.recvChainSeed != null
@@ -157,19 +154,10 @@ object DevE2ee {
         if (hasPersistentState && !hasRecvSeed && recvCtr == 0) {
             throw IllegalStateException("Persistent ratchet state exists but recv seed/counter are empty for sessionId=$sessionId")
         }
-        Log.d(DIAG_TAG, "decryptWithKey:derived dir=s2c counter=$counter keyType=chainNext keyFp=${fp(key)} hasPersistentState=$hasPersistentState hasRecvSeed=$hasRecvSeed recvCtr=$recvCtr hasSendSeed=$hasSendSeed sendCtr=$sendCtr")
-
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
         cipher.updateAAD(ad.toByteArray(Charsets.UTF_8))
-        return try {
-            val pt = cipher.doFinal(ct)
-            Log.d(DIAG_TAG, "decryptWithKey:ok dir=s2c counter=$counter sessionId=$sessionId keyFp=${fp(key)}")
-            String(pt, Charsets.UTF_8)
-        } catch (e: Exception) {
-            Log.e(DIAG_TAG, "decryptWithKey:fail dir=s2c counter=$counter sessionId=$sessionId ad=$ad headerId=$headerId keyFp=${fp(key)} err=${e.javaClass.simpleName}:${e.message}")
-            throw e
-        }
+        return cipher.doFinal(ct).toString(Charsets.UTF_8)
     }
 
     fun encryptAttachment(base64Data: String, baseKey: ByteArray, name: String, mime: String, ad: String, counter: Int): JSONObject {
@@ -270,7 +258,6 @@ object DevE2ee {
                 recvChainCounter = obj.optInt("recvChainCounter", 0).coerceAtLeast(0),
             )
         }.getOrElse {
-            Log.e(DIAG_TAG, "ratchetState:load_fail sessionId=$sessionId err=${it.javaClass.simpleName}:${it.message}")
             null
         }
     }
@@ -285,10 +272,7 @@ object DevE2ee {
             put("sendChainCounter", state.sendChainCounter)
             put("updatedAtMs", System.currentTimeMillis())
         }.toString()
-        val ok = prefs.edit().putString(ratchetStateKey(sessionId), payload).commit()
-        if (!ok) {
-            Log.e(DIAG_TAG, "ratchetState:persist_fail sessionId=$sessionId")
-        }
+        prefs.edit().putString(ratchetStateKey(sessionId), payload).commit()
     }
 
     private fun ratchetMixChainKey(sessionId: String, baseKey: ByteArray, direction: String, counter: Int): ByteArray {
@@ -319,11 +303,7 @@ object DevE2ee {
             // from the current reply/base key, not from the previously advanced envelope seed.
             val currentChain = if (direction == "s2c") baseKey else (state.sendChainSeed ?: chainInit)
 
-            val (chainNext, messageKey) = kdfCk(currentChain)
-            Log.d(
-                DIAG_TAG,
-                "ratchetMixChainKey dir=$direction isRecv=$isRecv counter=$counter sessionId=$sessionId loadedRecvCtr=${loadedState?.recvChainCounter ?: -1} loadedSendCtr=${loadedState?.sendChainCounter ?: -1} sendCtr=${state.sendChainCounter} recvCtr=${state.recvChainCounter} hasSendSeed=${state.sendChainSeed != null} hasRecvSeed=${state.recvChainSeed != null} rootPrevFp=${fp(rootPrev)} rootNextFp=${fp(rootNext)} chainInitFp=${fp(chainInit)} currentChainFp=${fp(currentChain)} chainNextFp=${fp(chainNext)} msgKeyFp=${fp(messageKey)}"
-            )
+            val (chainNext, _) = kdfCk(currentChain)
 
             if (isRecv) {
                 state.recvChainSeed = chainNext
