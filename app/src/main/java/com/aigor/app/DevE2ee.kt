@@ -313,9 +313,11 @@ object DevE2ee {
             val dhMaterial = sha256(baseKey + direction.toByteArray(Charsets.UTF_8) + counter.toString().toByteArray(Charsets.UTF_8))
             val (rootNext, chainInit) = kdfRk(rootPrev, dhMaterial)
 
-            // Bridge coherence: first s2c reply is seeded from reply_key before ratchet mix.
-            val persistedSeed = if (isRecv) state.recvChainSeed else state.sendChainSeed
-            val currentChain = persistedSeed ?: if (direction == "s2c") baseKey else chainInit
+            // Bridge coherence: each s2c decrypt must derive from the current message base key.
+            // Do not reuse persisted recv/send chain seed across independent envelopes because
+            // the bridge computes `_ratchet_mix_chain_key(session_id, reply_key, "s2c", counter)`
+            // from the current reply/base key, not from the previously advanced envelope seed.
+            val currentChain = if (direction == "s2c") baseKey else (state.sendChainSeed ?: chainInit)
 
             val (chainNext, messageKey) = kdfCk(currentChain)
             Log.d(
