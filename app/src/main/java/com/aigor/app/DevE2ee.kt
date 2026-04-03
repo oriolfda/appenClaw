@@ -1,5 +1,6 @@
 package com.aigor.app
 
+import android.content.Context
 import android.util.Base64
 import android.util.Log
 import org.json.JSONObject
@@ -57,6 +58,13 @@ object DevE2ee {
 
     private val ratchetStore = ConcurrentHashMap<String, SessionChainState>()
     private const val DIAG_TAG = "E2EE_DIAG"
+    private const val RATCHET_PREFS = "aigor_app_e2ee"
+    private const val RATCHET_KEY_PREFIX = "ratchet_state::"
+    @Volatile private var appContext: Context? = null
+
+    fun configure(context: Context) {
+        appContext = context.applicationContext
+    }
 
     private fun fp(bytes: ByteArray): String = sha256Hex(bytes).take(12)
 
@@ -138,9 +146,18 @@ object DevE2ee {
             }
         }
 
-        Log.d(DIAG_TAG, "decryptWithKey:start dir=s2c counter=$counter ratchetStep=$ratchetStep sessionId=$sessionId sessionIdField=$sessionIdField ad=$ad adLen=${ad.length} headerId=$headerId ivLen=${iv.size} ctLen=${ct.size} baseKeyFp=${fp(baseKey)}")
+        val hasPersistentState = hasPersistentRatchetState(sessionId)
+        Log.d(DIAG_TAG, "decryptWithKey:start dir=s2c counter=$counter ratchetStep=$ratchetStep sessionId=$sessionId sessionIdField=$sessionIdField ad=$ad adLen=${ad.length} headerId=$headerId ivLen=${iv.size} ctLen=${ct.size} baseKeyFp=${fp(baseKey)} hasPersistentState=$hasPersistentState")
         val key = ratchetMixChainKey(sessionId, baseKey, "s2c", counter)
-        Log.d(DIAG_TAG, "decryptWithKey:derived dir=s2c counter=$counter keyType=chainNext keyFp=${fp(key)}")
+        val currentState = ratchetStore[sessionId]
+        val hasRecvSeed = currentState?.recvChainSeed != null
+        val recvCtr = currentState?.recvChainCounter ?: 0
+        val hasSendSeed = currentState?.sendChainSeed != null
+        val sendCtr = currentState?.sendChainCounter ?: 0
+        if (hasPersistentState && !hasRecvSeed && recvCtr == 0) {
+            throw IllegalStateException("Persistent ratchet state exists but recv seed/counter are empty for sessionId=$sessionId")
+        }
+        Log.d(DIAG_TAG, "decryptWithKey:derived dir=s2c counter=$counter keyType=chainNext keyFp=${fp(key)} hasPersistentState=$hasPersistentState hasRecvSeed=$hasRecvSeed recvCtr=$recvCtr hasSendSeed=$hasSendSeed sendCtr=$sendCtr")
 
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
@@ -233,8 +250,63 @@ object DevE2ee {
         return d.copyOfRange(0, 32)
     }
 
+    private fun ratchetStateKey(sessionId: String): String = "$RATCHET_KEY_PREFIX$sessionId"
+
+    private fun hasPersistentRatchetState(sessionId: String): Boolean {
+        val prefs = appContext?.getSharedPreferences(RATCHET_PREFS, Context.MODE_PRIVATE) ?: return false
+        return prefs.contains(ratchetStateKey(sessionId))
+    }
+
+    private fun loadPersistentRatchetState(sessionId: String): SessionChainState? {
+        val prefs = appContext?.getSharedPreferences(RATCHET_PREFS, Context.MODE_PRIVATE) ?: return null
+        val raw = prefs.getString(ratchetStateKey(sessionId), null) ?: return null
+        return runCatching {
+            val obj = JSONObject(raw)
+            SessionChainState(
+                rootKeySeed = obj.optString("rootKeySeed", "").takeIf { it.isNotBlank() }?.let { Base64.decode(it, Base64.DEFAULT) },
+                sendChainSeed = obj.optString("sendChainSeed", "").takeIf { it.isNotBlank() }?.let { Base64.decode(it, Base64.DEFAULT) },
+                recvChainSeed = obj.optString("recvChainSeed", "").takeIf { it.isNotBlank() }?.let { Base64.decode(it, Base64.DEFAULT) },
+                sendChainCounter = obj.optInt("sendChainCounter", 0).coerceAtLeast(0),
+                recvChainCounter = obj.optInt("recvChainCounter", 0).coerceAtLeast(0),
+            )
+        }.getOrElse {
+            Log.e(DIAG_TAG, "ratchetState:load_fail sessionId=$sessionId err=${it.javaClass.simpleName}:${it.message}")
+            null
+        }
+    }
+
+    private fun persistRatchetState(sessionId: String, state: SessionChainState) {
+        val prefs = appContext?.getSharedPreferences(RATCHET_PREFS, Context.MODE_PRIVATE) ?: return
+        val payload = JSONObject().apply {
+            put("rootKeySeed", state.rootKeySeed?.let { Base64.encodeToString(it, Base64.NO_WRAP) } ?: "")
+            put("recvChainSeed", state.recvChainSeed?.let { Base64.encodeToString(it, Base64.NO_WRAP) } ?: "")
+            put("sendChainSeed", state.sendChainSeed?.let { Base64.encodeToString(it, Base64.NO_WRAP) } ?: "")
+            put("recvChainCounter", state.recvChainCounter)
+            put("sendChainCounter", state.sendChainCounter)
+            put("updatedAtMs", System.currentTimeMillis())
+        }.toString()
+        val ok = prefs.edit().putString(ratchetStateKey(sessionId), payload).commit()
+        if (!ok) {
+            Log.e(DIAG_TAG, "ratchetState:persist_fail sessionId=$sessionId")
+        }
+    }
+
     private fun ratchetMixChainKey(sessionId: String, baseKey: ByteArray, direction: String, counter: Int): ByteArray {
-        val state = ratchetStore.computeIfAbsent(sessionId) { SessionChainState() }
+        val loadedState = loadPersistentRatchetState(sessionId)
+        val state = ratchetStore.compute(sessionId) { _, existing ->
+            if (existing == null) {
+                loadedState ?: SessionChainState()
+            } else if (loadedState != null && loadedState.recvChainCounter > existing.recvChainCounter) {
+                existing.rootKeySeed = loadedState.rootKeySeed
+                existing.recvChainSeed = loadedState.recvChainSeed
+                existing.sendChainSeed = loadedState.sendChainSeed
+                existing.recvChainCounter = loadedState.recvChainCounter
+                existing.sendChainCounter = loadedState.sendChainCounter
+                existing
+            } else {
+                existing
+            }
+        } ?: SessionChainState()
         synchronized(state) {
             val isRecv = direction == "s2c"
             val rootPrev = state.rootKeySeed ?: sha256(baseKey + "root-init".toByteArray(Charsets.UTF_8)).copyOfRange(0, 32)
@@ -248,7 +320,7 @@ object DevE2ee {
             val (chainNext, messageKey) = kdfCk(currentChain)
             Log.d(
                 DIAG_TAG,
-                "ratchetMixChainKey dir=$direction isRecv=$isRecv counter=$counter sessionId=$sessionId sendCtr=${state.sendChainCounter} recvCtr=${state.recvChainCounter} hasSendSeed=${state.sendChainSeed != null} hasRecvSeed=${state.recvChainSeed != null} rootPrevFp=${fp(rootPrev)} rootNextFp=${fp(rootNext)} chainInitFp=${fp(chainInit)} currentChainFp=${fp(currentChain)} chainNextFp=${fp(chainNext)} msgKeyFp=${fp(messageKey)}"
+                "ratchetMixChainKey dir=$direction isRecv=$isRecv counter=$counter sessionId=$sessionId loadedRecvCtr=${loadedState?.recvChainCounter ?: -1} loadedSendCtr=${loadedState?.sendChainCounter ?: -1} sendCtr=${state.sendChainCounter} recvCtr=${state.recvChainCounter} hasSendSeed=${state.sendChainSeed != null} hasRecvSeed=${state.recvChainSeed != null} rootPrevFp=${fp(rootPrev)} rootNextFp=${fp(rootNext)} chainInitFp=${fp(chainInit)} currentChainFp=${fp(currentChain)} chainNextFp=${fp(chainNext)} msgKeyFp=${fp(messageKey)}"
             )
 
             if (isRecv) {
@@ -259,6 +331,7 @@ object DevE2ee {
                 state.sendChainCounter += 1
             }
             state.rootKeySeed = rootNext
+            persistRatchetState(sessionId, state)
             return chainNext
         }
     }
