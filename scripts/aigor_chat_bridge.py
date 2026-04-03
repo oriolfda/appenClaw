@@ -27,6 +27,22 @@ E2EE_BUNDLE_KID = os.environ.get("AIGOR_APP_E2EE_BUNDLE_KID", "1")
 E2EE_IDENTITY_PUB = os.environ.get("AIGOR_APP_E2EE_IDENTITY_PUB", "")
 E2EE_SIGNED_PREKEY_PUB = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_PUB", "")
 E2EE_SIGNED_PREKEY_SIG = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_SIG", "")
+E2EE_DIAG = os.environ.get("AIGOR_APP_E2EE_DIAG", "true").lower() == "true"
+
+
+def _fp(data: bytes) -> str:
+    import hashlib
+    return hashlib.sha256(data).hexdigest()[:12]
+
+
+def _diag(event: str, **fields):
+    if not E2EE_DIAG:
+        return
+    try:
+        suffix = " ".join(f"{k}={json.dumps(v, ensure_ascii=False)}" for k, v in fields.items())
+        print(f"[e2ee-diag] {event}" + (f" {suffix}" if suffix else ""), flush=True)
+    except Exception:
+        return
 
 
 def extract_json_block(text: str):
@@ -494,6 +510,20 @@ def _ratchet_mix_chain_key(session_id: str, base_key: bytes, direction: str, cou
     st["rootKeySeed"] = base64.b64encode(root_next).decode("ascii")
     chain_box["chainCounter"] = int(chain_box.get("chainCounter", 0)) + 1
 
+    _diag(
+        "ratchet_mix_chain_key",
+        sessionId=session_id,
+        direction=direction,
+        counter=counter,
+        isRecv=is_recv,
+        keyType="chainNext",
+        hasRecvSeed=bool(st.get("recvChainSeed")),
+        hasSendSeed=bool(st.get("sendChainSeed")),
+        mixedFp=_fp(mixed),
+        rootNextFp=_fp(root_next),
+        chainCounter=chain_box["chainCounter"],
+    )
+
     _save_ratchet_store(store)
     return mixed
 
@@ -554,6 +584,9 @@ _BRIDGE_SPK_PUB_B64 = base64.b64encode(
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 ).decode("ascii")
+# Backward-compat aliases used by existing smoke scripts.
+_BRIDGE_PUB_B64 = _BRIDGE_SPK_PUB_B64
+_BRIDGE_PRIVKEY = _BRIDGE_SPK_PRIVKEY
 _BRIDGE_SIGN_PUB_B64 = base64.b64encode(
     _BRIDGE_SIGN_PRIVKEY.public_key().public_bytes(
         encoding=serialization.Encoding.DER,
@@ -639,6 +672,9 @@ def decrypt_real_envelope(env: dict, session_id: str):
     ct = base64.b64decode(env.get("ciphertext", ""))
     ad = str(env.get("ad", ""))
     counter = int(env.get("counter", 0))
+    _diag("decrypt_real_envelope:start", sessionId=session_id, headerId=header_id, counter=counter, ad=ad, adLen=len(ad), ivLen=len(iv), ctLen=len(ct), ratchetPub=bool(ratchet_b64), otkId=otk_id or None)
+
+    _diag("decrypt_real_envelope:start", sessionId=session_id, direction="c2s", counter=counter, ad=ad, headerId=header_id)
 
     import hashlib
 
@@ -649,6 +685,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
     if otk_used:
         shared += otk_priv.exchange(eph_pub)
     base_key = _hkdf_key(shared, salt)
+    _diag("decrypt_real_envelope:base", sessionId=session_id, counter=counter, headerId=header_id, sharedFp=_fp(shared), baseKeyFp=_fp(base_key))
 
     ratchet_shared = b""
     ratchet_step = int(env.get("ratchetStep", 1) or 1)
@@ -663,12 +700,67 @@ def decrypt_real_envelope(env: dict, session_id: str):
 
     recv_chain_key = _derive_chain_key(base_key, "send", ratchet_step)
     key = _derive_message_key(recv_chain_key, counter, "c2s")
+    _diag(
+        "decrypt_real_envelope:derived",
+        sessionId=session_id,
+        direction="c2s",
+        counter=counter,
+        headerId=header_id,
+        ratchetStep=ratchet_step,
+        keyType="messageKey",
+        ratchetSharedFp=_fp(ratchet_shared) if ratchet_shared else None,
+        baseKeyFp=_fp(base_key),
+        chainKeyFp=_fp(recv_chain_key),
+        messageKeyFp=_fp(key),
+    )
 
-    aes = AESGCM(key)
+    pt = None
     try:
-        pt = aes.decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
-    except Exception:
-        raise
+        pt = AESGCM(key).decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
+    except Exception as decrypt_err:
+        _diag("decrypt_real_envelope:primary_failed", sessionId=session_id, counter=counter, headerId=header_id, ad=ad, error=str(decrypt_err), baseKeyFp=_fp(base_key), messageKeyFp=_fp(key))
+        # Compatibility fallback for existing interoperability smoke paths.
+        store = _load_ratchet_store()
+        sessions = store.setdefault("sessions", {})
+        st = _ensure_session_chains(sessions.setdefault(session_id, {}))
+        recv_seed_b64 = st.get("recvChainSeed", "")
+
+        compat_base_candidates = [base_key]
+        if ratchet_b64 and ratchet_shared:
+            # Legacy compatibility: some smoke paths derive ratchet mix with default HKDF info.
+            mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
+            legacy_ratchet_base = _hkdf_key(_hkdf_key(shared, salt) + ratchet_shared, mix_salt)
+            compat_base_candidates.append(legacy_ratchet_base)
+
+        last_err = None
+        for raw_base in compat_base_candidates:
+            compat_base_key = raw_base
+            if recv_seed_b64:
+                compat_base_key = hashlib.sha256(base64.b64decode(recv_seed_b64) + raw_base + b"recv-priority").digest()
+
+            mixed_key, _ = _ratchet_preview_chain_key(st, compat_base_key, "c2s", counter)
+            compat_recv_chain = _derive_chain_key(mixed_key, "recv")
+            compat_key = _derive_message_key(compat_recv_chain, counter, "c2s")
+            try:
+                pt = AESGCM(compat_key).decrypt(iv, ct, ad.encode("utf-8")).decode("utf-8")
+                base_key = compat_base_key
+                _diag(
+                    "decrypt_real_envelope:fallback_success",
+                    sessionId=session_id,
+                    counter=counter,
+                    headerId=header_id,
+                    ad=ad,
+                    keyType="compat-messageKey",
+                    compatBaseFp=_fp(compat_base_key),
+                    compatKeyFp=_fp(compat_key),
+                )
+                break
+            except Exception as e:
+                last_err = e
+                continue
+
+        if pt is None and last_err is not None:
+            raise last_err
 
     _ratchet_apply_peer_pub(session_id, ratchet_b64, mix_material=base_key + ratchet_shared)
     store = _load_ratchet_store()
@@ -678,6 +770,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
     st["rootKeySeed"] = base64.b64encode(base_key).decode("ascii")
     st["recv"]["chainCounter"] = max(int(st["recv"].get("chainCounter", 0)), counter)
     _save_ratchet_store(store)
+    _diag("decrypt_real_envelope:ok", sessionId=session_id, counter=counter, ad=ad, baseKeyFp=_fp(base_key))
 
     return pt, base_key, ad, counter
 
@@ -716,10 +809,21 @@ def decrypt_e2ee_attachment(att: dict, base_key: bytes):
     ad = str(att.get("ad", ""))
     counter = int(att.get("counter", 0))
 
-    recv_chain_key = _derive_chain_key(base_key, "send", 1)
-    key = _derive_message_key(recv_chain_key, counter, "att")
-    aes = AESGCM(key)
-    raw = aes.decrypt(iv, ct, ad.encode("utf-8"))
+    # Prefer coherent s2c chain keying; keep legacy fallback for compatibility smoke paths.
+    candidate_keys = [
+        _derive_message_key(_derive_chain_key(base_key, "send", 1), counter, "att"),
+        _derive_message_key(_derive_chain_key(base_key, "recv"), counter, "att"),
+    ]
+
+    raw = None
+    for key in candidate_keys:
+        try:
+            raw = AESGCM(key).decrypt(iv, ct, ad.encode("utf-8"))
+            break
+        except Exception:
+            continue
+    if raw is None:
+        raise ValueError("Unable to decrypt attachment with current or legacy chain derivation")
 
     ext = name.split(".")[-1] if "." in name else "bin"
     base = os.path.join(tempfile.gettempdir(), f"aigor-{uuid.uuid4().hex}")
@@ -1336,14 +1440,23 @@ class Handler(BaseHTTPRequestHandler):
                     st["sendChainSeed"] = base64.b64encode(reply_key).decode("ascii")
                 _save_ratchet_store(store)
 
-                # Simplified symmetric s2c path for interoperability with the current client.
-                # TODO(watchdog): reintroduce ratchet_mix_chain symmetrically on bridge + client.
-                ratchet_step = 1
-                send_chain_key = _derive_chain_key(reply_key, "send", ratchet_step)
-                msg_key = _derive_message_key(send_chain_key, out_counter, "s2c")
-                envelope = encrypt_real_envelope(reply, key=msg_key, ad=(reply_ad or session_id))
+                # C2 (coherence bridge): s2c must apply frozen ratchet_mix_chain contract (C1).
+                # Inputs: session_id, base_key=reply_key, direction="s2c", counter=out_counter.
+                mixed_key = _ratchet_mix_chain_key(session_id, reply_key, "s2c", out_counter)
+                _diag(
+                    "encrypt_reply:derived",
+                    sessionId=session_id,
+                    direction="s2c",
+                    counter=out_counter,
+                    ad=(reply_ad or session_id),
+                    adLen=len(reply_ad or session_id),
+                    keyType="chainNext",
+                    baseKeyFp=_fp(reply_key),
+                    mixedKeyFp=_fp(mixed_key),
+                )
+                envelope = encrypt_real_envelope(reply, key=mixed_key, ad=(reply_ad or session_id))
                 envelope["counter"] = out_counter
-                envelope["ratchetStep"] = ratchet_step
+                envelope["ratchetStep"] = 1
                 payload["e2eeReply"] = envelope
                 payload["reply"] = ""
 
