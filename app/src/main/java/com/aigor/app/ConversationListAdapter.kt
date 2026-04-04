@@ -45,8 +45,9 @@ class ConversationListAdapter(
         holder.title.setTextColor(if (active) theme.titleColor else theme.messageTextColor)
         holder.meta.setTextColor(if (active) theme.sendTint else theme.statusColor)
         holder.delete.setColorFilter(theme.sendTint)
-        holder.itemView.alpha = if (active) 1f else 0.92f
-        holder.itemView.setBackgroundColor(if (active) theme.menuTint.takeIf { it != 0 } ?: theme.screenBg else theme.screenBg)
+        holder.itemView.alpha = if (active) 1f else 0.94f
+        holder.itemView.setBackgroundResource(if (active) theme.menuBackground else theme.conversationBackground)
+        holder.itemView.background.alpha = if (active) 245 else if (theme.isLight) 210 else 180
         holder.itemView.setOnClickListener { onSelect(item) }
         holder.delete.setOnClickListener { onDelete(item) }
     }

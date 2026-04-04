@@ -190,6 +190,7 @@ class MainActivity : AppCompatActivity() {
         recordDotsText = findViewById(R.id.recordDotsText)
 
         appliedUiLocale = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
+        DevE2ee.configure(applicationContext)
         runCatching { E2eeKeyManager(this).ensureLocalBundle() }
 
         val conversationState = ConversationStore.ensureState(this)
@@ -561,6 +562,7 @@ class MainActivity : AppCompatActivity() {
                 val bridgePub = bridgeTarget?.first
                 val bridgeOtkPub = bridgeTarget?.second
                 val bridgeOtkId = bridgeTarget?.third
+                var encResult: DevE2ee.EncryptResult? = null
                 val payload = JSONObject().apply {
                     put("sessionId", e2eeSessionId)
                     put("prefs", JSONObject().apply {
@@ -571,11 +573,11 @@ class MainActivity : AppCompatActivity() {
                         val sendCounterKey = "e2ee_send_counter_${e2eeSessionId}"
                         val nextCounter = prefs.getInt(sendCounterKey, 0) + 1
                         prefs.edit().putInt(sendCounterKey, nextCounter).apply()
-                        val encResult = DevE2ee.encryptForBridge(getString(R.string.transcribe_only_prompt), bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
-                        prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult.responseKey, Base64.NO_WRAP)).apply()
+                        encResult = DevE2ee.encryptForBridge(getString(R.string.transcribe_only_prompt), bridgePub, e2eeSessionId, bridgeOtkPub, bridgeOtkId, nextCounter)
+                        prefs.edit().putString("e2ee_base_${e2eeSessionId}", Base64.encodeToString(encResult!!.responseKey, Base64.NO_WRAP)).apply()
                         put("message", "")
-                        put("e2ee", encResult.envelope)
-                        put("e2eeAttachment", DevE2ee.encryptAttachment(audioBase64, encResult.responseKey, "transcription-audio.m4a", "audio/mp4", e2eeSessionId, nextCounter))
+                        put("e2ee", encResult!!.envelope)
+                        put("e2eeAttachment", DevE2ee.encryptAttachment(audioBase64, encResult!!.responseKey, "transcription-audio.m4a", "audio/mp4", e2eeSessionId, nextCounter))
                     } else {
                         put("message", getString(R.string.transcribe_only_prompt))
                         put("attachment", JSONObject().apply {
@@ -604,9 +606,24 @@ class MainActivity : AppCompatActivity() {
                     val obj = JSONObject(body)
                     if (obj.has("e2eeReply")) {
                         val env = obj.getJSONObject("e2eeReply")
-                        val baseKey = prefs.getString("e2ee_base_${e2eeSessionId}", null)
-                            ?.let { Base64.decode(it, Base64.DEFAULT) }
-                        if (baseKey != null) DevE2ee.decryptWithKey(baseKey, env) else parseAssistantText(body, code)
+                        val inCounter = env.optInt("counter", 0)
+                        if (inCounter > 0 && !acceptIncomingCounter(prefs, inCounter, e2eeSessionId)) {
+                            "[E2EE] Resposta descartada (replay/finestra)"
+                        } else {
+                            val baseKey = encResult?.responseKey ?: run {
+                                prefs.getString("e2ee_base_${e2eeSessionId}", null)
+                                    ?.let { Base64.decode(it, Base64.DEFAULT) }
+                            }
+                            if (baseKey != null) {
+                                try {
+                                    DevE2ee.decryptWithKey(baseKey, env)
+                                } catch (e: Exception) {
+                                    "[E2EE] Error desencriptant transcripció: ${e.javaClass.simpleName}: ${e.message}"
+                                }
+                            } else {
+                                parseAssistantText(body, code)
+                            }
+                        }
                     } else {
                         parseAssistantText(body, code)
                     }
@@ -925,8 +942,8 @@ class MainActivity : AppCompatActivity() {
         recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
         recordDotsText.setTextColor(theme.statusColor)
-        val drawerBg = if (theme.menuTint != 0) theme.menuTint else theme.screenBg
-        conversationsDrawer.setBackgroundColor(drawerBg)
+        conversationsDrawer.setBackgroundResource(theme.menuBackground)
+        conversationsDrawer.background.alpha = if (theme.isLight) 230 else 210
         conversationsDrawerTitle.setTextColor(theme.titleColor)
         statusText.backgroundTintList = ColorStateList.valueOf(theme.screenBg)
         conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
@@ -1425,16 +1442,25 @@ class MainActivity : AppCompatActivity() {
         val pkg = packageManager.getPackageInfo(packageName, 0)
         val versionName = pkg.versionName ?: "?"
         val versionCode = pkg.longVersionCode
+        val customView = layoutInflater.inflate(R.layout.dialog_about, null)
+        val theme = currentTheme()
 
-        val info = buildString {
-            appendLine(getString(R.string.app_name))
-            appendLine(getString(R.string.about_version, versionName, versionCode))
-            appendLine(getString(R.string.about_bridge))
-            appendLine(getString(R.string.about_features))
-            appendLine("")
-            appendLine(getString(R.string.about_repo))
+        customView.findViewById<TextView>(R.id.aboutTitle).text = getString(R.string.app_name)
+        customView.findViewById<TextView>(R.id.aboutVersion).text = getString(R.string.about_version, versionName, versionCode)
+        customView.findViewById<TextView>(R.id.aboutBridge).apply {
+            text = getString(R.string.about_bridge)
+            setTextColor(theme.titleColor)
         }
-        themedDialog(this, currentTheme(), getString(R.string.menu_about), message = info).show()
+        customView.findViewById<TextView>(R.id.aboutFeatures).apply {
+            text = getString(R.string.about_features)
+            setTextColor(theme.messageTextColor)
+        }
+        customView.findViewById<TextView>(R.id.aboutRepo).apply {
+            text = getString(R.string.about_repo)
+            setTextColor(theme.statusColor)
+        }
+
+        themedDialog(this, theme, getString(R.string.menu_about), customView = customView).show()
     }
 
     private fun startNewChat() {

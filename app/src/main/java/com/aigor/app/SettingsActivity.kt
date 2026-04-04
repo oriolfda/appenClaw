@@ -44,7 +44,7 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
         val uiTheme = ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
-        val isLight = uiTheme.screenBg > 0xFF7FFFFFFF.toInt()
+        val isLight = uiTheme.isLight
         val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
 
         window.decorView.setBackgroundColor(uiTheme.screenBg)
@@ -62,11 +62,13 @@ class SettingsActivity : AppCompatActivity() {
         tintSpinner(themeSpinner, panelBg, uiTheme.messageTextColor)
         tintSpinner(languageSpinner, panelBg, uiTheme.messageTextColor)
         themeSpinnerFake.setTextColor(uiTheme.messageTextColor)
-        themeSpinnerFake.setBackgroundColor(panelBg)
+        themeSpinnerFake.setBackgroundResource(uiTheme.dropdownBackground)
+        themeSpinnerFake.background.alpha = if (uiTheme.isLight) 220 else 210
         languageSpinnerFake.setTextColor(uiTheme.messageTextColor)
-        languageSpinnerFake.setBackgroundColor(panelBg)
-        themeSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
-        languageSpinner.setPopupBackgroundDrawable(GradientDrawable().apply { setColor(panelBg) })
+        languageSpinnerFake.setBackgroundResource(uiTheme.dropdownBackground)
+        languageSpinnerFake.background.alpha = if (uiTheme.isLight) 220 else 210
+        themeSpinner.setPopupBackgroundDrawable(resources.getDrawable(uiTheme.dropdownBackground, theme))
+        languageSpinner.setPopupBackgroundDrawable(resources.getDrawable(uiTheme.dropdownBackground, theme))
         statusText.setTextColor(uiTheme.statusColor)
         showTranscriptionsCheck.setTextColor(uiTheme.messageTextColor)
         showTranscriptionsCheck.buttonTintList = ColorStateList.valueOf(uiTheme.sendTint)
@@ -158,14 +160,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun themedAdapter(items: List<String>, isLight: Boolean): ArrayAdapter<String> {
         val textColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F3F4F6")
-        val bgColor = if (isLight) Color.parseColor("#F8FAFC") else Color.parseColor("#111827")
+        val overlayRes = if (isLight) R.drawable.theme_panel_overlay_light else R.drawable.theme_panel_overlay_dark
 
         return object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent)
                 (v as? TextView)?.apply {
                     setTextColor(textColor)
-                    setBackgroundColor(bgColor)
+                    setBackgroundResource(overlayRes)
                 }
                 return v
             }
@@ -174,7 +176,7 @@ class SettingsActivity : AppCompatActivity() {
                 val v = super.getDropDownView(position, convertView, parent)
                 (v as? TextView)?.apply {
                     setTextColor(textColor)
-                    setBackgroundColor(bgColor)
+                    setBackgroundResource(overlayRes)
                 }
                 return v
             }
@@ -195,7 +197,8 @@ class SettingsActivity : AppCompatActivity() {
                 val isSelected = position == selectedIndex
                 text.setTextColor(if (isSelected) uiTheme.sendTint else uiTheme.messageTextColor)
                 text.setTypeface(text.typeface, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-                view.setBackgroundColor(if (isSelected) uiTheme.menuTint else uiTheme.dialogBg)
+                view.setBackgroundResource(if (isSelected) uiTheme.dropdownBackground else if (uiTheme.isLight) R.drawable.theme_panel_overlay_light else R.drawable.theme_panel_overlay_dark)
+                view.background.alpha = if (isSelected) 245 else 220
                 view.setPadding(32, 24, 32, 24)
                 return view
             }
