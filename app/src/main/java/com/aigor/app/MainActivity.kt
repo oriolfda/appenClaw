@@ -925,8 +925,7 @@ class MainActivity : AppCompatActivity() {
         recordSendButton.setColorFilter(theme.sendText)
         recordTimerText.setTextColor(theme.statusColor)
         recordDotsText.setTextColor(theme.statusColor)
-        val drawerBg = if (theme.menuTint != 0) theme.menuTint else theme.screenBg
-        conversationsDrawer.setBackgroundColor(drawerBg)
+        conversationsDrawer.setBackgroundColor(theme.menuTint.takeIf { it != 0 } ?: theme.screenBg)
         conversationsDrawerTitle.setTextColor(theme.titleColor)
         statusText.backgroundTintList = ColorStateList.valueOf(theme.screenBg)
         conversationsAdapter.update(ConversationStore.ensureState(this).threads.sortedByDescending { it.updatedAt }, activeConversation.threadId, theme)
