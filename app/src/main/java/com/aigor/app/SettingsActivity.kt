@@ -44,7 +44,7 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
         val uiTheme = ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
-        val isLight = uiTheme.screenBg > 0xFF7FFFFFFF.toInt()
+        val isLight = uiTheme.isLight
         val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
 
         window.decorView.setBackgroundColor(uiTheme.screenBg)
@@ -158,14 +158,15 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun themedAdapter(items: List<String>, isLight: Boolean): ArrayAdapter<String> {
         val textColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F3F4F6")
-        val bgColor = if (isLight) Color.parseColor("#F8FAFC") else Color.parseColor("#111827")
+        val panelBg = if (isLight) Color.parseColor("#E2E8F0") else Color.parseColor("#111827")
+        val itemBg = if (isLight) Color.parseColor("#F3F4F6") else Color.parseColor("#1F2937")
 
         return object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
                 val v = super.getView(position, convertView, parent)
                 (v as? TextView)?.apply {
                     setTextColor(textColor)
-                    setBackgroundColor(bgColor)
+                    setBackgroundColor(panelBg)
                 }
                 return v
             }
@@ -174,7 +175,7 @@ class SettingsActivity : AppCompatActivity() {
                 val v = super.getDropDownView(position, convertView, parent)
                 (v as? TextView)?.apply {
                     setTextColor(textColor)
-                    setBackgroundColor(bgColor)
+                    setBackgroundColor(itemBg)
                 }
                 return v
             }
