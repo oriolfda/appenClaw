@@ -53,7 +53,7 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
             isLight = true,
-            drawerItemActiveBg = 0xFFDDE7F3.toInt(),
+            drawerItemActiveBg = 0xFFF3F4F6.toInt(),
             drawerItemInactiveBg = 0x00FFFFFF,
         ),
         UiTheme(
@@ -77,7 +77,7 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
             isLight = true,
-            drawerItemActiveBg = 0xFFD7E6D6.toInt(),
+            drawerItemActiveBg = 0xFFF3F4F6.toInt(),
             drawerItemInactiveBg = 0x00FFFFFF,
         ),
         UiTheme(
@@ -101,7 +101,7 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
             isLight = true,
-            drawerItemActiveBg = 0xFFF1D7D7.toInt(),
+            drawerItemActiveBg = 0xFFF3F4F6.toInt(),
             drawerItemInactiveBg = 0x00FFFFFF,
         ),
         UiTheme(
@@ -125,8 +125,8 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
             isLight = false,
-            drawerItemActiveBg = 0xFF58765E.toInt(),
-            drawerItemInactiveBg = 0x00273A2B,
+            drawerItemActiveBg = 0xFF1F2937.toInt(),
+            drawerItemInactiveBg = 0x00000000,
         ),
         UiTheme(
             id = "dark_green",
@@ -149,8 +149,8 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
             isLight = false,
-            drawerItemActiveBg = 0xFF58765E.toInt(),
-            drawerItemInactiveBg = 0x00273A2B,
+            drawerItemActiveBg = 0xFF1F2937.toInt(),
+            drawerItemInactiveBg = 0x00000000,
         ),
         UiTheme(
             id = "dark_red",
@@ -173,8 +173,8 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
             isLight = false,
-            drawerItemActiveBg = 0xFF58765E.toInt(),
-            drawerItemInactiveBg = 0x00273A2B,
+            drawerItemActiveBg = 0xFF1F2937.toInt(),
+            drawerItemInactiveBg = 0x00000000,
         ),
         UiTheme(
             id = "darkred2",
@@ -197,8 +197,8 @@ object ThemeManager {
             botBubble = R.drawable.bg_chat_bot_darkred2,
             inputBg = R.drawable.bg_input_chat,
             isLight = false,
-            drawerItemActiveBg = 0xFF58765E.toInt(),
-            drawerItemInactiveBg = 0x00273A2B,
+            drawerItemActiveBg = 0xFF1F2937.toInt(),
+            drawerItemInactiveBg = 0x00000000,
         )
     )
 
