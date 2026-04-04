@@ -196,7 +196,7 @@ class SettingsActivity : AppCompatActivity() {
                 val isSelected = position == selectedIndex
                 text.setTextColor(if (isSelected) uiTheme.sendTint else uiTheme.messageTextColor)
                 text.setTypeface(text.typeface, if (isSelected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
-                view.setBackgroundColor(if (isSelected) uiTheme.menuTint else uiTheme.dialogBg)
+                view.setBackgroundColor(if (isSelected) uiTheme.drawerItemActiveBg else uiTheme.drawerItemInactiveBg)
                 view.setPadding(32, 24, 32, 24)
                 return view
             }
@@ -212,13 +212,13 @@ class SettingsActivity : AppCompatActivity() {
             .create()
 
         dialog.setOnShowListener {
-            dialog.window?.decorView?.setBackgroundColor(uiTheme.dialogBg)
+            dialog.window?.decorView?.setBackgroundColor(if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.dialogBg)
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(uiTheme.menuDotsColor)
             val titleViewId = resources.getIdentifier("alertTitle", "id", "android")
             dialog.findViewById<TextView?>(titleViewId)?.setTextColor(uiTheme.titleColor)
             dialog.findViewById<TextView?>(android.R.id.message)?.setTextColor(uiTheme.messageTextColor)
-            dialog.listView?.setBackgroundColor(uiTheme.dialogBg)
-            dialog.listView?.divider = GradientDrawable().apply { setColor(uiTheme.menuTint) ; setSize(1, 1) }
+            dialog.listView?.setBackgroundColor(if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.dialogBg)
+            dialog.listView?.divider = GradientDrawable().apply { setColor(uiTheme.drawerItemActiveBg) ; setSize(1, 1) }
             dialog.listView?.dividerHeight = 1
         }
         dialog.show()
