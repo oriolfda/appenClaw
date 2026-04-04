@@ -80,7 +80,7 @@ class SettingsActivity : AppCompatActivity() {
 
         val themes = ThemeManager.themes
         val themeLabels = themes.map { localizedThemeLabel(it) }
-        val themeAdapter = themedAdapter(themeLabels, isLight)
+        val themeAdapter = themedAdapter(themeLabels, uiTheme)
         themeSpinner.adapter = themeAdapter
 
         val currentThemeId = prefs.getString(ThemeManager.PREF_KEY, "html_match")
@@ -108,7 +108,7 @@ class SettingsActivity : AppCompatActivity() {
             "gl-ES" to "Galego",
             "eu-ES" to "Euskara",
         )
-        val langAdapter = themedAdapter(languageOptions.map { it.second }, isLight)
+        val langAdapter = themedAdapter(languageOptions.map { it.second }, uiTheme)
         languageSpinner.adapter = langAdapter
 
         val currentLang = prefs.getString("ui_locale", "auto") ?: "auto"
@@ -156,10 +156,10 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    private fun themedAdapter(items: List<String>, isLight: Boolean): ArrayAdapter<String> {
-        val textColor = if (isLight) Color.parseColor("#0F172A") else Color.parseColor("#F3F4F6")
-        val panelBg = if (isLight) Color.parseColor("#E2E8F0") else Color.parseColor("#111827")
-        val itemBg = if (isLight) Color.parseColor("#F3F4F6") else Color.parseColor("#1F2937")
+    private fun themedAdapter(items: List<String>, uiTheme: ThemeManager.UiTheme): ArrayAdapter<String> {
+        val textColor = uiTheme.messageTextColor
+        val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
+        val itemBg = uiTheme.drawerItemActiveBg
 
         return object : ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, items) {
             override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
