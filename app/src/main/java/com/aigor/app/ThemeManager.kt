@@ -26,10 +26,6 @@ object ThemeManager {
         @DrawableRes val userBubble: Int,
         @DrawableRes val botBubble: Int,
         @DrawableRes val inputBg: Int,
-        val isLight: Boolean,
-        @DrawableRes val conversationBackground: Int,
-        @DrawableRes val dropdownBackground: Int,
-        @DrawableRes val menuBackground: Int,
     )
 
     val themes = listOf(
@@ -53,10 +49,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_light,
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
-            isLight = true,
-            conversationBackground = R.drawable.bgconversations,
-            dropdownBackground = R.drawable.bgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "clar_verd",
@@ -78,10 +70,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_light_green,
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
-            isLight = true,
-            conversationBackground = R.drawable.bgconversations,
-            dropdownBackground = R.drawable.bgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "clar_vermell",
@@ -103,10 +91,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_light_red,
             botBubble = R.drawable.bg_chat_bot_light,
             inputBg = R.drawable.bg_input_chat_light,
-            isLight = true,
-            conversationBackground = R.drawable.bgconversations,
-            dropdownBackground = R.drawable.bgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "dark_blue",
@@ -128,10 +112,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_dark_blue_new,
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
-            isLight = false,
-            conversationBackground = R.drawable.darkconversation,
-            dropdownBackground = R.drawable.darkbgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "dark_green",
@@ -153,10 +133,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_dark_green,
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
-            isLight = false,
-            conversationBackground = R.drawable.darkconversation,
-            dropdownBackground = R.drawable.darkbgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "dark_red",
@@ -178,10 +154,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_dark_red_new,
             botBubble = R.drawable.bg_chat_bot_black,
             inputBg = R.drawable.bg_input_chat,
-            isLight = false,
-            conversationBackground = R.drawable.darkconversation,
-            dropdownBackground = R.drawable.darkbgitems,
-            menuBackground = R.drawable.bgmenu,
         ),
         UiTheme(
             id = "darkred2",
@@ -203,10 +175,6 @@ object ThemeManager {
             userBubble = R.drawable.bg_chat_user_ember,
             botBubble = R.drawable.bg_chat_bot_darkred2,
             inputBg = R.drawable.bg_input_chat,
-            isLight = false,
-            conversationBackground = R.drawable.darkconversation,
-            dropdownBackground = R.drawable.darkbgitems,
-            menuBackground = R.drawable.bgmenu,
         )
     )
 
