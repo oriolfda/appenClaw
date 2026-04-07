@@ -23,7 +23,7 @@ Aquest repositori suporta **dos modes d'ús**:
 
 Copia i enganxa una instrucció com aquesta:
 
-> "Vull fer servir appenClaw tal com és, sense personalitzar-la ni recompilar-la. Fes servir com a referència canònica `https://github.com/oriolfda/appenClaw` i segueix estrictament `docs/APPENCLAW_AI_REPLICA.md` en mode AS-IS. No facis rebrand ni rebuild de l'APK si no és necessari. Prepara el bridge, deixa'm un endpoint + token funcionals, explica'm si cal nginx/firewall/domini per accés extern, i indica'm com descarregar i configurar l'APK `appenClaw-release.apk`."
+> "Vull fer servir appenClaw tal com és, sense personalitzar-la ni recompilar-la. Fes servir com a referència canònica `https://github.com/oriolfda/appenClaw` i segueix estrictament `docs/APPENCLAW_AI_REPLICA.md` en mode AS-IS. No facis rebrand ni rebuild de l'APK si no és necessari. Abans d'instal·lar o crear cap servei, verifica si el bridge d'appenClaw ja existeix o ja està corrent en aquesta màquina i, si és així, reutilitza'l o adapta'l en lloc de duplicar-lo. Si jo no especifico el port, pots decidir tu un port adequat que no entri en conflicte i m'ho has d'indicar explícitament. Prepara el bridge, deixa'm un endpoint + token funcionals, explica'm si cal nginx/firewall/domini per accés extern, i indica'm com descarregar i configurar l'APK `appenClaw-release.apk`."
 
 ### Què fa l'humà
 
@@ -49,14 +49,38 @@ L'humà només ha de:
   - TLS/HTTPS
   - ports oberts a firewall/router
 
-#### 3) Configurar xarxa i publicació
+#### 3) Decidir el port del bridge
+L'humà pot:
+- indicar un port concret, o
+- deixar que l'agent AI triï un port lliure adequat
+
+Si l'AI tria el port, ha de:
+- comprovar que no entri en conflicte amb serveis existents
+- documentar quin port ha escollit
+- dir clarament a l'humà quin endpoint final ha d'usar
+
+#### 4) Configurar xarxa i publicació
 Si el bridge serà accessible des de fora de la LAN:
 - apunta el domini/subdomini a la IP pública
 - obre el port al router/firewall
 - posa `nginx` davant del bridge si vols TLS i una URL pública neta
 - mantén sempre actiu el token del bridge
 
-#### 4) Provar flux bàsic
+#### 5) Permisos que ha de tenir l'assistent OpenClaw
+Si vols que l'assistent pugui deixar el bridge instal·lat i persistent, ha de tenir permisos suficients per fer les accions necessàries al host, per exemple:
+- crear o editar fitxers de configuració del bridge
+- crear o editar un servei `systemd` (user o system)
+- arrencar, aturar, reiniciar i consultar l'estat del servei
+- llegir o reservar un port lliure
+- si cal accés extern: tocar configuració de `nginx` i/o explicar exactament què has de fer tu manualment
+- si cal obrir ports al firewall, tenir permisos per fer-ho o bé deixar-te la instrucció exacta
+
+Si l'assistent no té aquests permisos, almenys ha de poder:
+- preparar tots els fitxers
+- indicar les comandes exactes que has d'executar tu
+- explicar què falta per completar el desplegament
+
+#### 6) Provar flux bàsic
 - xat text
 - enviament d'àudio
 - reproducció d'àudio

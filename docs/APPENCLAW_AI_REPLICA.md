@@ -31,10 +31,12 @@ Ask in a short checklist format and wait for answers.
 2. Which host will run the bridge?
 3. Which OpenClaw agent/session should the bridge target?
 4. Which bridge port should be used?
+   - If the human does not care, explicitly ask whether the AI may choose a free/appropriate port.
 5. Is TTS needed for bridge-served voice replies?
 6. Should STT transcripts be shown in the app?
 7. Will a reverse proxy (`nginx`) be used?
 8. Does the human already have domain/subdomain + firewall access if internet exposure is required?
+9. Does the AI have enough permissions on the host to create/edit bridge files and manage a persistent service (`systemd` user/system service or equivalent)?
 
 ### Minimum intake for Mode B — personalized assistant-app
 1. Visible app name
@@ -105,11 +107,15 @@ EOF
 ### What to do
 1. Keep app branding unchanged.
 2. Use the prebuilt APK already present in the repository.
-3. Prepare the bridge host.
-4. Create/configure bridge env file.
-5. Set up persistent bridge execution (`systemd` recommended).
-6. Provide endpoint + token to the human.
-7. Validate baseline functionality.
+3. Inspect the host before installing anything:
+   - check whether an appenClaw bridge already exists
+   - check whether a related service is already running
+   - reuse or adapt an existing valid setup instead of duplicating it
+4. Prepare the bridge host.
+5. Create/configure bridge env file.
+6. Set up persistent bridge execution (`systemd` recommended).
+7. Provide endpoint + token to the human.
+8. Validate baseline functionality.
 
 ### APK delivery
 For Mode A, prefer delivering:
@@ -149,6 +155,8 @@ Create a user service or system service that:
 - runs `python3 scripts/appenclaw_chat_bridge.py`
 - restarts on failure
 - starts on boot/login as appropriate
+
+Before creating a new service, check whether a suitable existing service is already present. Do not create duplicate bridge services unless the human explicitly wants a separate instance.
 
 ### Validation checklist for Mode A
 - text chat works
@@ -257,6 +265,13 @@ Minimum items to mention to the human:
 - reverse proxy
 - TLS certificates
 - token/auth model
+
+Also confirm whether the AI has enough permissions to:
+- create/edit reverse proxy configs
+- reload/restart `nginx`
+- inspect or change firewall rules
+
+If not, prepare exact human-run instructions instead of assuming direct access.
 
 ---
 
