@@ -2,7 +2,7 @@
 
 > **OHARRA:** App hau eraikuntza aktiboan dago. Erabili zure ardurapean.
 >
-> **E2EE adarrari buruzko ohar garrantzitsua:** adar honetako E2EE inplementazioa AI laguntzaile batek garatu du osorik edo nagusiki garapen prozesuan zehar. Ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
+> **E2EE inplementazioari buruzko ohar garrantzitsua:** proiektu honetako E2EE inplementazioa AI laguntzaile batek garatu du osorik edo nagusiki garapen prozesuan zehar. Ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
 
 **appenClaw** Android aplikazioa da OpenClaw agente batera testu, audio, irudi eta bideo bidez konektatzeko.
 

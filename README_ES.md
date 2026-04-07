@@ -2,7 +2,7 @@
 
 > **AVISO:** Esta app está en construcción activa. Úsala bajo tu propia responsabilidad.
 >
-> **Aviso importante sobre la rama E2EE:** la implementación E2EE de esta rama ha sido desarrollada íntegramente o principalmente por un asistente AI durante el proceso de desarrollo. No ha sido certificada, auditada ni validada por ninguna entidad externa independiente. No debe presentarse como una implementación canónica o certificada de Signal. Cualquier uso del proyecto, del APK o de sus funciones criptográficas se realiza bajo el riesgo y responsabilidad de quien decida utilizarlo.
+> **Aviso importante sobre la implementación E2EE:** la implementación E2EE de este proyecto ha sido desarrollada íntegramente o principalmente por un asistente AI durante el proceso de desarrollo. No ha sido certificada, auditada ni validada por ninguna entidad externa independiente. No debe presentarse como una implementación canónica o certificada de Signal. Cualquier uso del proyecto, del APK o de sus funciones criptográficas se realiza bajo el riesgo y responsabilidad de quien decida utilizarlo.
 
 **appenClaw** es una app Android para conectarse a un agente OpenClaw por texto, audio, imágenes y vídeo.
 
