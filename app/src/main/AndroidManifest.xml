@@ -6,12 +6,12 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/aigor_app"
-        android:roundIcon="@drawable/aigor_app"
+        android:icon="@drawable/appenclaw_app"
+        android:roundIcon="@drawable/appenclaw_app"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.AigorApp">
+        android:theme="@style/Theme.appenClawApp">
         <activity
             android:name=".SettingsActivity"
             android:exported="false" />

@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">AIGOR App</string>
-    <string name="settings_title">AIGOR Settings</string>
+    <string name="app_name">appenClaw App</string>
+    <string name="settings_title">appenClaw Settings</string>
     <string name="settings_endpoint">Endpoint</string>
     <string name="settings_token">Hook token</string>
     <string name="settings_theme">Theme</string>
@@ -23,7 +23,7 @@
     <string name="status_new_chat_started">Status: new chat started</string>
     <string name="status_chat_cleared">Status: chat cleared</string>
     <string name="fill_endpoint_token">Fill endpoint and token</string>
-    <string name="title_app">AIGOR</string>
+    <string name="title_app">appenClaw</string>
     <string name="cd_menu">Menu</string>
     <string name="status_ready">Status: ready</string>
     <string name="pending_file">📎 file</string>
@@ -84,9 +84,9 @@
     <string name="bridge_error">Bridge error: %1$s%2$s</string>
     <string name="text_response_received">Text response received.</string>
     <string name="about_version">Version: %1$s (%2$d)</string>
-    <string name="about_bridge">Bridge: OpenClaw /chat + /status</string>
+    <string name="about_bridge">Bridge: appenClaw /chat + /status</string>
     <string name="about_features">Features: chat, context, attachments (image/video/audio)</string>
-    <string name="about_repo">Repo: aigor-app</string>
+    <string name="about_repo">Repo: appenclaw-app</string>
     <string name="html_preview_title">HTML preview</string>
     <string name="html_preview_tap">HTML content — tap to open preview</string>
     <string name="context_status_template">Current context:

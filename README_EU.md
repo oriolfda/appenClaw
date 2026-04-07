@@ -1,15 +1,15 @@
-# AIGOR App
+# appenClaw App
 
 > **OHARRA:** App hau eraikuntza fasean dago. Erabili zure ardurapean.
 >
 > **E2EE adarreko ohar garrantzitsua:** adar honetako E2EE inplementazioa AI laguntzaile batek garatu du osorik edo nagusiki garapen prozesuan zehar. Ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
 
-**AIGOR App Android aplikazioa da, zure OpenClaw laguntzailearekin komunikatzeko** testu, audio, irudi eta bideo bidez.
+**appenClaw App Android aplikazioa da, zure appenClaw laguntzailearekin komunikatzeko** testu, audio, irudi eta bideo bidez.
 
 Biltegi hau erabiltzaile ez-teknikoentzat pentsatuta dago:
 1. Aplikazioak zer egiten duen ulertzeko.
 2. Gizaki gisa behar den minimoa prestatzeko.
-3. OpenClaw laguntzaileari APK pertsonalizatua eraikitzeko argibideak emateko.
+3. appenClaw laguntzaileari APK pertsonalizatua eraikitzeko argibideak emateko.
 
 ## Zer egin behar duzu zuk (gizakia)
 
@@ -33,13 +33,13 @@ Biltegi hau erabiltzaile ez-teknikoentzat pentsatuta dago:
 ### 2. pausoa — Sortu ZUK repoa eta eman sarbide segurua laguntzaileari
 Gomendioa: biltegia zurea izatea (zure GitHub), ez laguntzailearena.
 
-- **2.1** Sortu repo berria zure GitHub-en (adib. `aigor-app`)
+- **2.1** Sortu repo berria zure GitHub-en (adib. `appenclaw-app`)
 - **2.2** Sortu deploy key espezifikoa repo horretarako
   - laguntzaileak commit/push egin behar badu, idazketa baimena aktibatu
 
 GitHub adibide azkarra:
 1. Repository → **Settings** → **Deploy keys** → **Add deploy key**
-2. Izenburua, adib. `aigor-app-assistant`
+2. Izenburua, adib. `appenclaw-app-assistant`
 3. Itsatsi gako publikoa (`*.pub`)
 4. Aktibatu **Allow write access** laguntzaileak aldaketak igo behar baditu
 5. Gorde
@@ -48,26 +48,26 @@ GitHub adibide azkarra:
   - zure GitHub-en sortu berri duzun repoaren URL-a
   - SSH gakoaren bidea/kokapena (laguntzailea exekutatzen den hostean)
 
-### 3. pausoa — Eman repo hau zure OpenClaw laguntzaileari
-Partekatu repoaren URL-a eta eskatu `docs/OPENCLAW_AI_REPLICA.md` jarraitzea.
+### 3. pausoa — Eman repo hau zure appenClaw laguntzaileari
+Partekatu repoaren URL-a eta eskatu `docs/APPENCLAW_AI_REPLICA.md` jarraitzea.
 
 Aukeran, esan laguntzaileari galdetzeko zein karpeta partekatu nahi duzun APK emateko eta erroreak jakinarazteko.
 
 ### 4. pausoa — Probatu APK eta eman feedbacka
 Instalatu, endpoint+token konfiguratu, testu/audio/irudi/bideo probatu eta arazo bisual/funtzionalak jakinarazi.
 
-## Zer egingo du OpenClaw laguntzaileak
+## Zer egingo du appenClaw laguntzaileak
 - Beharrezko informazioaren bilketa interaktiboa
 - Karpeta partekatuari buruzko galdera aukerakoa
 - Android setup-a
-- OpenClaw bridge setup-a
+- appenClaw bridge setup-a
 - STT/TTS konfigurazioa zure hobespenen arabera
 - APK build/sign
 - Marka/gai/hizkuntza pertsonalizazioa
 - Balidazio funtzionala
 
 ## Dokumentazio nagusia
-- `docs/OPENCLAW_AI_REPLICA.md`
+- `docs/APPENCLAW_AI_REPLICA.md`
 - `docs/LOCALIZATION.md`
 - `docs/templates/ui-locale-template.json`
 

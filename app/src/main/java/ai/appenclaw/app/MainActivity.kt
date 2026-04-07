@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.Manifest
 import android.app.AlertDialog
@@ -56,7 +56,7 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        val prefs = newBase.getSharedPreferences("aigor_prefs", android.content.Context.MODE_PRIVATE)
+        val prefs = newBase.getSharedPreferences("appenclaw_prefs", android.content.Context.MODE_PRIVATE)
         val code = prefs.getString("ui_locale", "auto")
         super.attachBaseContext(LocaleManager.apply(newBase, code))
     }
@@ -189,7 +189,7 @@ class MainActivity : AppCompatActivity() {
         recordTimerText = findViewById(R.id.recordTimerText)
         recordDotsText = findViewById(R.id.recordDotsText)
 
-        appliedUiLocale = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
+        appliedUiLocale = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE).getString("ui_locale", "auto") ?: "auto"
         runCatching { E2eeKeyManager(this).ensureLocalBundle() }
 
         val conversationState = ConversationStore.ensureState(this)
@@ -243,7 +243,7 @@ class MainActivity : AppCompatActivity() {
         conversationsRecycler.layoutManager = LinearLayoutManager(this)
         conversationsRecycler.adapter = conversationsAdapter
         applyTheme(theme)
-        val showTranscriptions = getSharedPreferences("aigor_prefs", MODE_PRIVATE).getBoolean("show_transcriptions", true)
+        val showTranscriptions = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE).getBoolean("show_transcriptions", true)
         adapter.setShowTranscriptionOption(!showTranscriptions)
 
         refreshConversationsDrawer()
@@ -368,9 +368,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         sendButton.setOnClickListener {
-            val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-            val endpoint = prefs.getString("openclaw_endpoint", "").orEmpty().trim()
-            val token = prefs.getString("openclaw_hook_token", "").orEmpty().trim()
+            val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
+            val endpoint = prefs.getString("appenclaw_endpoint", "").orEmpty().trim()
+            val token = prefs.getString("appenclaw_hook_token", "").orEmpty().trim()
             val message = messageEdit.text.toString().trim()
 
             if (endpoint.isBlank()) {
@@ -435,7 +435,7 @@ class MainActivity : AppCompatActivity() {
             messageEdit.setText("")
             addMessage(ChatMessage("typing", ""))
 
-            sendToOpenClaw(endpoint, token, message, attachmentToSend, activeConversation)
+            sendToappenClaw(endpoint, token, message, attachmentToSend, activeConversation)
             pendingAttachment = null
             updatePendingAttachmentUi()
         }
@@ -444,7 +444,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
         val currentLocale = prefs.getString("ui_locale", "auto") ?: "auto"
         if (currentLocale != appliedUiLocale) {
             appliedUiLocale = currentLocale
@@ -547,9 +547,9 @@ class MainActivity : AppCompatActivity() {
                     return@thread
                 }
 
-                val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-                val endpoint = prefs.getString("openclaw_endpoint", "").orEmpty().trim()
-                val token = prefs.getString("openclaw_hook_token", "").orEmpty().trim()
+                val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
+                val endpoint = prefs.getString("appenclaw_endpoint", "").orEmpty().trim()
+                val token = prefs.getString("appenclaw_hook_token", "").orEmpty().trim()
                 if (endpoint.isBlank() || token.isBlank()) {
                     runOnUiThread { statusText.text = getString(R.string.status_configure_endpoint_token) }
                     return@thread
@@ -890,7 +890,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun currentTheme(): ThemeManager.UiTheme {
-        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
         return ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
     }
 
@@ -939,12 +939,12 @@ class MainActivity : AppCompatActivity() {
         return urls.distinct()
     }
 
-    private fun sendToOpenClaw(endpoint: String, token: String, message: String, attachment: AttachmentData?, conversation: ConversationThread) {
+    private fun sendToappenClaw(endpoint: String, token: String, message: String, attachment: AttachmentData?, conversation: ConversationThread) {
         statusText.text = getString(R.string.status_sending)
 
         thread {
             try {
-                val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+                val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
                 val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
 
                 val urls = extractUrls(message)
@@ -1007,7 +1007,7 @@ class MainActivity : AppCompatActivity() {
                 } catch (_: Exception) { "" }
 
                 runOnUiThread {
-                    val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+                    val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
                     val showTranscriptions = prefs.getBoolean("show_transcriptions", true)
 
                     val assistantTextRaw = try {
@@ -1229,9 +1229,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun fetchContextStatus() {
-        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
-        val endpoint = prefs.getString("openclaw_endpoint", "").orEmpty().trim()
-        val token = prefs.getString("openclaw_hook_token", "").orEmpty().trim()
+        val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
+        val endpoint = prefs.getString("appenclaw_endpoint", "").orEmpty().trim()
+        val token = prefs.getString("appenclaw_hook_token", "").orEmpty().trim()
         if (endpoint.isBlank() || token.isBlank()) {
             statusText.text = getString(R.string.status_configure_endpoint_token)
             return

@@ -65,14 +65,14 @@ def main():
 
     tmpdir = tempfile.mkdtemp(prefix="e2ee-strict-smoke-")
     env = os.environ.copy()
-    if env_prefix in ("OPENCLAW_APP", "OPENCLAW"):
-        bridge_prefix = "OPENCLAW_APP"
-        e2ee_prefix = "OPENCLAW_APP"
-    elif env_prefix in ("AIGOR_APP", "AIGOR"):
-        bridge_prefix = "AIGOR"
-        e2ee_prefix = "AIGOR_APP"
+    if env_prefix in ("APPENCLAW_APP", "APPENCLAW"):
+        bridge_prefix = "APPENCLAW_APP"
+        e2ee_prefix = "APPENCLAW_APP"
+    elif env_prefix in ("appenClaw_APP", "appenClaw"):
+        bridge_prefix = "appenClaw"
+        e2ee_prefix = "appenClaw_APP"
     else:
-        raise RuntimeError(f"unsupported ENV_PREFIX={env_prefix} (expected OPENCLAW_APP/OPENCLAW or AIGOR_APP/AIGOR)")
+        raise RuntimeError(f"unsupported ENV_PREFIX={env_prefix} (expected APPENCLAW_APP/APPENCLAW or appenClaw_APP/appenClaw)")
 
     env[f"{bridge_prefix}_BRIDGE_HOST"] = "127.0.0.1"
     env[f"{bridge_prefix}_BRIDGE_PORT"] = str(port)

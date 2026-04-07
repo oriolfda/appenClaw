@@ -47,7 +47,7 @@ Last updated: 2026-03-28 07:12 UTC
 - ✅ **1.4 Còpia de blocs de codi o fragments multilínia**
   - Implementació:
     - `RichTextRenderer` incorpora `extractCopyableCode(raw)` per detectar i extreure codi copiable a partir de blocs fenced (` ```...``` `) o text amb patró clar de codi/indentació.
-    - `ChatAdapter` (missatges text sense àudio) ara detecta codi en long-press i, si n'hi ha, copia el fragment de codi (label de clipboard `aigor-code`) en lloc del missatge complet.
+    - `ChatAdapter` (missatges text sense àudio) ara detecta codi en long-press i, si n'hi ha, copia el fragment de codi (label de clipboard `appenclaw-code`) en lloc del missatge complet.
     - Si no hi ha codi detectable, es manté el comportament existent de còpia completa del missatge.
   - Cobertura del criteri “done”:
     - Hi ha una via raonable i implementada per copiar codi/fragments multilínia.
@@ -74,13 +74,13 @@ Last updated: 2026-03-28 07:12 UTC
 
 - ✅ **2.3 Reutilitzar `sessionId` de conversa activa en missatgeria/E2EE**
   - Implementació:
-    - `MainActivity` deixa d'usar el valor fix `aigor-app-chat` en els fluxos de `sendToOpenClaw()` i `requestTranscription()`; ara usa `activeConversation.sessionId`.
+    - `MainActivity` deixa d'usar el valor fix `appenclaw-app-chat` en els fluxos de `sendToappenClaw()` i `requestTranscription()`; ara usa `activeConversation.sessionId`.
     - `DevE2ee.encryptAttachment(...)` rep també el `sessionId` actiu en lloc d'un identificador global fix.
     - El comptador de sortida E2EE passa a ser per conversa (`e2ee_send_counter_<sessionId>`) tant en missatgeria com en transcripció.
     - `acceptIncomingCounter(...)` passa a requerir explícitament `sessionId`, evitant fallback implícit a un id global.
   - Cobertura del criteri “done”:
     - El codi d'enviament/transcripció usa el `sessionId` actiu de la conversa.
-    - S'elimina la dependència funcional d'un únic `aigor-app-chat` fix per a totes les converses.
+    - S'elimina la dependència funcional d'un únic `appenclaw-app-chat` fix per a totes les converses.
 
 - ✅ **3.1 Persistència local d'historial de converses i missatges**
   - Implementació:
@@ -104,7 +104,7 @@ Last updated: 2026-03-28 07:12 UTC
 
 - ✅ **3.3 Recuperació de context i continuació sobre `sessionId` correcte**
   - Implementació:
-    - `sendToOpenClaw(...)` rep ara una instantània explícita de la conversa origen (`ConversationThread`) i envia sempre amb el `sessionId` d'aquella conversa, evitant desalineacions si l'usuari canvia de conversa mentre la resposta és en vol.
+    - `sendToappenClaw(...)` rep ara una instantània explícita de la conversa origen (`ConversationThread`) i envia sempre amb el `sessionId` d'aquella conversa, evitant desalineacions si l'usuari canvia de conversa mentre la resposta és en vol.
     - Quan arriba una resposta i la conversa activa ja és una altra, `MainActivity` no toca la UI de la conversa actual: persisteix la resposta al thread origen amb `persistAssistantReplyForThread(...)`, substituint el `typing` pendent o afegint el missatge final segons calgui.
     - El mateix comportament de persistència s'aplica en errors de xarxa per no perdre continuïtat de context al thread original.
   - Cobertura del criteri “done”:
@@ -127,10 +127,10 @@ Last updated: 2026-03-28 07:12 UTC
 
 ## Evidència resumida
 - Canvis de codi aplicats a:
-  - `app/src/main/java/com/aigor/app/ConversationStore.kt`
+  - `app/src/main/java/com/appenclaw/app/ConversationStore.kt`
     - Nova API `activateThread(context, threadId)` per canviar i persistir la conversa activa.
-  - `app/src/main/java/com/aigor/app/MainActivity.kt`
-    - `sendToOpenClaw(...)` ara treballa amb instantània de conversa origen i session routing estable per thread.
+  - `app/src/main/java/com/appenclaw/app/MainActivity.kt`
+    - `sendToappenClaw(...)` ara treballa amb instantània de conversa origen i session routing estable per thread.
     - Nou helper `persistAssistantReplyForThread(...)` per persistir respostes/errors al thread correcte quan l'usuari canvia de conversa durant una resposta en vol.
     - Nou flux `showConversationsSelector()` + `switchToConversation(threadId)` per llistar i obrir converses existents.
     - Integració del nou selector dins del menú overflow.

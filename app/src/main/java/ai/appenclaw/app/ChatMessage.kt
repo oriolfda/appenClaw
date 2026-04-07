@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 data class ChatMessage(
     val role: String, // "user" | "assistant" | "system"

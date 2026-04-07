@@ -1,6 +1,6 @@
 # APP UX & Conversations Plan
 
-Objectiu: implementar tres línies de treball a `aigor-app` sobre `main`, sense ampliar scope fora del que està definit aquí.
+Objectiu: implementar tres línies de treball a `appenclaw-app` sobre `main`, sense ampliar scope fora del que està definit aquí.
 
 ## Regles de governança
 - El watchdog només pot executar tasques definides en aquest fitxer.
@@ -62,7 +62,7 @@ Done quan:
 Descripció: Garantir que el flux de missatgeria i E2EE reutilitza el `sessionId` de la conversa activa i no un valor fix global.
 Done quan:
 - el codi d'enviament/transcripció usa el `sessionId` actiu
-- no queda dependència funcional d'un únic `aigor-app-chat` fix per a totes les converses
+- no queda dependència funcional d'un únic `appenclaw-app-chat` fix per a totes les converses
 - queda evidència al report
 
 ## FASE 3 — Historial i recuperació de context

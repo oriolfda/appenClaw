@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">AIGOR App</string>
-    <string name="settings_title">AIGOR ezarpenak</string>
+    <string name="app_name">appenClaw App</string>
+    <string name="settings_title">appenClaw ezarpenak</string>
     <string name="settings_endpoint">Endpoint</string>
     <string name="settings_token">Tokena</string>
     <string name="settings_theme">Gaia</string>
@@ -23,7 +23,7 @@
     <string name="status_new_chat_started">Egoera: txat berria hasita</string>
     <string name="status_chat_cleared">Egoera: txata garbituta</string>
     <string name="fill_endpoint_token">Bete endpoint eta tokena</string>
-    <string name="title_app">AIGOR</string>
+    <string name="title_app">appenClaw</string>
     <string name="cd_menu">Menua</string>
     <string name="status_ready">Egoera: prest</string>
     <string name="pending_file">📎 fitxategia</string>
@@ -84,9 +84,9 @@
     <string name="bridge_error">Bridge errorea: %1$s%2$s</string>
     <string name="text_response_received">Testu erantzuna jasota.</string>
     <string name="about_version">Bertsioa: %1$s (%2$d)</string>
-    <string name="about_bridge">Bridge: OpenClaw /chat + /status</string>
+    <string name="about_bridge">Bridge: appenClaw /chat + /status</string>
     <string name="about_features">Funtzioak: txata, testuingurua, eranskinak (irudia/bideoa/audioa)</string>
-    <string name="about_repo">Repo: aigor-app</string>
+    <string name="about_repo">Repo: appenclaw-app</string>
     <string name="html_preview_title">HTML aurrebista</string>
     <string name="html_preview_tap">HTML edukia — ukitu aurrebista irekitzeko</string>
     <string name="context_status_template">Uneko testuingurua:

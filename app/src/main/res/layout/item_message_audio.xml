@@ -29,7 +29,7 @@
                 android:padding="6dp"
                 android:src="@drawable/ic_play_min" />
 
-            <com.aigor.app.AudioWaveProgressView
+            <ai.appenclaw.app.AudioWaveProgressView
                 android:id="@+id/audioWaveImage"
                 android:layout_width="170dp"
                 android:layout_height="22dp"

@@ -183,20 +183,20 @@ def main():
 
     add_check("fullMatrix", ["python3", "scripts/e2ee_full_matrix_smoke.py"])
     add_check(
-        "strictModeAigor",
-        ["python3", "scripts/e2ee_strict_mode_smoke.py", "scripts/aigor_chat_bridge.py", "AIGOR_APP"],
+        "strictModeappenClaw",
+        ["python3", "scripts/e2ee_strict_mode_smoke.py", "scripts/appenclaw_chat_bridge.py", "appenClaw_APP"],
     )
 
-    openclaw_bridge = Path("scripts/openclaw_chat_bridge.py")
-    if openclaw_bridge.exists():
+    appenclaw_bridge = Path("scripts/appenclaw_chat_bridge.py")
+    if appenclaw_bridge.exists():
         add_check(
             "strictModeOpenclaw",
-            ["python3", "scripts/e2ee_strict_mode_smoke.py", str(openclaw_bridge), "OPENCLAW_APP"],
+            ["python3", "scripts/e2ee_strict_mode_smoke.py", str(appenclaw_bridge), "APPENCLAW_APP"],
         )
     else:
         add_check(
             "strictModeOpenclaw",
-            ["python3", "scripts/e2ee_strict_mode_smoke.py", str(openclaw_bridge), "OPENCLAW_APP"],
+            ["python3", "scripts/e2ee_strict_mode_smoke.py", str(appenclaw_bridge), "APPENCLAW_APP"],
             optional=True,
         )
 
@@ -226,7 +226,7 @@ def main():
         full_matrix_unique_scripts = None
         full_matrix_missing_required = None
         full_matrix_unexpected_scripts = None
-        if c["name"] in {"strictModeAigor", "strictModeOpenclaw"}:
+        if c["name"] in {"strictModeappenClaw", "strictModeOpenclaw"}:
             strict_cases, strict_unique_case_names, strict_case_names = _strict_mode_cases_meta(r["stdout"])
             min_strict_cases = 100
             if strict_cases is None or strict_cases < min_strict_cases:

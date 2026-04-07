@@ -1,11 +1,11 @@
-# E2EE Hardening Plan — aigor-app
+# E2EE Hardening Plan — appenclaw-app
 
 Last updated: 2026-03-27 14:14 UTC
 Branch: `feature/signal-e2ee-phase2`
 Status: **IN PROGRESS (Signal-grade blockers active)**
 
 ## Purpose
-Tancar els blockers reals que encara impedeixen afirmar honestament que l'E2EE d'`aigor-app` és Signal-grade.
+Tancar els blockers reals que encara impedeixen afirmar honestament que l'E2EE d'`appenclaw-app` és Signal-grade.
 
 ## Signal-grade blockers actius
 ### BLOCKER 1 — Primitives finals no implementades
@@ -15,7 +15,7 @@ Els docs congelen X25519 + Ed25519 + HKDF-SHA256 + AES-GCM, però el codi verifi
 El model actual continua classificat com `CUSTOM-HARDENED`; per tant encara no es pot afirmar equivalència forta amb Double Ratchet tipus Signal.
 
 ## No-scope
-- cap treball de sincronització amb `openclaw-app`
+- cap treball de sincronització amb `appenclaw-app`
 - no augmentar `minimStrictCases` per inèrcia
 - no recrear els `strictCases=100`
 - no obrir tasques noves fora de les definides aquí
@@ -32,9 +32,9 @@ Status: **PENDING**
 #### Tasca 1.1
 Descripció: Auditar tots els punts del codi on encara hi ha P-256/ECDH i inventariar la migració requerida.
 Fitxers objectiu:
-- `app/src/main/java/com/aigor/app/DevE2ee.kt`
-- `app/src/main/java/com/aigor/app/E2eeKeyManager.kt`
-- `scripts/aigor_chat_bridge.py`
+- `app/src/main/java/com/appenclaw/app/DevE2ee.kt`
+- `app/src/main/java/com/appenclaw/app/E2eeKeyManager.kt`
+- `scripts/appenclaw_chat_bridge.py`
 Done quan:
 - queda escrit un inventari exhaustiu de punts a migrar a X25519
 - queda clar què es manté en Ed25519/HKDF/AES-GCM
@@ -48,7 +48,7 @@ Done quan:
 #### Tasca 1.3
 Descripció: Migrar el bridge a X25519 per al mateix flux.
 Done quan:
-- `scripts/aigor_chat_bridge.py` ja no usa `SECP256R1` per DH principal del protocol
+- `scripts/appenclaw_chat_bridge.py` ja no usa `SECP256R1` per DH principal del protocol
 - el bundle/handshake/derivació inicial queden alineats amb la decisió final de primitives
 
 #### Tasca 1.4

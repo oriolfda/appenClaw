@@ -41,8 +41,8 @@ def session_state(mod, sid: str):
 def main():
     import sys
 
-    script_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("aigor_chat_bridge.py")
-    env_prefix = (sys.argv[2] if len(sys.argv) > 2 else "AIGOR_APP").upper()
+    script_path = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).with_name("appenclaw_chat_bridge.py")
+    env_prefix = (sys.argv[2] if len(sys.argv) > 2 else "appenClaw_APP").upper()
 
     tmp = Path(tempfile.mkdtemp(prefix="e2ee-failed-decrypt-dh-step-rollback-smoke-"))
     os.environ[f"{env_prefix}_E2EE_KEYSTORE"] = str(tmp / "keys.json")

@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.content.Context
 import android.graphics.Canvas

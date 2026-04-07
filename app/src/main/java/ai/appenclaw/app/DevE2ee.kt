@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.content.Context
 import android.util.Base64
@@ -56,7 +56,7 @@ object DevE2ee {
     )
 
     private val ratchetStore = ConcurrentHashMap<String, SessionChainState>()
-    private const val RATCHET_PREFS = "aigor_app_e2ee"
+    private const val RATCHET_PREFS = "appenclaw_app_e2ee"
     private const val RATCHET_KEY_PREFIX = "ratchet_state::"
     @Volatile private var appContext: Context? = null
 
@@ -85,7 +85,7 @@ object DevE2ee {
         }
 
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        var baseKey = hkdfSha256(shared, salt, "aigor-e2ee-v1", 32)
+        var baseKey = hkdfSha256(shared, salt, "appenclaw-e2ee-v1", 32)
 
         val ratchet = kpg.generateKeyPair()
         val kaRatchet = KeyAgreement.getInstance("X25519")
@@ -94,7 +94,7 @@ object DevE2ee {
         val ratchetShared = kaRatchet.generateSecret()
         val ratchetPubBytes = ratchet.public.encoded
         val ratchetSalt = MessageDigest.getInstance("SHA-256").digest(ratchetPubBytes).copyOfRange(0, 16)
-        baseKey = hkdfSha256(baseKey + ratchetShared, ratchetSalt, "aigor-ratchet-step-v1", 32)
+        baseKey = hkdfSha256(baseKey + ratchetShared, ratchetSalt, "appenclaw-ratchet-step-v1", 32)
 
         val state = canonicalStateFromRoot(
             rootKey = baseKey,
@@ -132,11 +132,9 @@ object DevE2ee {
     fun decryptWithKey(baseKey: ByteArray, env: JSONObject): String {
         val ad = env.optString("ad", "")
         val sessionIdField = env.optString("sessionId", "")
-        val headerId = env.optString("headerId", "")
         val iv = Base64.decode(env.optString("iv", ""), Base64.DEFAULT)
         val ct = Base64.decode(env.optString("ciphertext", ""), Base64.DEFAULT)
         val counter = env.optInt("counter", 0)
-        val ratchetStep = env.optInt("ratchetStep", -1)
         require(counter >= 1) { "Invalid s2c counter: $counter" }
         val sessionId = ad.ifBlank {
             sessionIdField.ifBlank {
@@ -149,8 +147,6 @@ object DevE2ee {
         val currentState = ratchetStore[sessionId]
         val hasRecvSeed = currentState?.recvChainSeed != null
         val recvCtr = currentState?.recvChainCounter ?: 0
-        val hasSendSeed = currentState?.sendChainSeed != null
-        val sendCtr = currentState?.sendChainCounter ?: 0
         if (hasPersistentState && !hasRecvSeed && recvCtr == 0) {
             throw IllegalStateException("Persistent ratchet state exists but recv seed/counter are empty for sessionId=$sessionId")
         }

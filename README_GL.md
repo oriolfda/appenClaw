@@ -1,15 +1,15 @@
-# AIGOR App
+# appenClaw App
 
 > **AVISO:** Esta app está en fase de construción. Úsaa baixo a túa propia responsabilidade.
 >
 > **Aviso importante sobre a rama E2EE:** a implementación E2EE desta rama foi desenvolvida integramente ou principalmente por un asistente AI durante o proceso de desenvolvemento. Non foi certificada, auditada nin validada por ningunha entidade externa independente. Non debe presentarse como unha implementación canónica ou certificada de Signal. Calquera uso do proxecto, do APK ou das súas funcións criptográficas realízase baixo o risco e responsabilidade de quen decida utilizalo.
 
-**AIGOR App é unha app Android para comunicarte co teu asistente OpenClaw** con texto, audio, imaxes e vídeo.
+**appenClaw App é unha app Android para comunicarte co teu asistente appenClaw** con texto, audio, imaxes e vídeo.
 
 Este repositorio está pensado para que unha persoa non técnica poida:
 1. Entender que fai a app.
 2. Preparar o mínimo necesario como humano.
-3. Dar instrucións ao seu asistente OpenClaw para construír e personalizar o APK.
+3. Dar instrucións ao seu asistente appenClaw para construír e personalizar o APK.
 
 ## Que fas ti (humano)
 
@@ -33,13 +33,13 @@ Este repositorio está pensado para que unha persoa non técnica poida:
 ### Paso 2 — Crea TI o repo e dá acceso seguro ao asistente
 Recomendación: que o repositorio sexa teu (o teu GitHub), non do asistente.
 
-- **2.1** Crea un repositorio novo no teu GitHub (ex. `aigor-app`)
+- **2.1** Crea un repositorio novo no teu GitHub (ex. `appenclaw-app`)
 - **2.2** Crea unha deploy key específica para ese repositorio
   - se esperas que o asistente faga commits/push, activa escritura
 
 Exemplo rápido (GitHub):
 1. Repository → **Settings** → **Deploy keys** → **Add deploy key**
-2. Título, por exemplo `aigor-app-assistant`
+2. Título, por exemplo `appenclaw-app-assistant`
 3. Pega a chave pública (`*.pub`)
 4. Activa **Allow write access** se o asistente ten que subir cambios
 5. Garda
@@ -48,26 +48,26 @@ Exemplo rápido (GitHub):
   - URL do repositorio recén creado no teu GitHub
   - ruta/localización da chave SSH no host onde corre o asistente
 
-### Paso 3 — Entrega este repo ao teu asistente OpenClaw
-Pásalle a URL do repo e indícalle que siga `docs/OPENCLAW_AI_REPLICA.md`.
+### Paso 3 — Entrega este repo ao teu asistente appenClaw
+Pásalle a URL do repo e indícalle que siga `docs/APPENCLAW_AI_REPLICA.md`.
 
 Opcionalmente, pídelle que che pregunte que cartafol compartido prefires para entregar APK e reportar incidencias.
 
 ### Paso 4 — Proba o APK e dá feedback
 Instala, configura endpoint+token, proba texto/audio/imaxe/vídeo e reporta incidencias visuais ou funcionais.
 
-## Que fará o teu asistente OpenClaw
+## Que fará o teu asistente appenClaw
 - Recollida interactiva de información
 - Pregunta opcional sobre cartafol compartido
 - Setup Android
-- Setup bridge OpenClaw
+- Setup bridge appenClaw
 - Configuración STT/TTS segundo as túas preferencias
 - Build/sign APK
 - Personalización de marca/tema/idioma
 - Validación funcional
 
 ## Documentación principal
-- `docs/OPENCLAW_AI_REPLICA.md`
+- `docs/APPENCLAW_AI_REPLICA.md`
 - `docs/LOCALIZATION.md`
 - `docs/templates/ui-locale-template.json`
 

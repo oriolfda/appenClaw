@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.view.LayoutInflater
 import android.view.View

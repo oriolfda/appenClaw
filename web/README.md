@@ -1,4 +1,4 @@
-# AIGOR Web UI
+# appenClaw Web UI
 
 Interfície web separada de l'app Android, amb el mateix canal de comunicació cap al bridge (`/chat`, `/status`).
 

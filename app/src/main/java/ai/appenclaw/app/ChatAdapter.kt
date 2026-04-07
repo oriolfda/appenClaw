@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -144,10 +144,10 @@ class ChatAdapter(
                     holder.text.text = RichTextRenderer.buildHighlightedCode(codeBlock?.language, codeText)
                     holder.text.setOnClickListener(null)
                     holder.codeCopyIcon?.setOnClickListener {
-                        copyMessageToClipboard(holder.itemView.context, codeText, label = "aigor-code")
+                        copyMessageToClipboard(holder.itemView.context, codeText, label = "appenclaw-code")
                     }
                     holder.text.setOnLongClickListener {
-                        copyMessageToClipboard(holder.text.context, codeText, label = "aigor-code")
+                        copyMessageToClipboard(holder.text.context, codeText, label = "appenclaw-code")
                         true
                     }
                 } else {
@@ -156,7 +156,7 @@ class ChatAdapter(
                     holder.text.setOnLongClickListener {
                         val copyableCode = RichTextRenderer.extractCopyableCode(item.text)
                         if (copyableCode != null) {
-                            copyMessageToClipboard(holder.text.context, copyableCode, label = "aigor-code")
+                            copyMessageToClipboard(holder.text.context, copyableCode, label = "appenclaw-code")
                         } else {
                             copyMessageToClipboard(holder.text.context, item.text)
                         }
@@ -269,7 +269,7 @@ class ChatAdapter(
         }
     }
 
-    private fun copyMessageToClipboard(context: Context, text: String, label: String = "aigor-message"): Boolean {
+    private fun copyMessageToClipboard(context: Context, text: String, label: String = "appenclaw-message"): Boolean {
         val normalized = text.trimEnd()
         if (normalized.isBlank()) return false
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

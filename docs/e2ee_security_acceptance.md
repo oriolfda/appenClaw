@@ -1,4 +1,4 @@
-# E2EE Security Acceptance Criteria — aigor-app
+# E2EE Security Acceptance Criteria — appenclaw-app
 
 Last updated: 2026-03-27 14:14 UTC
 Status: **ACTIVE**
@@ -44,6 +44,18 @@ No es pot declarar `DONE` mentre falli algun d'aquests punts:
 - release gate PASS
 - build release PASS
 - verificació final manual coherent amb el codi
+
+## AEAD BAD_DECRYPT acceptance addendum
+Aquest addendum és obligatori per al bloc de remediació AEAD.
+
+No es pot declarar resolt el bug reportat a `error.jpg` mentre no es compleixi tot això:
+- el cas reproduït del `AEADBadTagException / BAD_DECRYPT` queda identificat i deixa de fallar,
+- queda evidència de la causa arrel triada entre: direcció incorrecta, message key vs chain key, persistència/counters o AD/sessionId,
+- el camí nominal `s2c` no produeix `AEADBadTagException` en la revalidació dirigida,
+- `python3 scripts/e2ee_full_matrix_smoke.py` => PASS,
+- `python3 scripts/e2ee_release_gate_smoke.py` => PASS,
+- `./gradlew :app:assembleRelease` => PASS,
+- `strictCases=100` es preserva.
 
 ## Change control
 Qualsevol canvi en strict cases ha d'indicar explícitament:

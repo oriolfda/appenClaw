@@ -36,6 +36,6 @@ def run(path, prefix):
 
 if __name__ == "__main__":
     raise SystemExit(run(
-        "/home/oriol/.openclaw/workspace/aigor-app/scripts/aigor_chat_bridge.py",
-        "AIGOR_APP",
+        "/home/oriol/.appenclaw/workspace/appenclaw-app/scripts/appenclaw_chat_bridge.py",
+        "appenClaw_APP",
     ))

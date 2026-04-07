@@ -1,4 +1,4 @@
-# E2EE Coherence Plan (Bridge + App) — aigor-app
+# E2EE Coherence Plan (Bridge + App) — appenclaw-app
 
 Last updated: 2026-04-03 06:50 UTC
 Branch target: `main`
@@ -12,7 +12,7 @@ Implementar de manera **coherent i simultània** el hardening pendent entre brid
 - Només es poden executar les tasques definides aquí (C1→C6).
 - Prohibit afegir, dividir, fusionar, redefinir o inventar tasques noves.
 - Si manca granularitat, reportar blocker i aturar-se.
-- No tocar `openclaw-app`.
+- No tocar `appenclaw-app`.
 - No modificar `minimStrictCases` ni recrear strict cases per inèrcia.
 
 ## Tasques (ordre obligatori)
@@ -22,7 +22,7 @@ Done quan:
 - queda documentat contracte únic (inputs, outputs, labels/KDF, invariants)
 - el contracte és explícitament idèntic per bridge i app
 
-### C2 — Implementació bridge (`scripts/aigor_chat_bridge.py`)
+### C2 — Implementació bridge (`scripts/appenclaw_chat_bridge.py`)
 Done quan:
 - el bridge aplica `ratchet_mix_chain` segons contracte C1 al camí `s2c`
 - no hi ha desviacions no documentades respecte C1

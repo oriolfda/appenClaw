@@ -1,14 +1,14 @@
-# AIGOR App
+# appenClaw App
 
 > **Avís important sobre la branca E2EE:** la implementació E2EE d'aquesta branca ha estat realitzada íntegrament o principalment per un assistent AI durant el procés de desenvolupament. No està certificada, auditada ni validada per cap entitat externa independent. No s'ha de presentar com una implementació canònica o certificada de Signal. Qualsevol ús del projecte, de l'APK o de les seves funcions criptogràfiques es fa sota el risc i responsabilitat de qui decideixi utilitzar-lo.
 
-**AIGOR App és una app Android per comunicar-te amb el teu assistent OpenClaw** de forma natural: text, àudio, imatges i vídeo, amb una interfície de xat moderna.
+**appenClaw App és una app Android per comunicar-te amb el teu assistent appenClaw** de forma natural: text, àudio, imatges i vídeo, amb una interfície de xat moderna.
 
 Aquest repositori està pensat perquè qualsevol persona (encara que no sigui tècnica) pugui:
 
 1. Entendre què és l’app i què fa.
 2. Preparar el mínim necessari com a humà.
-3. Donar instruccions al seu assistent OpenClaw perquè construeixi i personalitzi l’APK.
+3. Donar instruccions al seu assistent appenClaw perquè construeixi i personalitzi l’APK.
 
 ---
 
@@ -45,7 +45,7 @@ Abans de res, pensa aquests punts:
 Recomanació: que el **repo sigui teu** (GitHub de l’humà) i no de l’assistent.
 
 Flux recomanat:
-1. Crea un repo nou (p. ex. `openclaw-app` o el nom que vulguis)
+1. Crea un repo nou (p. ex. `appenclaw-app` o el nom que vulguis)
 2. Afegeix una **deploy key** (preferiblement amb escriptura si l’assistent ha de fer push)
 3. Comparteix amb l’assistent:
    - URL del repo
@@ -55,10 +55,10 @@ Exemple breu (GitHub):
 - Repository → **Settings** → **Deploy keys** → **Add deploy key**
 - Enganxa la clau pública (`*.pub`) i activa **Allow write access** si vols que l’assistent pugi canvis.
 
-### Pas 3 — Dona aquest repo al teu assistent OpenClaw
+### Pas 3 — Dona aquest repo al teu assistent appenClaw
 Passa-li l’enllaç del repo i digues-li:
 
-> “Vull una rèplica personalitzada de l’AIGOR App. Segueix la guia `docs/OPENCLAW_AI_REPLICA.md`, canvia nom+icona+tema+idioma, compila APK release i deixa’m el fitxer llest per instal·lar.”
+> “Vull una rèplica personalitzada de l’appenClaw App. Segueix la guia `docs/APPENCLAW_AI_REPLICA.md`, canvia nom+icona+tema+idioma, compila APK release i deixa’m el fitxer llest per instal·lar.”
 
 ### Pas 4 — Prova l’APK i dona feedback
 Quan l’assistent et passi l’APK:
@@ -70,13 +70,13 @@ Quan l’assistent et passi l’APK:
 
 ---
 
-## Què farà el teu assistent OpenClaw
+## Què farà el teu assistent appenClaw
 
 El teu assistent (no tu manualment) farà:
 
 - recollida **interactiva** de la informació necessària (nom, icona, idioma, tema, STT/TTS, etc.)
 - instal·lació de requisits Android (JDK/SDK)
-- configuració del bridge OpenClaw
+- configuració del bridge appenClaw
 - configuració de STT/TTS segons preferències humanes (incloent veus triades)
 - compilació APK release
 - personalització (marca, tema, idioma)
@@ -84,7 +84,7 @@ El teu assistent (no tu manualment) farà:
 
 Guia completa per a l’assistent:
 
-➡️ `docs/OPENCLAW_AI_REPLICA.md`
+➡️ `docs/APPENCLAW_AI_REPLICA.md`
 
 ---
 
@@ -112,7 +112,7 @@ Guia completa per a l’assistent:
 
 ## Documents útils
 
-- `docs/OPENCLAW_AI_REPLICA.md` → guia operativa per l’assistent OpenClaw
+- `docs/APPENCLAW_AI_REPLICA.md` → guia operativa per l’assistent appenClaw
 - `docs/LOCALIZATION.md` → com afegir/traduir idiomes de la interfície
 - `docs/templates/ui-locale-template.json` → plantilla de traduccions
 
@@ -120,4 +120,4 @@ Guia completa per a l’assistent:
 
 ## En una frase
 
-**Tu decideixes com vols l’app. El teu assistent OpenClaw la construeix i la personalitza per tu.**
+**Tu decideixes com vols l’app. El teu assistent appenClaw la construeix i la personalitza per tu.**

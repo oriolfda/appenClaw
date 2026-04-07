@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.content.Context
 import org.json.JSONArray
@@ -14,7 +14,7 @@ data class ConversationThread(
 )
 
 object ConversationStore {
-    private const val PREFS_NAME = "aigor_prefs"
+    private const val PREFS_NAME = "appenclaw_prefs"
     private const val KEY_THREADS = "chat_threads"
     private const val KEY_ACTIVE_THREAD_ID = "chat_active_thread_id"
     private const val KEY_LEGACY_CHAT_HISTORY = "chat_history"
@@ -155,7 +155,7 @@ object ConversationStore {
     private fun newThread(now: Long = System.currentTimeMillis()): ConversationThread {
         return ConversationThread(
             threadId = UUID.randomUUID().toString(),
-            sessionId = "aigor-app-chat-${UUID.randomUUID()}",
+            sessionId = "appenclaw-app-chat-${UUID.randomUUID()}",
             createdAt = now,
             updatedAt = now,
             title = null,

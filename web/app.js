@@ -22,7 +22,7 @@ const els = {
 const defaultCfg = {
   endpoint: "http://192.168.0.210:8091",
   token: "",
-  sessionId: "aigor-app-chat",
+  sessionId: "appenclaw-app-chat",
   language: "auto",
   showTranscription: true,
 };
@@ -30,7 +30,7 @@ const defaultCfg = {
 let attachment = null;
 
 function loadCfg() {
-  const raw = localStorage.getItem("aigor-web-config");
+  const raw = localStorage.getItem("appenclaw-web-config");
   const cfg = raw ? { ...defaultCfg, ...JSON.parse(raw) } : defaultCfg;
   els.endpoint.value = cfg.endpoint;
   els.token.value = cfg.token;
@@ -43,11 +43,11 @@ function saveCfg() {
   const cfg = {
     endpoint: els.endpoint.value.trim().replace(/\/$/, ""),
     token: els.token.value.trim(),
-    sessionId: els.sessionId.value.trim() || "aigor-app-chat",
+    sessionId: els.sessionId.value.trim() || "appenclaw-app-chat",
     language: els.language.value,
     showTranscription: els.showTranscription.checked,
   };
-  localStorage.setItem("aigor-web-config", JSON.stringify(cfg));
+  localStorage.setItem("appenclaw-web-config", JSON.stringify(cfg));
   setStatus("Configuració desada");
   return cfg;
 }

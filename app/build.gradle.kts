@@ -13,11 +13,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.aigor.app"
+    namespace = "ai.appenclaw.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.aigor.app"
+        applicationId = "ai.appenclaw.app"
         minSdk = 24
         targetSdk = 34
         versionCode = 50

@@ -1,8 +1,8 @@
 {
   "locale": "pt-PT",
   "strings": {
-    "app_name": "AIGOR App",
-    "settings_title": "Configuração AIGOR",
+    "app_name": "appenClaw App",
+    "settings_title": "Configuração appenClaw",
     "settings_endpoint": "Endpoint",
     "settings_token": "Token",
     "settings_theme": "Tema",

@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "aigor-app"
+rootProject.name = "appenclaw-app"
 include(":app")

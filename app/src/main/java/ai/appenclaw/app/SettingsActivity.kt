@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.app.AlertDialog
 import android.content.res.ColorStateList
@@ -21,7 +21,7 @@ import com.google.android.material.button.MaterialButton
 class SettingsActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        val prefs = newBase.getSharedPreferences("aigor_prefs", android.content.Context.MODE_PRIVATE)
+        val prefs = newBase.getSharedPreferences("appenclaw_prefs", android.content.Context.MODE_PRIVATE)
         val code = prefs.getString("ui_locale", "auto")
         super.attachBaseContext(LocaleManager.apply(newBase, code))
     }
@@ -42,7 +42,7 @@ class SettingsActivity : AppCompatActivity() {
         val saveButton: MaterialButton = findViewById(R.id.saveSettingsButton)
         val statusText: TextView = findViewById(R.id.settingsStatusText)
 
-        val prefs = getSharedPreferences("aigor_prefs", MODE_PRIVATE)
+        val prefs = getSharedPreferences("appenclaw_prefs", MODE_PRIVATE)
         val uiTheme = ThemeManager.byId(prefs.getString(ThemeManager.PREF_KEY, "html_match"))
         val isLight = uiTheme.isLight
         val panelBg = if (uiTheme.menuTint != 0) uiTheme.menuTint else uiTheme.screenBg
@@ -75,8 +75,8 @@ class SettingsActivity : AppCompatActivity() {
         saveButton.setTextColor(uiTheme.sendText)
         saveButton.strokeColor = ColorStateList.valueOf(uiTheme.sendTint)
 
-        endpointEdit.setText(prefs.getString("openclaw_endpoint", "http://192.168.0.102:8092/chat"))
-        tokenEdit.setText(prefs.getString("openclaw_hook_token", ""))
+        endpointEdit.setText(prefs.getString("appenclaw_endpoint", "http://192.168.0.102:8092/chat"))
+        tokenEdit.setText(prefs.getString("appenclaw_hook_token", ""))
 
         val themes = ThemeManager.themes
         val themeLabels = themes.map { localizedThemeLabel(it) }
@@ -143,8 +143,8 @@ class SettingsActivity : AppCompatActivity() {
             }
 
             prefs.edit()
-                .putString("openclaw_endpoint", endpoint)
-                .putString("openclaw_hook_token", token)
+                .putString("appenclaw_endpoint", endpoint)
+                .putString("appenclaw_hook_token", token)
                 .putString(ThemeManager.PREF_KEY, themeId)
                 .putString("ui_locale", selectedLang)
                 .putBoolean("show_transcriptions", showTranscriptions)

@@ -13,20 +13,21 @@ from cryptography.hazmat.primitives.asymmetric import ed25519, x25519
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
-HOST = os.environ.get("AIGOR_BRIDGE_HOST", "0.0.0.0")
-PORT = int(os.environ.get("AIGOR_BRIDGE_PORT", "8091"))
-TOKEN = os.environ.get("AIGOR_BRIDGE_TOKEN", "")
-DEFAULT_SESSION = os.environ.get("AIGOR_BRIDGE_SESSION", "aigor-app-chat")
-PUBLIC_BASE_URL = os.environ.get("AIGOR_BRIDGE_PUBLIC_BASE_URL", f"http://192.168.0.102:{PORT}")
-MEDIA_DIR = os.environ.get("AIGOR_BRIDGE_MEDIA_DIR", "/mnt/apps/aigor/media")
-EDGE_TTS = os.environ.get("AIGOR_BRIDGE_EDGE_TTS", "/home/oriol/.openclaw/venvs/aigor-tts/bin/edge-tts")
-E2EE_ENABLED = os.environ.get("AIGOR_APP_E2EE_ENABLED", "false").lower() == "true"
-E2EE_REQUIRED = os.environ.get("AIGOR_APP_E2EE_REQUIRED", "false").lower() == "true"
-E2EE_PROTOCOL = os.environ.get("AIGOR_APP_E2EE_PROTOCOL", "signal-x3dh-dr-v1")
-E2EE_BUNDLE_KID = os.environ.get("AIGOR_APP_E2EE_BUNDLE_KID", "1")
-E2EE_IDENTITY_PUB = os.environ.get("AIGOR_APP_E2EE_IDENTITY_PUB", "")
-E2EE_SIGNED_PREKEY_PUB = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_PUB", "")
-E2EE_SIGNED_PREKEY_SIG = os.environ.get("AIGOR_APP_E2EE_SIGNED_PREKEY_SIG", "")
+HOST = os.environ.get("APPENCLAW_BRIDGE_HOST", "0.0.0.0")
+PORT = int(os.environ.get("APPENCLAW_BRIDGE_PORT", "8091"))
+TOKEN = os.environ.get("APPENCLAW_BRIDGE_TOKEN", "")
+DEFAULT_SESSION = os.environ.get("APPENCLAW_BRIDGE_SESSION", "appenclaw-app-chat")
+BRIDGE_AGENT = (os.environ.get("APPENCLAW_BRIDGE_AGENT", "") or "").strip()
+PUBLIC_BASE_URL = os.environ.get("APPENCLAW_BRIDGE_PUBLIC_BASE_URL", f"http://192.168.0.102:{PORT}")
+MEDIA_DIR = os.environ.get("APPENCLAW_BRIDGE_MEDIA_DIR", "/mnt/apps/appenclaw/media")
+EDGE_TTS = os.environ.get("APPENCLAW_BRIDGE_EDGE_TTS", "/home/oriol/.appenclaw/venvs/appenclaw-tts/bin/edge-tts")
+E2EE_ENABLED = os.environ.get("APPENCLAW_APP_E2EE_ENABLED", "false").lower() == "true"
+E2EE_REQUIRED = os.environ.get("APPENCLAW_APP_E2EE_REQUIRED", "false").lower() == "true"
+E2EE_PROTOCOL = os.environ.get("APPENCLAW_APP_E2EE_PROTOCOL", "signal-x3dh-dr-v1")
+E2EE_BUNDLE_KID = os.environ.get("APPENCLAW_APP_E2EE_BUNDLE_KID", "1")
+E2EE_IDENTITY_PUB = os.environ.get("APPENCLAW_APP_E2EE_IDENTITY_PUB", "")
+E2EE_SIGNED_PREKEY_PUB = os.environ.get("APPENCLAW_APP_E2EE_SIGNED_PREKEY_PUB", "")
+E2EE_SIGNED_PREKEY_SIG = os.environ.get("APPENCLAW_APP_E2EE_SIGNED_PREKEY_SIG", "")
 
 
 def extract_json_block(text: str):
@@ -70,7 +71,7 @@ def extract_json_block(text: str):
         return None
 
 
-def run_openclaw_json(cmd, timeout=180):
+def run_appenclaw_json(cmd, timeout=180):
     proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     out = (proc.stdout or "") + (proc.stderr or "")
     parsed = extract_json_block(out)
@@ -180,11 +181,11 @@ def b64rand(n: int) -> str:
 
 
 def _bridge_keystore_path() -> str:
-    return os.environ.get("AIGOR_APP_E2EE_KEYSTORE", "/mnt/apps/aigor/e2ee/bridge_keys.json")
+    return os.environ.get("APPENCLAW_APP_E2EE_KEYSTORE", "/mnt/apps/appenclaw/e2ee/bridge_keys.json")
 
 
 def _otk_store_path() -> str:
-    return os.environ.get("AIGOR_APP_E2EE_OTK_STORE", "/mnt/apps/aigor/e2ee/otk_store.json")
+    return os.environ.get("APPENCLAW_APP_E2EE_OTK_STORE", "/mnt/apps/appenclaw/e2ee/otk_store.json")
 
 
 def _load_otk_store():
@@ -260,7 +261,7 @@ def _peek_otk_list(limit: int = 5):
 
 
 def _ratchet_store_path() -> str:
-    return os.environ.get("AIGOR_APP_E2EE_RATCHET_STORE", "/mnt/apps/aigor/e2ee/ratchet_store.json")
+    return os.environ.get("APPENCLAW_APP_E2EE_RATCHET_STORE", "/mnt/apps/appenclaw/e2ee/ratchet_store.json")
 
 
 def _ensure_session_chains(st: dict) -> dict:
@@ -575,7 +576,7 @@ def _decode_pubkey_spki(b64: str):
     return pub
 
 
-def _hkdf_key(shared: bytes, salt: bytes, info: bytes = b"aigor-e2ee-v1") -> bytes:
+def _hkdf_key(shared: bytes, salt: bytes, info: bytes = b"appenclaw-e2ee-v1") -> bytes:
     hkdf = HKDF(algorithm=hashes.SHA256(), length=32, salt=salt, info=info)
     return hkdf.derive(shared)
 
@@ -661,7 +662,7 @@ def decrypt_real_envelope(env: dict, session_id: str):
             ratchet_pub = _decode_pubkey_spki(ratchet_b64)
             ratchet_shared = _BRIDGE_SPK_PRIVKEY.exchange(ratchet_pub)
             mix_salt = hashlib.sha256(base64.b64decode(ratchet_b64)).digest()[:16]
-            base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"aigor-ratchet-step-v1")
+            base_key = _hkdf_key(base_key + ratchet_shared, mix_salt, info=b"appenclaw-ratchet-step-v1")
         except Exception:
             raise
 
@@ -768,7 +769,7 @@ def decrypt_e2ee_attachment(att: dict, base_key: bytes):
         raise ValueError("Unable to decrypt attachment with current or legacy chain derivation")
 
     ext = name.split(".")[-1] if "." in name else "bin"
-    base = os.path.join(tempfile.gettempdir(), f"aigor-{uuid.uuid4().hex}")
+    base = os.path.join(tempfile.gettempdir(), f"appenclaw-{uuid.uuid4().hex}")
     path = f"{base}.{ext}"
     with open(path, "wb") as f:
         f.write(raw)
@@ -792,7 +793,7 @@ def process_attachment(att: dict):
 
     raw = base64.b64decode(data_b64)
     ext = name.split(".")[-1] if "." in name else "bin"
-    base = os.path.join(tempfile.gettempdir(), f"aigor-{uuid.uuid4().hex}")
+    base = os.path.join(tempfile.gettempdir(), f"appenclaw-{uuid.uuid4().hex}")
     path = f"{base}.{ext}"
     with open(path, "wb") as f:
         f.write(raw)
@@ -804,8 +805,8 @@ def process_attachment(att: dict):
         hints.append(f"Analitza aquesta imatge local: {path}")
 
     elif mime.startswith("audio/"):
-        stt_py = "/home/oriol/.openclaw/workspace/scripts/stt_aina_ca.py"
-        stt_runner = "/home/oriol/.openclaw/venvs/aina-stt/bin/python"
+        stt_py = "/home/oriol/.appenclaw/workspace/scripts/stt_aina_ca.py"
+        stt_runner = "/home/oriol/.appenclaw/venvs/aina-stt/bin/python"
         if os.path.exists(stt_py) and os.path.exists(stt_runner):
             try:
                 tr = subprocess.run([stt_runner, stt_py, path], capture_output=True, text=True, timeout=180)
@@ -856,12 +857,26 @@ class Handler(BaseHTTPRequestHandler):
             self._debug("http-error", code=code, payload=payload, path=self.path)
         body = json.dumps(payload).encode("utf-8")
         try:
+            preview = body.decode("utf-8", errors="replace")
+        except Exception:
+            preview = "<decode-error>"
+        self._debug(
+            "http-send",
+            code=code,
+            path=self.path,
+            payloadKeys=sorted(list(payload.keys())) if isinstance(payload, dict) else None,
+            bodyLen=len(body),
+            bodyPreview=(preview[:400] + "...") if len(preview) > 400 else preview,
+        )
+        try:
             self.send_response(code)
             self._send_cors()
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
+            self.send_header("Connection", "close")
             self.end_headers()
             self.wfile.write(body)
+            self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             # Client disconnected before response was written.
             return
@@ -930,7 +945,7 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             session_id = DEFAULT_SESSION
-            code, parsed, raw = run_openclaw_json(["openclaw", "sessions", "--json"], timeout=60)
+            code, parsed, raw = run_appenclaw_json(["appenclaw", "sessions", "--json"], timeout=60)
             if code != 0 or not parsed:
                 self._send(500, {"ok": False, "error": "sessions_failed", "details": raw[-500:]})
                 return
@@ -1017,7 +1032,17 @@ class Handler(BaseHTTPRequestHandler):
         reply_key = None
         reply_ad = ""
         inbound_counter = 0
-        session_id = (data.get("sessionId") or DEFAULT_SESSION).strip() or DEFAULT_SESSION
+        raw_session_id = str(data.get("sessionId") or "").strip()
+        session_id = raw_session_id or DEFAULT_SESSION
+        self._debug(
+            "request-received",
+            path=self.path,
+            rawSessionId=raw_session_id,
+            effectiveSessionId=session_id,
+            hasMessage=bool((data.get("message") or "").strip()),
+            hasE2ee=bool(e2ee_req),
+            topLevelKeys=sorted(list(data.keys())),
+        )
 
         if E2EE_REQUIRED:
             raw_ciphertext = e2ee_req.get("ciphertext") if e2ee_req else None
@@ -1090,6 +1115,15 @@ class Handler(BaseHTTPRequestHandler):
                     "ok": False,
                     "error": "e2ee_salt_required",
                     "message": "Encrypted envelope requires non-empty string salt."
+                })
+                return
+
+            raw_ciphertext = e2ee_req.get("ciphertext")
+            if not isinstance(raw_ciphertext, str) or not raw_ciphertext.strip():
+                self._send(400, {
+                    "ok": False,
+                    "error": "e2ee_ciphertext_required",
+                    "message": "Encrypted envelope requires non-empty string ciphertext."
                 })
                 return
 
@@ -1319,13 +1353,28 @@ class Handler(BaseHTTPRequestHandler):
                         final_message += " No mostris la transcripció. Respon breument i prepara àudio de resposta."
 
             cmd = [
-                "openclaw", "agent",
+                "appenclaw", "agent",
                 "--session-id", session_id,
                 "--message", final_message,
                 "--json",
             ]
+            if BRIDGE_AGENT:
+                cmd[2:2] = ["--agent", BRIDGE_AGENT]
+            self._debug(
+                "appenclaw-agent-call",
+                sessionId=session_id,
+                finalMessagePreview=(final_message[:200] + "...") if len(final_message) > 200 else final_message,
+                cmd=cmd,
+            )
 
-            rc, parsed, out = run_openclaw_json(cmd, timeout=240)
+            rc, parsed, out = run_appenclaw_json(cmd, timeout=240)
+            self._debug(
+                "appenclaw-agent-result",
+                sessionId=session_id,
+                rc=rc,
+                parsedKeys=sorted(list(parsed.keys())) if isinstance(parsed, dict) else None,
+                rawOutPreview=(out[:400] + "...") if len(out) > 400 else out,
+            )
             if rc != 0 or not parsed:
                 self._send(500, {"ok": False, "error": "agent_failed", "details": out[-600:]})
                 return
@@ -1407,7 +1456,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     srv = ThreadingHTTPServer((HOST, PORT), Handler)
-    print(f"AIGOR bridge listening on http://{HOST}:{PORT} (/chat, /status)")
+    print(f"appenClaw bridge listening on http://{HOST}:{PORT} (/chat, /status)")
     srv.serve_forever()
 
 

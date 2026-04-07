@@ -1,6 +1,6 @@
-# OpenClaw AI Replica Guide
+# appenClaw AI Replica Guide
 
-This guide is for an OpenClaw assistant that needs to replicate/customize this app for a human user.
+This guide is for an appenClaw assistant that needs to replicate/customize this app for a human user.
 
 > AI-facing instructions are intentionally written in English so any human reviewer can audit them easily.
 
@@ -29,7 +29,7 @@ If data is missing, ask follow-up questions interactively instead of guessing.
 - Linux
 - Java 17
 - Android SDK CLI
-- OpenClaw CLI available
+- appenClaw CLI available
 - Python 3
 - (Optional) `edge-tts` for server-side spoken replies
 
@@ -50,8 +50,8 @@ sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
 ## 3) Build APK
 ```bash
-git clone <fork-url> aigor-app
-cd aigor-app
+git clone <fork-url> appenclaw-app
+cd appenclaw-app
 cat > local.properties <<EOF
 sdk.dir=$HOME/Android/Sdk
 EOF
@@ -59,7 +59,7 @@ EOF
 ```
 
 ## 4) Bridge
-Script: `scripts/aigor_chat_bridge.py`
+Script: `scripts/appenclaw_chat_bridge.py`
 - `POST /chat`
 - `GET /status`
 - `GET /media/<file>`
@@ -67,15 +67,15 @@ Script: `scripts/aigor_chat_bridge.py`
 - `GET /e2ee/prekey-bundle` (phase 2 bootstrap)
 
 Recommended environment variables:
-- `AIGOR_BRIDGE_HOST`
-- `AIGOR_BRIDGE_PORT`
-- `AIGOR_BRIDGE_TOKEN`
-- `AIGOR_BRIDGE_PUBLIC_BASE_URL`
-- `AIGOR_BRIDGE_MEDIA_DIR`
-- `AIGOR_BRIDGE_EDGE_TTS`
-- `AIGOR_APP_E2EE_ENABLED` (optional, phase 2)
-- `AIGOR_APP_E2EE_REQUIRED` (optional, phase 2 strict mode)
-- `AIGOR_APP_E2EE_PROTOCOL` (default: `signal-x3dh-dr-v1`)
+- `appenClaw_BRIDGE_HOST`
+- `appenClaw_BRIDGE_PORT`
+- `appenClaw_BRIDGE_TOKEN`
+- `appenClaw_BRIDGE_PUBLIC_BASE_URL`
+- `appenClaw_BRIDGE_MEDIA_DIR`
+- `appenClaw_BRIDGE_EDGE_TTS`
+- `appenClaw_APP_E2EE_ENABLED` (optional, phase 2)
+- `appenClaw_APP_E2EE_REQUIRED` (optional, phase 2 strict mode)
+- `appenClaw_APP_E2EE_PROTOCOL` (default: `signal-x3dh-dr-v1`)
 
 Bridge-TTS note:
 - Configure bridge-TTS after collecting the interactive TTS mode (`auto`/`specific-voice`).

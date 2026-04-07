@@ -61,6 +61,6 @@ def run(module_path: str, prefix: str):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 3:
-        print("usage: e2ee_large_gap_header_scope_smoke.py <bridge.py> <OPENCLAW_APP|AIGOR_APP>")
+        print("usage: e2ee_large_gap_header_scope_smoke.py <bridge.py> <APPENCLAW_APP|appenClaw_APP>")
         sys.exit(2)
     raise SystemExit(run(sys.argv[1], sys.argv[2]))

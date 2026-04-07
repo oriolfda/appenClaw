@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">AIGOR App</string>
-    <string name="settings_title">Configuración AIGOR</string>
+    <string name="app_name">appenClaw App</string>
+    <string name="settings_title">Configuración appenClaw</string>
     <string name="settings_endpoint">Endpoint</string>
     <string name="settings_token">Token</string>
     <string name="settings_theme">Tema</string>
@@ -23,7 +23,7 @@
     <string name="status_new_chat_started">Estado: novo chat iniciado</string>
     <string name="status_chat_cleared">Estado: chat limpo</string>
     <string name="fill_endpoint_token">Completa endpoint e token</string>
-    <string name="title_app">AIGOR</string>
+    <string name="title_app">appenClaw</string>
     <string name="cd_menu">Menú</string>
     <string name="status_ready">Estado: listo</string>
     <string name="pending_file">📎 archivo</string>
@@ -84,9 +84,9 @@
     <string name="bridge_error">Error bridge: %1$s%2$s</string>
     <string name="text_response_received">Respuesta de texto recibida.</string>
     <string name="about_version">Versión: %1$s (%2$d)</string>
-    <string name="about_bridge">Bridge: OpenClaw /chat + /status</string>
+    <string name="about_bridge">Bridge: appenClaw /chat + /status</string>
     <string name="about_features">Funciones: chat, contexto, adjuntos (imagen/vídeo/audio)</string>
-    <string name="about_repo">Repo: aigor-app</string>
+    <string name="about_repo">Repo: appenclaw-app</string>
     <string name="html_preview_title">Vista previa HTML</string>
     <string name="html_preview_tap">Contido HTML — toca para abrir a vista previa</string>
     <string name="copied">Copiado</string>

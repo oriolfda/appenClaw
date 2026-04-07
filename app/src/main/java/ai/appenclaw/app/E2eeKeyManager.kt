@@ -1,4 +1,4 @@
-package com.aigor.app
+package ai.appenclaw.app
 
 import android.content.Context
 import android.os.Build
@@ -26,7 +26,7 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 class E2eeKeyManager(private val context: Context) {
-    private val prefs = context.getSharedPreferences("aigor_app_e2ee", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("appenclaw_app_e2ee", Context.MODE_PRIVATE)
 
     data class LocalBundle(
         val deviceId: String,
@@ -369,6 +369,6 @@ class E2eeKeyManager(private val context: Context) {
     private fun b64(input: ByteArray): String = Base64.encodeToString(input, Base64.NO_WRAP)
 
     companion object {
-        private const val ANDROID_KEYSTORE_ALIAS = "aigor_e2ee_wrapping_key_v1"
+        private const val ANDROID_KEYSTORE_ALIAS = "appenclaw_e2ee_wrapping_key_v1"
     }
 }
