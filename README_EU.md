@@ -2,7 +2,7 @@
 
 > **OHARRA:** App hau eraikuntza aktiboan dago. Erabili zure ardurapean.
 >
-> **E2EE inplementazioari buruzko ohar garrantzitsua:** proiektu honetako E2EE inplementazioa AI laguntzaile batek garatu du osorik edo nagusiki garapen prozesuan zehar. Ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
+> **Garapenari eta E2EE inplementazioari buruzko ohar garrantzitsua:** app hau AI laguntzaile batek garatu du osorik edo nagusiki, gizakien gainbegiradapean eta jarraibideekin. Proiektuko E2EE inplementazioak ere ez du kanpo entitate independente baten ziurtapenik, auditoriarik edo balidaziorik. Ez da aurkeztu behar Signal-en inplementazio kanoniko edo ziurtatu gisa. Proiektuaren, APKaren edo haren funtzio kriptografikoen edozein erabilera erabiltzea erabakitzen duenaren arrisku eta erantzukizunpean egiten da.
 
 **appenClaw** Android aplikazioa da OpenClaw agente batera testu, audio, irudi eta bideo bidez konektatzeko.
 
@@ -16,6 +16,20 @@ Biltegi honek **bi erabilera modu** ditu:
 2. **assistant-app pertsonalizatu bat sortzea**
    - izena, ikonoa, hizkuntza, gaia eta bridge xehetasunak moldatzea
    - erabiltzaile bakoitzaren agenterako APK propioa konpilatzea
+
+---
+
+## Aplikazioak zer dauka
+
+- testu txata
+- audio grabazioa eta bidalketa
+- irudi eta bideo eranskinak
+- txateko audio erreprodukzioa
+- muturretik muturrerako zifratzea (E2EE) mezu eta eranskinetarako, Signal ereduaren gaineko inplementazio propioarekin (**ikus hasierako oharra**)
+- HTML/kode errenderizazioa
+- ikusizko gaiak
+- UI lokalizazioa
+- bridge laguntza endpoint + token bidez
 
 ---
 
@@ -187,20 +201,6 @@ Agenteak hau jarraitu behar du:
 - marka pertsonalizatzen du erabiltzaileak hala nahi badu
 - Android SDK/JDK prestatu bakarrik berriz konpilatu behar bada
 - APK-a konpilatu eta balidatzen du pertsonalizazio moduan
-
----
-
-## Aplikazioak zer dauka
-
-- testu txata
-- audio grabazioa eta bidalketa
-- irudi eta bideo eranskinak
-- txateko audio erreprodukzioa
-- muturretik muturrerako zifratzea (E2EE) mezu eta eranskinetarako, Signal ereduaren gaineko inplementazio propioarekin (**ikus hasierako oharra**)
-- HTML/kode errenderizazioa
-- ikusizko gaiak
-- UI lokalizazioa
-- bridge laguntza endpoint + token bidez
 
 ---
 

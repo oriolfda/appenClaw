@@ -1,6 +1,6 @@
 # appenClaw
 
-> **Avís important sobre la implementació E2EE:** la implementació E2EE d'aquest projecte ha estat realitzada íntegrament o principalment per un assistent AI durant el procés de desenvolupament. No està certificada, auditada ni validada per cap entitat externa independent. No s'ha de presentar com una implementació canònica o certificada de Signal. Qualsevol ús del projecte, de l'APK o de les seves funcions criptogràfiques es fa sota el risc i responsabilitat de qui decideixi utilitzar-lo.
+> **Avís important sobre el desenvolupament i la implementació E2EE:** aquesta app ha estat desenvolupada íntegrament o principalment per un assistent AI sota supervisió i indicacions humanes. La implementació E2EE del projecte tampoc no està certificada, auditada ni validada per cap entitat externa independent. No s'ha de presentar com una implementació canònica o certificada de Signal. Qualsevol ús del projecte, de l'APK o de les seves funcions criptogràfiques es fa sota el risc i responsabilitat de qui decideixi utilitzar-lo.
 
 **appenClaw** és una app Android per connectar-se a un agent OpenClaw per text, àudio, imatges i vídeo.
 
@@ -14,6 +14,20 @@ Aquest repositori suporta **dos modes d'ús**:
 2. **Crear una assistant-app personalitzada**
    - rebrand de nom, icona, idioma, tema i detalls del bridge
    - compilació d'un APK propi per a l'agent de cada usuari
+
+---
+
+## Què inclou l'app
+
+- xat text
+- gravació i enviament d'àudio
+- adjunts d'imatge i vídeo
+- reproducció d'àudio al xat
+- xifrat d'extrem a extrem (E2EE) per a missatges i adjunts, amb implementació pròpia basada en el model de Signal (**vegeu l'avís inicial**)
+- render HTML/codi
+- temes visuals
+- localització UI
+- suport de bridge amb endpoint + token
 
 ---
 
@@ -185,20 +199,6 @@ En el mode **personalitzat**, l'agent sí que ha de:
 - personalitza la marca si l'usuari ho vol
 - només prepara Android SDK/JDK si cal recompilar
 - compila i valida l'APK quan hi ha mode personalitzat
-
----
-
-## Què inclou l'app
-
-- xat text
-- gravació i enviament d'àudio
-- adjunts d'imatge i vídeo
-- reproducció d'àudio al xat
-- xifrat d'extrem a extrem (E2EE) per a missatges i adjunts, amb implementació pròpia basada en el model de Signal (**vegeu l'avís inicial**)
-- render HTML/codi
-- temes visuals
-- localització UI
-- suport de bridge amb endpoint + token
 
 ---
 

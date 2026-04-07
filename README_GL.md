@@ -2,7 +2,7 @@
 
 > **AVISO:** Esta app está en construción activa. Úsaa baixo a túa propia responsabilidade.
 >
-> **Aviso importante sobre a implementación E2EE:** a implementación E2EE deste proxecto foi desenvolvida integramente ou principalmente por un asistente AI durante o proceso de desenvolvemento. Non foi certificada, auditada nin validada por ningunha entidade externa independente. Non debe presentarse como unha implementación canónica ou certificada de Signal. Calquera uso do proxecto, do APK ou das súas funcións criptográficas realízase baixo o risco e responsabilidade de quen decida utilizalo.
+> **Aviso importante sobre o desenvolvemento e a implementación E2EE:** esta app foi desenvolvida integramente ou principalmente por un asistente AI baixo supervisión e indicacións humanas. A implementación E2EE do proxecto tampouco foi certificada, auditada nin validada por ningunha entidade externa independente. Non debe presentarse como unha implementación canónica ou certificada de Signal. Calquera uso do proxecto, do APK ou das súas funcións criptográficas realízase baixo o risco e responsabilidade de quen decida utilizalo.
 
 **appenClaw** é unha app Android para conectarse a un axente OpenClaw mediante texto, audio, imaxes e vídeo.
 
@@ -16,6 +16,20 @@ Este repositorio soporta **dous modos de uso**:
 2. **Crear unha assistant-app personalizada**
    - rebrand de nome, icona, idioma, tema e detalles do bridge
    - compilación dun APK propio para o axente de cada usuario
+
+---
+
+## Que inclúe a app
+
+- chat de texto
+- gravación e envío de audio
+- adxuntos de imaxe e vídeo
+- reprodución de audio no chat
+- cifrado de extremo a extremo (E2EE) para mensaxes e adxuntos, cunha implementación propia baseada no modelo de Signal (**véxase o aviso inicial**)
+- render HTML/código
+- temas visuais
+- localización UI
+- soporte de bridge con endpoint + token
 
 ---
 
@@ -187,20 +201,6 @@ En modo **personalizado**, o axente si debe:
 - personaliza a marca se o usuario o quere
 - só prepara Android SDK/JDK se hai que recompilar
 - compila e valida o APK cando hai modo personalizado
-
----
-
-## Que inclúe a app
-
-- chat de texto
-- gravación e envío de audio
-- adxuntos de imaxe e vídeo
-- reprodución de audio no chat
-- cifrado de extremo a extremo (E2EE) para mensaxes e adxuntos, cunha implementación propia baseada no modelo de Signal (**véxase o aviso inicial**)
-- render HTML/código
-- temas visuais
-- localización UI
-- soporte de bridge con endpoint + token
 
 ---
 

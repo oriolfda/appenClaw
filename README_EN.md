@@ -2,7 +2,7 @@
 
 > **WARNING:** This app is under active construction. Use it at your own risk.
 >
-> **Important notice about the E2EE implementation:** the E2EE implementation in this project has been developed entirely or primarily by an AI assistant during the development process. It has not been certified, audited, or validated by any independent external entity. It must not be presented as a certified or canonical Signal implementation. Any use of the project, APK, or its cryptographic features is entirely at the risk and responsibility of the person choosing to use it.
+> **Important notice about development and the E2EE implementation:** this app has been developed entirely or primarily by an AI assistant under human supervision and direction. The E2EE implementation in this project has not been certified, audited, or validated by any independent external entity. It must not be presented as a certified or canonical Signal implementation. Any use of the project, APK, or its cryptographic features is entirely at the risk and responsibility of the person choosing to use it.
 
 **appenClaw** is an Android app for connecting to an OpenClaw agent using text, audio, images, and video.
 
@@ -16,6 +16,20 @@ This repository supports **two usage modes**:
 2. **Create a personalized assistant-app from appenClaw**
    - rebrand name, icon, locale, theme, and bridge details
    - build a dedicated APK for a specific agent/personality
+
+---
+
+## What the app includes
+
+- text chat
+- audio recording and sending
+- image/video attachments
+- in-chat audio playback
+- end-to-end encryption (E2EE) for messages and attachments, with an in-house implementation based on the Signal model (**see the initial notice**)
+- HTML/code rendering
+- visual themes
+- UI localization
+- bridge support with endpoint + token
 
 ---
 
@@ -163,20 +177,6 @@ In the **customized** mode, the AI agent does need to:
 - personalizes branding if requested
 - only prepares Android SDK/JDK when rebuild is needed
 - builds and validates the APK when customization is requested
-
----
-
-## What the app includes
-
-- text chat
-- audio recording and sending
-- image/video attachments
-- in-chat audio playback
-- end-to-end encryption (E2EE) for messages and attachments, with an in-house implementation based on the Signal model (**see the initial notice**)
-- HTML/code rendering
-- visual themes
-- UI localization
-- bridge support with endpoint + token
 
 ---
 
