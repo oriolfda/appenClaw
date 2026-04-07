@@ -19,6 +19,12 @@ Aquest repositori suporta **dos modes d'ús**:
 
 ## Ruta A — Fer servir appenClaw as-is
 
+### Missatge que l'humà ha de donar al seu OpenClaw
+
+Copia i enganxa una instrucció com aquesta:
+
+> "Vull fer servir appenClaw tal com és, sense personalitzar-la ni recompilar-la. Prepara el bridge, deixa'm un endpoint + token funcionals, explica'm si cal nginx/firewall/domini per accés extern, i indica'm com descarregar i configurar l'APK `appenClaw-release.apk`."
+
 ### Què fa l'humà
 
 #### 1) Descarregar i instal·lar l'APK
@@ -74,6 +80,12 @@ Només ha de:
 ---
 
 ## Ruta B — Crear una assistant-app personalitzada a partir de appenClaw
+
+### Missatge que l'humà ha de donar al seu OpenClaw
+
+Copia i enganxa una instrucció com aquesta:
+
+> "Vull crear una assistant-app personalitzada a partir de appenClaw. Fes intake interactiu del nom, icona, idioma, tema, preferències STT/TTS, agent objectiu, port del bridge i model de desplegament. Després personalitza el repo, compila una APK release, prepara el bridge específic i deixa'm instruccions clares per instal·lar-la i fer-la servir."
 
 ### Què fa l'humà
 

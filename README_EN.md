@@ -21,6 +21,12 @@ This repository supports **two usage modes**:
 
 ## Path A — Use appenClaw as-is
 
+### Message the human should give to their OpenClaw
+
+Copy/paste something like this:
+
+> "I want to use appenClaw as-is, without rebranding or rebuilding it. Prepare the bridge, give me a working endpoint + token, explain whether nginx/firewall/domain setup is needed for external access, and tell me how to download and configure the `appenClaw-release.apk`."
+
 ### What the human does
 
 #### 1) Download and install the APK
@@ -76,6 +82,12 @@ It only needs to:
 ---
 
 ## Path B — Create a personalized assistant-app from appenClaw
+
+### Message the human should give to their OpenClaw
+
+Copy/paste something like this:
+
+> "I want to create a personalized assistant-app starting from appenClaw. Run interactive intake for name, icon, locale, theme, STT/TTS preferences, target agent, bridge port, and deployment model. Then personalize the repo, build a release APK, prepare the dedicated bridge, and leave me clear install/use instructions."
 
 ### What the human does
 
