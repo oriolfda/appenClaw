@@ -945,7 +945,7 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             session_id = DEFAULT_SESSION
-            code, parsed, raw = run_appenclaw_json(["appenclaw", "sessions", "--json"], timeout=60)
+            code, parsed, raw = run_appenclaw_json(["openclaw", "sessions", "--json"], timeout=60)
             if code != 0 or not parsed:
                 self._send(500, {"ok": False, "error": "sessions_failed", "details": raw[-500:]})
                 return
@@ -1353,7 +1353,7 @@ class Handler(BaseHTTPRequestHandler):
                         final_message += " No mostris la transcripció. Respon breument i prepara àudio de resposta."
 
             cmd = [
-                "appenclaw", "agent",
+                "openclaw", "agent",
                 "--session-id", session_id,
                 "--message", final_message,
                 "--json",
@@ -1361,7 +1361,7 @@ class Handler(BaseHTTPRequestHandler):
             if BRIDGE_AGENT:
                 cmd[2:2] = ["--agent", BRIDGE_AGENT]
             self._debug(
-                "appenclaw-agent-call",
+                "openclaw-agent-call",
                 sessionId=session_id,
                 finalMessagePreview=(final_message[:200] + "...") if len(final_message) > 200 else final_message,
                 cmd=cmd,
@@ -1369,7 +1369,7 @@ class Handler(BaseHTTPRequestHandler):
 
             rc, parsed, out = run_appenclaw_json(cmd, timeout=240)
             self._debug(
-                "appenclaw-agent-result",
+                "openclaw-agent-result",
                 sessionId=session_id,
                 rc=rc,
                 parsedKeys=sorted(list(parsed.keys())) if isinstance(parsed, dict) else None,

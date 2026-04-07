@@ -101,6 +101,14 @@ Si l'assistent no té aquests permisos, almenys ha de poder:
 - imatge/vídeo
 - estat/context
 
+#### 7) Si apareix `e2ee_decrypt_failed`
+Comprovacions prioritàries:
+- que l'endpoint configurat acabi realment en `/chat`
+- que el servei del bridge estigui executant els fitxers correctes d'appenClaw i no un bridge antic d'un altre repo
+- que el bridge estigui cridant el CLI real disponible a la màquina (`openclaw`)
+- que les rutes d'emmagatzematge E2EE (keystore/OTK/ratchet) existeixin i siguin accessibles
+- que el `prekey-bundle` provingui del mateix bridge que processa `/chat`
+
 ### Què ha de fer l'agent AI
 L'agent ha de seguir:
 - `docs/APPENCLAW_AI_REPLICA.md`
@@ -110,10 +118,12 @@ Per al mode **as-is**, l'agent **no necessita Android toolchain** si no s'ha de 
 Només ha de:
 1. preparar l'entorn host del bridge
 2. crear o adaptar el bridge base `scripts/appenclaw_chat_bridge.py`
-3. generar fitxer d'entorn del bridge
-4. configurar servei persistent (`systemd` recomanat)
-5. indicar a l'humà endpoint + token finals
-6. validar text, adjunts i àudio
+3. verificar que el servei real del bridge apunta al repo, env i script correctes
+4. generar fitxer d'entorn del bridge
+5. configurar servei persistent (`systemd` recomanat)
+6. comprovar que el bridge continua cridant el CLI real disponible a la màquina (`openclaw`, tret que se n'hagi instal·lat explícitament un altre)
+7. indicar a l'humà endpoint + token finals
+8. validar text, adjunts i àudio, incloent els endpoints E2EE si estan activats
 
 ---
 

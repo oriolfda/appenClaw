@@ -111,11 +111,15 @@ EOF
    - check whether an appenClaw bridge already exists
    - check whether a related service is already running
    - reuse or adapt an existing valid setup instead of duplicating it
+   - verify that the running service actually points to the expected repo, env file, and bridge script
 4. Prepare the bridge host.
 5. Create/configure bridge env file.
 6. Set up persistent bridge execution (`systemd` recommended).
-7. Provide endpoint + token to the human.
-8. Validate baseline functionality.
+7. Verify the bridge script still invokes the real backend CLI available on the machine.
+   - For app rebrands, do **not** blindly rename the OpenClaw CLI binary.
+   - If the machine provides `openclaw`, keep bridge subprocess calls on `openclaw` unless a different real CLI has been explicitly installed.
+8. Provide endpoint + token to the human.
+9. Validate baseline functionality.
 
 ### APK delivery
 For Mode A, prefer delivering:
@@ -163,8 +167,17 @@ Before creating a new service, check whether a suitable existing service is alre
 - image/video upload works
 - audio send/playback works
 - context/status works
+- `/e2ee/status` and `/e2ee/prekey-bundle` respond correctly when E2EE is enabled
 - token auth is enforced
 - public URL works if internet exposure was requested
+
+### E2EE-specific troubleshooting rule
+If the app reports `e2ee_decrypt_failed`, check in this order:
+1. whether the app endpoint really points to `/chat`
+2. whether the running bridge service points to the correct repo/env/script for appenClaw
+3. whether the bridge is using the real backend CLI available on the machine (`openclaw` unless explicitly replaced)
+4. whether E2EE keystore/OTK/ratchet store paths exist and are writable
+5. whether the prekey bundle returned by the running service matches the actual bridge instance handling `/chat`
 
 ---
 
