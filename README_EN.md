@@ -21,7 +21,7 @@ This repository supports **two usage modes**:
 
 ## What the app includes
 
-- text chat
+- text chat to communicate with your OpenClaw agent
 - audio recording and sending
 - image/video attachments
 - in-chat audio playback

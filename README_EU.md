@@ -21,7 +21,7 @@ Biltegi honek **bi erabilera modu** ditu:
 
 ## Aplikazioak zer dauka
 
-- testu txata
+- testu txata zure OpenClaw agentearekin komunikatzeko
 - audio grabazioa eta bidalketa
 - irudi eta bideo eranskinak
 - txateko audio erreprodukzioa

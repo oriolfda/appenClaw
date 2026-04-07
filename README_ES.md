@@ -21,7 +21,7 @@ Este repositorio soporta **dos modos de uso**:
 
 ## Qué incluye la app
 
-- chat de texto
+- chat de texto para comunicarse con tu agente OpenClaw
 - grabación y envío de audio
 - adjuntos de imagen y vídeo
 - reproducción de audio en el chat

@@ -19,7 +19,7 @@ Aquest repositori suporta **dos modes d'ús**:
 
 ## Què inclou l'app
 
-- xat text
+- xat de text per comunicar-se amb el teu agent OpenClaw
 - gravació i enviament d'àudio
 - adjunts d'imatge i vídeo
 - reproducció d'àudio al xat
