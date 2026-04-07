@@ -1,81 +1,235 @@
-# appenClaw App
+# appenClaw
 
-> **AVISO:** Esta app está en fase de construción. Úsaa baixo a túa propia responsabilidade.
+> **AVISO:** Esta app está en construción activa. Úsaa baixo a túa propia responsabilidade.
 >
 > **Aviso importante sobre a rama E2EE:** a implementación E2EE desta rama foi desenvolvida integramente ou principalmente por un asistente AI durante o proceso de desenvolvemento. Non foi certificada, auditada nin validada por ningunha entidade externa independente. Non debe presentarse como unha implementación canónica ou certificada de Signal. Calquera uso do proxecto, do APK ou das súas funcións criptográficas realízase baixo o risco e responsabilidade de quen decida utilizalo.
 
-**appenClaw App é unha app Android para comunicarte co teu asistente appenClaw** con texto, audio, imaxes e vídeo.
+**appenClaw** é unha app Android para conectarse a un axente OpenClaw mediante texto, audio, imaxes e vídeo.
 
-Este repositorio está pensado para que unha persoa non técnica poida:
-1. Entender que fai a app.
-2. Preparar o mínimo necesario como humano.
-3. Dar instrucións ao seu asistente appenClaw para construír e personalizar o APK.
+Este repositorio soporta **dous modos de uso**:
 
-## Que fas ti (humano)
+1. **Usar appenClaw tal como está**
+   - descargar un APK xa compilado
+   - instalalo
+   - configurar endpoint + token
+   - usalo co bridge base
+2. **Crear unha assistant-app personalizada**
+   - rebrand de nome, icona, idioma, tema e detalles do bridge
+   - compilación dun APK propio para o axente de cada usuario
 
-### Paso 1 — Decide como queres a túa app
-- Nome da app
-- Icona (PNG cadrado, ideal 1024x1024)
-- Idioma UI por defecto
-- Tema de cor
-- Preferencias de audio:
-  - transcrición STT visible no chat ou non
-  - modo TTS: `auto` (voz por idioma) ou `voz específica`
-  - se é `auto`: idiomas + voz por idioma
-  - se é `voz específica`: voz exacta e cando aplicala
-- Se queres acceso desde Internet (fóra da LAN): dominio/subdominio + proxy inverso (ex. DuckDNS + nginx)
-- Sinatura Android (keystore/token):
-  - xéraa o asistente AI durante build/sign
-  - é necesaria para futuras actualizacións
-  - non publiques nunca o material de sinatura no repo
-- Cartafol compartido humano↔AI para APK, capturas, logs e reportes
+---
 
-### Paso 2 — Crea TI o repo e dá acceso seguro ao asistente
-Recomendación: que o repositorio sexa teu (o teu GitHub), non do asistente.
+## Ruta A — Usar appenClaw as-is
 
-- **2.1** Crea un repositorio novo no teu GitHub (ex. `appenclaw-app`)
-- **2.2** Crea unha deploy key específica para ese repositorio
-  - se esperas que o asistente faga commits/push, activa escritura
+### Mensaxe que a persoa debe darlle ao seu OpenClaw
 
-Exemplo rápido (GitHub):
-1. Repository → **Settings** → **Deploy keys** → **Add deploy key**
-2. Título, por exemplo `appenclaw-app-assistant`
-3. Pega a chave pública (`*.pub`)
-4. Activa **Allow write access** se o asistente ten que subir cambios
-5. Garda
+Copia e pega unha instrución coma esta:
 
-- **2.3** Comparte co asistente:
-  - URL do repositorio recén creado no teu GitHub
-  - ruta/localización da chave SSH no host onde corre o asistente
+> "Quero usar appenClaw tal como está, sen personalizala nin recompilala. Usa como referencia canónica `https://github.com/oriolfda/appenClaw` e segue estritamente `docs/APPENCLAW_AI_REPLICA.md` en modo AS-IS. Non fagas rebrand nin rebuild do APK se non é necesario. Antes de instalar ou crear ningún servizo, verifica se o bridge de appenClaw xa existe ou xa está correndo nesta máquina e, se é así, reutilízao ou adápao no canto de duplicalo. Se eu non especifico o porto, podes decidir ti un porto axeitado que non entre en conflito e debes indicarmo explicitamente. Prepara o bridge, déixame un endpoint + token funcionais, explícame se fai falta nginx/firewall/dominio para acceso externo, e indícame como descargar e configurar o APK `appenClaw-release.apk`."
 
-### Paso 3 — Entrega este repo ao teu asistente appenClaw
-Pásalle a URL do repo e indícalle que siga `docs/APPENCLAW_AI_REPLICA.md`.
+### Que fai a persoa humana
 
-Opcionalmente, pídelle que che pregunte que cartafol compartido prefires para entregar APK e reportar incidencias.
+#### 1) Descargar e instalar o APK
+Non fai falta Android SDK nin compilación local.
 
-### Paso 4 — Proba o APK e dá feedback
-Instala, configura endpoint+token, proba texto/audio/imaxe/vídeo e reporta incidencias visuais ou funcionais.
+A persoa só ten que:
+- descargar `appenClaw-release.apk`
+- instalalo no móbil
+- abrir **Settings**
+- poñer:
+  - endpoint do bridge
+  - token
+  - idioma de interface se o quere cambiar
 
-## Que fará o teu asistente appenClaw
-- Recollida interactiva de información
-- Pregunta opcional sobre cartafol compartido
-- Setup Android
-- Setup bridge appenClaw
-- Configuración STT/TTS segundo as túas preferencias
-- Build/sign APK
-- Personalización de marca/tema/idioma
-- Validación funcional
+#### 2) Decidir como se accederá
+- **Só LAN**
+  - o móbil e o servidor deben estar na mesma rede
+  - usa a IP local do servidor
+- **Acceso desde internet**
+  - fai falta dominio ou subdominio
+  - `nginx` ou reverse proxy equivalente
+  - TLS/HTTPS
+  - portos abertos en firewall/router
 
-## Documentación principal
+#### 3) Decidir o porto do bridge
+A persoa pode:
+- indicar un porto concreto, ou
+- deixar que o axente AI escolla un porto libre axeitado
+
+Se o AI escolle o porto, debe:
+- comprobar que non entre en conflito con servizos existentes
+- documentar que porto escolleu
+- dicirlle claramente á persoa cal é o endpoint final que debe usar
+
+#### 4) Configurar rede e publicación
+Se o bridge vai ser accesible desde fóra da LAN:
+- apunta o dominio/subdominio á IP pública
+- abre o porto no router/firewall
+- coloca `nginx` diante do bridge se queres TLS e unha URL pública limpa
+- mantén sempre activo o token do bridge
+
+#### 5) Permisos que debe ter o asistente OpenClaw
+Se queres que o asistente deixe o bridge instalado e persistente, debe ter permisos suficientes para facer as accións necesarias no host, por exemplo:
+- crear ou editar ficheiros de configuración do bridge
+- crear ou editar un servizo `systemd` (user ou system)
+- arrancar, parar, reiniciar e consultar o estado do servizo
+- ler ou reservar un porto libre
+- se fai falta acceso externo: tocar configuración de `nginx` e/ou explicarte exactamente que debes facer ti manualmente
+- se fai falta abrir portos no firewall, ter permisos para facelo ou deixarche a instrución exacta
+
+Se o asistente non ten eses permisos, polo menos debe poder:
+- preparar todos os ficheiros
+- indicar os comandos exactos que debes executar ti
+- explicar que falta para completar o despregamento
+
+#### 6) Probar fluxo básico
+- chat de texto
+- envío de audio
+- reprodución de audio
+- imaxe/vídeo
+- estado/contexto
+
+### Que debe facer o axente AI
+O axente debe seguir:
 - `docs/APPENCLAW_AI_REPLICA.md`
-- `docs/LOCALIZATION.md`
-- `docs/templates/ui-locale-template.json`
+
+Para o modo **as-is**, o axente **non necesita Android toolchain** se non hai que recompilar nada.
+
+Só debe:
+1. preparar o entorno host do bridge
+2. crear ou adaptar o bridge base `scripts/appenclaw_chat_bridge.py`
+3. xerar o ficheiro de entorno do bridge
+4. configurar servizo persistente (`systemd` recomendado)
+5. indicar á persoa endpoint + token finais
+6. validar texto, adxuntos e audio
+
+---
+
+## Ruta B — Crear unha assistant-app personalizada a partir de appenClaw
+
+### Mensaxe que a persoa debe darlle ao seu OpenClaw
+
+Copia e pega unha instrución coma esta:
+
+> "Quero crear unha assistant-app personalizada a partir de appenClaw. Usa como referencia canónica `https://github.com/oriolfda/appenClaw` e segue estritamente `docs/APPENCLAW_AI_REPLICA.md` en modo personalizado. Fai intake interactivo do nome, icona, idioma, tema, preferencias STT/TTS, axente obxectivo, porto do bridge e modelo de despregamento. Despois personaliza un repositorio de traballo axeitado, compila un APK release, prepara o bridge específico e déixame instrucións claras para instalala e usala."
+
+### Que fai a persoa humana
+
+#### 1) Preparar GitHub
+Recomendación: que o repo sexa **da persoa humana**, non do asistente.
+
+Fluxo recomendado:
+1. crea un repo propio en GitHub
+2. engade unha **deploy key**
+3. se o axente debe facer `push`, activa **Allow write access**
+4. comparte co axente:
+   - URL do repo
+   - localización da clave SSH no host
+
+#### 2) Preparar a información de personalización
+Antes de darlle traballo ao axente, a persoa debería ter claro:
+- nome visible da app
+- icona (PNG cadrado, idealmente 1024x1024)
+- idioma UI por defecto
+- tema de cores
+- se quere mostrar ou non transcricións STT
+- política TTS:
+  - automática por idioma
+  - ou voz fixa específica
+- axente obxectivo
+- porto do bridge
+- se será só LAN ou accesible desde internet
+- se quere dominio/subdominio + `nginx`
+
+#### 3) Preparar entorno de publicación se fai falta
+Se se quere acceso externo:
+- dominio/subdominio
+- `nginx` ou reverse proxy equivalente
+- TLS/HTTPS
+- portos abertos en firewall/router
+- validación mínima de seguridade antes de expoñer o bridge
+
+#### 4) Probar o APK personalizado
+Cando o axente che entregue o APK:
+- instálao
+- comproba nome + icona
+- configura endpoint + token
+- proba texto, audio, imaxe, vídeo
+- reporta incidencias visuais ou funcionais
+
+### Que debe facer o axente AI
+O axente debe seguir:
+- `docs/APPENCLAW_AI_REPLICA.md`
+
+En modo **personalizado**, o axente si debe:
+1. facer intake interactivo coa persoa
+2. preparar entorno Android se hai que buildar
+3. personalizar nome, icona, tema, idioma e bridge
+4. configurar STT/TTS segundo as preferencias exactas
+5. compilar APK release
+6. validar funcionalmente o resultado
+7. deixar instrucións finais de instalación e mantemento
+
+---
+
+## Resumo rápido: quen fai que
+
+### Humanos
+- descargan o APK prebuilt en modo as-is
+- crean repo propio se queren assistant-app personalizada
+- deciden branding, política de audio e publicación
+- xestionan dominio, `nginx`, firewall e accesos externos se fai falta
+- proban o APK e dan feedback
+
+### Axente AI
+- prepara bridge e servizo persistente
+- pide os datos mínimos necesarios
+- personaliza a marca se o usuario o quere
+- só prepara Android SDK/JDK se hai que recompilar
+- compila e valida o APK cando hai modo personalizado
+
+---
+
+## Que inclúe a app
+
+- chat de texto
+- gravación e envío de audio
+- adxuntos de imaxe e vídeo
+- reprodución de audio no chat
+- render HTML/código
+- temas visuais
+- localización UI
+- soporte de bridge con endpoint + token
+
+---
+
+## Idiomas iniciais soportados (UI)
+
+- Català (`ca-ES`)
+- Español (`es-ES`)
+- English UK (`en-GB`)
+- English US (`en-US`)
+- Galego (`gl-ES`)
+- Euskara (`eu-ES`)
+
+---
+
+## Documentos útiles
+
+- `docs/APPENCLAW_AI_REPLICA.md` → guía operativa para o axente AI
+- `docs/LOCALIZATION.md` → engadir ou traducir idiomas UI
+- `docs/templates/ui-locale-template.json` → plantilla de traducións
 
 ---
 
 ## Aviso legal básico
-Esta app é unha interface de comunicación cun asistente AI. O uso, a configuración e as accións executadas a través do asistente son responsabilidade da persoa que desprega e usa a app.
 
-Autores/colaboradores do repositorio non asumen responsabilidade por uso indebido, perda de datos, incidentes de seguridade ou danos derivados da instalación, configuración ou uso da app.
+appenClaw é unha interface de comunicación para axentes AI. A configuración, despregamento, exposición de rede e uso final son responsabilidade de quen a desprega e a usa.
 
-Se decides instalar ou usar esta app, enténdese que aceptas estes termos.
+As persoas autoras ou contribuidoras do repositorio non se fan responsables de malos usos, perda de datos, incidencias de seguridade ou danos derivados da instalación, configuración ou uso.
+
+---
+
+## Nunha frase
+
+**Podes descargar e usar appenClaw tal como está, ou usala como base para crear a túa propia assistant-app conectada a un axente OpenClaw.**
