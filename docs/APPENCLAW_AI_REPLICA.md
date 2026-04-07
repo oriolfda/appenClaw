@@ -13,7 +13,8 @@ Before changing code or preparing infrastructure, ask the human which path appli
 
 - **Mode A — appenClaw as-is**
   - keep name/icon/branding as provided
-  - only configure and deploy the bridge + APK usage
+  - do **not** rebuild the APK unless explicitly requested
+  - provide the prebuilt APK and configure bridge usage
 - **Mode B — personalized assistant-app**
   - customize name, icon, theme, locale, and bridge details
   - build a dedicated APK for the human's own agent/personality
@@ -64,16 +65,18 @@ If information is missing, ask follow-up questions instead of guessing.
 ## 2) Host requirements
 Minimum host requirements:
 - Linux
-- Java 17
-- Android SDK CLI (only if building APK on this host)
-- OpenClaw CLI available and authenticated/usable
+- OpenClaw CLI available and usable
 - Python 3
 - optional `edge-tts` for server-side spoken replies
 - optional `nginx` when reverse proxying the bridge
 
+Only if **Mode B** requires APK rebuilds:
+- Java 17
+- Android SDK CLI
+
 ---
 
-## 3) Android toolchain setup (only when building APKs)
+## 3) Android toolchain setup (only for Mode B or explicit rebuild requests)
 ```bash
 sudo apt-get update
 sudo apt-get install -y openjdk-17-jdk unzip
@@ -101,11 +104,20 @@ EOF
 
 ### What to do
 1. Keep app branding unchanged.
-2. Prepare the bridge host.
-3. Create/configure bridge env file.
-4. Set up persistent bridge execution (`systemd` recommended).
-5. Provide endpoint + token to the human.
-6. Validate baseline functionality.
+2. Use the prebuilt APK already present in the repository.
+3. Prepare the bridge host.
+4. Create/configure bridge env file.
+5. Set up persistent bridge execution (`systemd` recommended).
+6. Provide endpoint + token to the human.
+7. Validate baseline functionality.
+
+### APK delivery
+For Mode A, prefer delivering:
+- `appenClaw-release.apk`
+
+Do not rebuild the APK unless:
+- the human explicitly requests a new build, or
+- the repository state changed and a fresh official APK must be published.
 
 ### Bridge script
 Use:

@@ -7,9 +7,10 @@
 Aquest repositori suporta **dos modes d'ús**:
 
 1. **Fer servir appenClaw tal com és**
-   - instal·lar l'APK base
+   - descarregar una APK ja compilada
+   - instal·lar-la
    - configurar endpoint + token
-   - connectar-la al bridge
+   - usar-la amb el bridge base
 2. **Crear una assistant-app personalitzada**
    - rebrand de nom, icona, idioma, tema i detalls del bridge
    - compilació d'un APK propi per a l'agent de cada usuari
@@ -20,56 +21,54 @@ Aquest repositori suporta **dos modes d'ús**:
 
 ### Què fa l'humà
 
-#### 1) Preparar el bridge
-Cal un host Linux amb:
-- OpenClaw CLI funcional
-- Python 3
-- accés de xarxa des del mòbil
-- opcionalment `edge-tts` si vols àudio de resposta servit pel bridge
+#### 1) Descarregar i instal·lar l'APK
+No cal Android SDK ni compilació local.
+
+L'humà només ha de:
+- descarregar `appenClaw-release.apk`
+- instal·lar-la al mòbil
+- obrir **Settings**
+- posar:
+  - endpoint del bridge
+  - token
+  - idioma d'interfície si ho vol canviar
 
 #### 2) Decidir com s'hi accedirà
 - **Només LAN**
-  - posa el mòbil i el servidor a la mateixa xarxa
+  - el mòbil i el servidor han d'estar a la mateixa xarxa
   - usa la IP local del servidor
 - **Accés des d'internet**
-  - domini o subdomini
-  - reverse proxy (`nginx` recomanat)
+  - cal domini o subdomini
+  - `nginx` o reverse proxy equivalent
   - TLS/HTTPS
-  - obertura del port necessari al firewall/router
+  - ports oberts a firewall/router
 
 #### 3) Configurar xarxa i publicació
 Si el bridge serà accessible des de fora de la LAN:
 - apunta el domini/subdomini a la IP pública
 - obre el port al router/firewall
-- posa `nginx` davant del bridge si vols TLS, domini net i capes addicionals de control
-- mantén **sempre** el token del bridge actiu
+- posa `nginx` davant del bridge si vols TLS i una URL pública neta
+- mantén sempre actiu el token del bridge
 
-#### 4) Instal·lar l'APK
-- instal·la l'APK de `appenClaw`
-- obre **Settings**
-- configura:
-  - endpoint del bridge
-  - token
-  - idioma d'interfície
-  - preferències bàsiques d'àudio
-
-#### 5) Provar flux bàsic
+#### 4) Provar flux bàsic
 - xat text
 - enviament d'àudio
 - reproducció d'àudio
 - imatge/vídeo
-- `/status` o estat de context
+- estat/context
 
 ### Què ha de fer l'agent AI
-L'agent ha de seguir la guia operativa:
+L'agent ha de seguir:
 - `docs/APPENCLAW_AI_REPLICA.md`
 
-Per al mode **as-is**, l'agent ha de:
-1. preparar l'entorn host
+Per al mode **as-is**, l'agent **no necessita Android toolchain** si no s'ha de recompilar res.
+
+Només ha de:
+1. preparar l'entorn host del bridge
 2. crear o adaptar el bridge base `scripts/appenclaw_chat_bridge.py`
 3. generar fitxer d'entorn del bridge
 4. configurar servei persistent (`systemd` recomanat)
-5. indicar a l'humà l'endpoint i token finals
+5. indicar a l'humà endpoint + token finals
 6. validar text, adjunts i àudio
 
 ---
@@ -92,7 +91,6 @@ Flux recomanat:
 #### 2) Preparar la informació de personalització
 Abans de donar feina a l'agent, l'humà hauria de tenir clar:
 - nom visible de l'app
-- nom intern del projecte/repo si vol canviar-lo
 - icona (PNG quadrat, idealment 1024x1024)
 - idioma UI per defecte
 - tema de colors
@@ -111,7 +109,7 @@ Si es vol accés extern:
 - `nginx` o reverse proxy equivalent
 - TLS/HTTPS
 - ports oberts a firewall/router
-- validació de seguretat mínima abans d'exposar el bridge
+- validació mínima de seguretat abans d'exposar el bridge
 
 #### 4) Provar l'APK personalitzat
 Quan l'agent et doni l'APK:
@@ -125,9 +123,9 @@ Quan l'agent et doni l'APK:
 L'agent ha de seguir:
 - `docs/APPENCLAW_AI_REPLICA.md`
 
-En el mode **personalitzat**, l'agent ha de:
+En el mode **personalitzat**, l'agent sí que ha de:
 1. fer intake interactiu amb l'humà
-2. preparar repo, branding i configuració
+2. preparar entorn Android si cal buildar
 3. personalitzar nom, icona, tema, idioma i bridge
 4. configurar STT/TTS segons preferències exactes
 5. compilar APK release
@@ -139,17 +137,18 @@ En el mode **personalitzat**, l'agent ha de:
 ## Resum ràpid: qui fa què
 
 ### Humans
+- descarreguen l'APK prebuilt en mode as-is
 - creen repo propi si volen assistant-app personalitzada
 - decideixen branding, política d'àudio i publicació
 - gestionen domini, `nginx`, firewall i accessos externs si cal
 - proven l'APK i donen feedback
 
 ### Agent AI
-- prepara Android toolchain i bridge
+- prepara bridge i servei persistent
 - demana les dades mínimes necessàries
-- configura servei persistent del bridge
 - personalitza la marca si l'usuari ho vol
-- compila i valida l'APK
+- només prepara Android SDK/JDK si cal recompilar
+- compila i valida l'APK quan hi ha mode personalitzat
 
 ---
 
@@ -195,4 +194,4 @@ Les persones autores o contribuïdores del repositori no es fan responsables de 
 
 ## En una frase
 
-**Pots fer servir appenClaw tal com és, o usar-la com a base per crear la teva pròpia assistant-app connectada a un agent OpenClaw.**
+**Pots descarregar i fer servir appenClaw tal com és, o usar-la com a base per crear la teva pròpia assistant-app connectada a un agent OpenClaw.**

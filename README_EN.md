@@ -9,9 +9,10 @@
 This repository supports **two usage modes**:
 
 1. **Use appenClaw as-is**
-   - install the base APK
+   - download a prebuilt APK
+   - install it
    - configure endpoint + token
-   - connect it to a working bridge
+   - use it with the base bridge
 2. **Create a personalized assistant-app from appenClaw**
    - rebrand name, icon, locale, theme, and bridge details
    - build a dedicated APK for a specific agent/personality
@@ -22,22 +23,27 @@ This repository supports **two usage modes**:
 
 ### What the human does
 
-#### 1) Prepare the bridge host
-You need a Linux host with:
-- working OpenClaw CLI
-- Python 3
-- network reachability from the phone
-- optionally `edge-tts` for bridge-served voice replies
+#### 1) Download and install the APK
+No Android SDK or local build is required.
+
+The human only needs to:
+- download `appenClaw-release.apk`
+- install it on the phone
+- open **Settings**
+- enter:
+  - bridge endpoint
+  - token
+  - UI language if they want to change it
 
 #### 2) Decide access mode
 - **LAN only**
   - keep phone and server on the same network
   - use the server private IP
 - **Internet-accessible**
-  - domain/subdomain
-  - reverse proxy (`nginx` recommended)
+  - require domain or subdomain
+  - `nginx` or equivalent reverse proxy
   - TLS/HTTPS
-  - open the required port in firewall/router
+  - open ports in firewall/router
 
 #### 3) Configure network/public exposure
 If the bridge will be reachable from outside the LAN:
@@ -46,28 +52,21 @@ If the bridge will be reachable from outside the LAN:
 - put `nginx` in front if you want TLS and cleaner public routing
 - keep bridge token auth enabled at all times
 
-#### 4) Install the APK
-- install the `appenClaw` APK
-- open **Settings**
-- configure:
-  - bridge endpoint
-  - token
-  - UI language
-  - basic audio preferences
-
-#### 5) Test baseline flow
+#### 4) Test baseline flow
 - text chat
 - audio send
 - audio playback
 - image/video
-- `/status` or context status
+- status/context
 
 ### What the AI agent must do
-The agent should follow:
+The AI agent should follow:
 - `docs/APPENCLAW_AI_REPLICA.md`
 
-For the **as-is** mode, the AI agent should:
-1. prepare the host environment
+For the **as-is** mode, the AI agent **does not need Android toolchain** unless something must be rebuilt.
+
+It only needs to:
+1. prepare the bridge host environment
 2. create or adapt the base bridge `scripts/appenclaw_chat_bridge.py`
 3. generate the bridge environment file
 4. configure a persistent service (`systemd` recommended)
@@ -94,7 +93,6 @@ Recommended flow:
 #### 2) Prepare personalization inputs
 Before asking the AI agent to work, the human should define:
 - visible app name
-- internal project/repo name if they want to rename it too
 - icon (square PNG, ideally 1024x1024)
 - default UI locale
 - color theme
@@ -127,9 +125,9 @@ Once the AI agent delivers the APK:
 The AI agent should follow:
 - `docs/APPENCLAW_AI_REPLICA.md`
 
-In the **customized** mode, the AI agent should:
+In the **customized** mode, the AI agent does need to:
 1. run interactive intake with the human
-2. prepare repo, branding, and config
+2. prepare Android environment if a build is required
 3. personalize name, icon, theme, locale, and bridge
 4. configure STT/TTS exactly as requested
 5. build the release APK
@@ -141,17 +139,18 @@ In the **customized** mode, the AI agent should:
 ## Quick responsibility split
 
 ### Humans
+- download the prebuilt APK in as-is mode
 - create their own repo if they want a personalized assistant-app
 - decide branding, audio policy, and publication model
 - manage domain, `nginx`, firewall, and internet exposure if needed
 - test the APK and provide feedback
 
 ### AI agent
-- prepares Android toolchain and bridge
+- prepares bridge and persistent service
 - asks for the minimum required data
-- configures persistent bridge service
 - personalizes branding if requested
-- builds and validates the APK
+- only prepares Android SDK/JDK when rebuild is needed
+- builds and validates the APK when customization is requested
 
 ---
 
@@ -197,4 +196,4 @@ Repository authors/contributors are not liable for misuse, data loss, security i
 
 ## In one sentence
 
-**You can use appenClaw as-is, or use it as the base for building your own assistant-app connected to an OpenClaw agent.**
+**You can download and use appenClaw as-is, or use it as the base for building your own assistant-app connected to an OpenClaw agent.**
