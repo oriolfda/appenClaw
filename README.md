@@ -194,6 +194,7 @@ En el mode **personalitzat**, l'agent sí que ha de:
 - gravació i enviament d'àudio
 - adjunts d'imatge i vídeo
 - reproducció d'àudio al xat
+- xifrat d'extrem a extrem (E2EE) per a missatges i adjunts, amb implementació pròpia basada en el model de Signal (**vegeu l'avís inicial**)
 - render HTML/codi
 - temes visuals
 - localització UI

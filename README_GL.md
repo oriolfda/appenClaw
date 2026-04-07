@@ -196,6 +196,7 @@ En modo **personalizado**, o axente si debe:
 - gravación e envío de audio
 - adxuntos de imaxe e vídeo
 - reprodución de audio no chat
+- cifrado de extremo a extremo (E2EE) para mensaxes e adxuntos, cunha implementación propia baseada no modelo de Signal (**véxase o aviso inicial**)
 - render HTML/código
 - temas visuais
 - localización UI

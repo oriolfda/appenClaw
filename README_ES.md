@@ -196,6 +196,7 @@ En modo **personalizado**, el agente sí debe:
 - grabación y envío de audio
 - adjuntos de imagen y vídeo
 - reproducción de audio en el chat
+- cifrado de extremo a extremo (E2EE) para mensajes y adjuntos, con implementación propia basada en el modelo de Signal (**véase el aviso inicial**)
 - render HTML/código
 - temas visuales
 - localización UI

@@ -196,6 +196,7 @@ Agenteak hau jarraitu behar du:
 - audio grabazioa eta bidalketa
 - irudi eta bideo eranskinak
 - txateko audio erreprodukzioa
+- muturretik muturrerako zifratzea (E2EE) mezu eta eranskinetarako, Signal ereduaren gaineko inplementazio propioarekin (**ikus hasierako oharra**)
 - HTML/kode errenderizazioa
 - ikusizko gaiak
 - UI lokalizazioa

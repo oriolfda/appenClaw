@@ -172,6 +172,7 @@ In the **customized** mode, the AI agent does need to:
 - audio recording and sending
 - image/video attachments
 - in-chat audio playback
+- end-to-end encryption (E2EE) for messages and attachments, with an in-house implementation based on the Signal model (**see the initial notice**)
 - HTML/code rendering
 - visual themes
 - UI localization
