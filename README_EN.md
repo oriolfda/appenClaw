@@ -25,7 +25,7 @@ This repository supports **two usage modes**:
 
 Copy/paste something like this:
 
-> "I want to use appenClaw as-is, without rebranding or rebuilding it. Prepare the bridge, give me a working endpoint + token, explain whether nginx/firewall/domain setup is needed for external access, and tell me how to download and configure the `appenClaw-release.apk`."
+> "I want to use appenClaw as-is, without rebranding or rebuilding it. Follow `docs/APPENCLAW_AI_REPLICA.md` strictly in AS-IS mode. Do not rebrand or rebuild the APK unless necessary. Prepare the bridge, give me a working endpoint + token, explain whether nginx/firewall/domain setup is needed for external access, and tell me how to download and configure the `appenClaw-release.apk`."
 
 ### What the human does
 
@@ -87,7 +87,7 @@ It only needs to:
 
 Copy/paste something like this:
 
-> "I want to create a personalized assistant-app starting from appenClaw. Run interactive intake for name, icon, locale, theme, STT/TTS preferences, target agent, bridge port, and deployment model. Then personalize the repo, build a release APK, prepare the dedicated bridge, and leave me clear install/use instructions."
+> "I want to create a personalized assistant-app starting from appenClaw. Follow `docs/APPENCLAW_AI_REPLICA.md` strictly in personalized mode. Run interactive intake for name, icon, locale, theme, STT/TTS preferences, target agent, bridge port, and deployment model. Then personalize the repo, build a release APK, prepare the dedicated bridge, and leave me clear install/use instructions."
 
 ### What the human does
 
